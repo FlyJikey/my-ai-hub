@@ -66,16 +66,16 @@ async function handlePost(req) {
         const category = body.category || "Не указана";
         const scenarioId = body.scenario || body.scenarioId || "seo";
 
-        // Жестко фиксируем лучшие бесплатные модели, как просил пользователь
-        const visionModelId = "nvidia/nemotron-nano-12b-v2-vl:free";
-
         // 1. Проверки
         if (!productName) return NextResponse.json({ error: "Необходимо передать название товара (name)" }, { status: 400 });
 
         const scenarioPrompt = SCENARIOS[scenarioId] || SCENARIOS["seo"];
 
+        const visionProvider = body.visionProvider || "openrouter";
+        const visionModelId = body.visionModelId || "nvidia/nemotron-nano-12b-v2-vl:free";
+
         // ============================================
-        // ЭТАП 1: VISION (OpenRouter - Nemotron 12B)
+        // ЭТАП 1: VISION (Dynamic Provider)
         // ============================================
         let visionData = { attributes: {}, tags: [], description: "Нет фото" };
 
@@ -101,27 +101,52 @@ async function handlePost(req) {
   "tags": ["тип", "факт1"]
 }`;
 
-            const orKey = process.env.OPENROUTER_API_KEY;
-            if (!orKey) return NextResponse.json({ error: "Не настроен OPENROUTER_API_KEY в AI Hub" }, { status: 500 });
-
             try {
-                const vRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${orKey}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        model: visionModelId,
-                        messages: [
-                            {
-                                role: "user",
-                                content: [
-                                    { type: "text", text: visionPromptText },
-                                    { type: "image_url", image_url: { url: imageUrl } }
-                                ]
-                            }
-                        ],
-                        temperature: 0.1
-                    })
-                });
+                let vRes;
+                if (visionProvider === "polza") {
+                    const polzaKey = process.env.POLZA_API_KEY;
+                    if (!polzaKey) return NextResponse.json({ error: "Не настроен POLZA_API_KEY в AI Hub" }, { status: 500 });
+
+                    vRes = await fetch("https://api.polza.ai/v1/chat/completions", {
+                        method: "POST",
+                        headers: { "Authorization": `Bearer ${polzaKey}`, "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            model: visionModelId,
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: [
+                                        { type: "text", text: visionPromptText },
+                                        { type: "image_url", image_url: { url: imageUrl } }
+                                    ]
+                                }
+                            ],
+                            temperature: 0.1
+                        })
+                    });
+                } else {
+                    // Default to OpenRouter
+                    const orKey = process.env.OPENROUTER_API_KEY;
+                    if (!orKey) return NextResponse.json({ error: "Не настроен OPENROUTER_API_KEY в AI Hub" }, { status: 500 });
+
+                    vRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                        method: "POST",
+                        headers: { "Authorization": `Bearer ${orKey}`, "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            model: visionModelId,
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: [
+                                        { type: "text", text: visionPromptText },
+                                        { type: "image_url", image_url: { url: imageUrl } }
+                                    ]
+                                }
+                            ],
+                            temperature: 0.1
+                        })
+                    });
+                }
 
                 if (vRes.ok) {
                     const data = await vRes.json();
@@ -134,7 +159,7 @@ async function handlePost(req) {
 
                     visionData = JSON.parse(rawContent);
                 } else {
-                    console.error("OpenRouter Vision Error", await vRes.text());
+                    console.error("Vision API Error", await vRes.text());
                 }
             } catch (e) {
                 console.error("Failed Vision parsing or fetch", e);
@@ -142,8 +167,8 @@ async function handlePost(req) {
         }
 
         // Принимаем параметры для текста с фронтенда:
-        const textProvider = body.textProvider || "polza";
-        const textModelId = body.textModelId || "llama-3.3-70b-versatile"; // Fallback to llama
+        const textProvider = body.textProvider || body.provider || "polza";
+        const textModelId = body.textModelId || body.modelId || "llama-3.3-70b-versatile"; // Fallback to llama
 
         // ============================================
         // ЭТАП 2: TEXT (Dynamic Provider: Polza / Groq)

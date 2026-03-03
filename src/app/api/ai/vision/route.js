@@ -97,6 +97,10 @@ export async function POST(req) {
             const data = await res.json();
             textResponse = data.choices[0].message.content;
         } else if (provider === "openrouter" || !provider) {
+            const openRouterKey = process.env.OPENROUTER_API_KEY;
+            if (!openRouterKey) {
+                return NextResponse.json({ error: "API ключ OPENROUTER_API_KEY не настроен (.env.local)" }, { status: 500, headers: corsHeaders });
+            }
 
             const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
@@ -105,7 +109,7 @@ export async function POST(req) {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    model: finalModelId,
+                    model: modelId,
                     messages: [
                         {
                             role: "user",
