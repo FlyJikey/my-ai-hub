@@ -60,6 +60,9 @@ const SCENARIOS = {
 async function handlePost(req) {
     try {
         const body = await req.json();
+        console.log("=== VERCEL DEBUG: INCOMING PAYLOAD FROM SPRT-SHOP ===");
+        console.log(JSON.stringify(body, null, 2));
+
         // Принимаем параметры: либо name, либо productName.
         const productName = body.name || body.productName;
         const imageUrl = body.imageUrl;
