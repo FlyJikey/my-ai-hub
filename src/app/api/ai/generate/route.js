@@ -1,5 +1,27 @@
 import { NextResponse } from "next/server";
 
+export const runtime = 'nodejs'; // or edge does not matter but good practice
+
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-version, x-csrftoken, x-requested-with',
+    'Access-Control-Max-Age': '86400',
+};
+
+export async function OPTIONS() {
+    return NextResponse.json({}, { headers: corsHeaders });
+}
+
+export async function POST(req) {
+    const res = await handlePost(req);
+    // Добавляем CORS-заголовки к ответу
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+        res?.headers?.set(key, value);
+    });
+    return res;
+}
+
 const SCENARIOS = {
     "seo": `ОЧЕНЬ ВАЖНО: Тебя просят написать продающий текст.
 СТРОГОЕ ПРАВИЛО ФОРМАТИРОВАНИЯ: ЗАПРЕЩЕНО использовать любые спецсимволы Markdown (никаких #, ##, ###, *, **). Используй только чистый текст. Если нужно сделать заголовок — просто напиши его с заглавной буквы с новой строки.
@@ -34,10 +56,6 @@ const SCENARIOS = {
 
     "creative": `Напиши яркое, эмоциональное и креативное описание товара в стиле поста для социальных сетей. Используй эмодзи, живой язык, обращайся к покупателю на "ты". Сделай текст таким, чтобы его хотелось репостнуть.`
 };
-
-export async function POST(req) {
-    return await handlePost(req);
-}
 
 async function handlePost(req) {
     try {
@@ -142,7 +160,7 @@ async function handlePost(req) {
 - Характеристики с фото: ${characteristics}
 - Теги: ${tags}
 
-🎯 Сценарий:
+�� Сценарий:
 ${scenarioPrompt}
 
 Пиши только на русском языке, без лишних вступлений, сразу выдай готовый текст.`;
@@ -171,8 +189,8 @@ ${scenarioPrompt}
         let finalText = textData.choices[0].message.content.trim();
 
         // Очистка от маркдауна, если Llama всё-таки его добавила
-        if (finalText.startsWith('```markdown')) finalText = finalText.replace(/^```markdown\n/, '').replace(/\n```$/, '');
-        else if (finalText.startsWith('```')) finalText = finalText.replace(/^```\n/, '').replace(/\n```$/, '');
+        if (finalText.startsWith('\`\`\`markdown')) finalText = finalText.replace(/^\`\`\`markdown\n/, '').replace(/\n\`\`\`$/, '');
+        else if (finalText.startsWith('\`\`\`')) finalText = finalText.replace(/^\`\`\`\n/, '').replace(/\n\`\`\`$/, '');
 
         // 3. Возврат результата (возвращаем и description, и resultText для совместимости)
         return NextResponse.json({

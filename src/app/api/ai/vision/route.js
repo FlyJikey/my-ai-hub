@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 
+export const runtime = 'nodejs'; // Keep as nodejs or edge
+
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-version, x-csrftoken, x-requested-with',
+    'Access-Control-Max-Age': '86400',
+};
+
+export async function OPTIONS() {
+    return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(req) {
     try {
         const formData = await req.formData();
@@ -153,13 +166,13 @@ export async function POST(req) {
         }
 
         const parsedResult = JSON.parse(textResponse);
-        return NextResponse.json({ result: parsedResult });
+        return NextResponse.json({ result: parsedResult }, { headers: corsHeaders });
 
     } catch (error) {
         console.error("Vision AI error:", error);
         return NextResponse.json(
             { error: "Внутренняя ошибка сервера: " + error.message },
-            { status: 500 }
+            { status: 500, headers: corsHeaders }
         );
     }
 }
