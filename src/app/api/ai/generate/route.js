@@ -68,7 +68,6 @@ async function handlePost(req) {
 
         // Жестко фиксируем лучшие бесплатные модели, как просил пользователь
         const visionModelId = "nvidia/nemotron-nano-12b-v2-vl:free";
-        const textModelId = "llama-3.3-70b-versatile";
 
         // 1. Проверки
         if (!productName) return NextResponse.json({ error: "Необходимо передать название товара (name)" }, { status: 400 });
@@ -142,8 +141,12 @@ async function handlePost(req) {
             }
         }
 
+        // Принимаем параметры для текста с фронтенда:
+        const textProvider = body.textProvider || "polza";
+        const textModelId = body.textModelId || "llama-3.3-70b-versatile"; // Fallback to llama
+
         // ============================================
-        // ЭТАП 2: TEXT (Groq - Llama 3.3 70B)
+        // ЭТАП 2: TEXT (Dynamic Provider: Polza / Groq)
         // ============================================
 
         const characteristics = Object.entries(visionData.attributes || {}).map(([k, v]) => `${k}: ${v}`).join(", ");
@@ -160,33 +163,87 @@ async function handlePost(req) {
 - Характеристики с фото: ${characteristics}
 - Теги: ${tags}
 
-�� Сценарий:
+🎯 Сценарий:
 ${scenarioPrompt}
 
 Пиши только на русском языке, без лишних вступлений, сразу выдай готовый текст.`;
 
-        const groqKey = process.env.GROQ_API_KEY;
-        if (!groqKey) return NextResponse.json({ error: "Не настроен GROQ_API_KEY в AI Hub" }, { status: 500 });
+        let finalText = "";
+        let tRes;
+        let textData;
 
-        const tRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: textModelId,
-                messages: [
-                    { role: "system", content: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts." },
-                    { role: "user", content: fullContextPrompt }
-                ],
-                temperature: 0.7,
-            })
-        });
+        if (textProvider === "polza") {
+            const polzaKey = process.env.POLZA_API_KEY;
+            if (!polzaKey) return NextResponse.json({ error: "Не настроен POLZA_API_KEY в AI Hub" }, { status: 500 });
 
-        if (!tRes.ok) {
-            const errText = await tRes.text();
-            return NextResponse.json({ error: "Ошибка Groq API: " + errText }, { status: 500 });
+            tRes = await fetch("https://api.polza.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${polzaKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: textModelId,
+                    messages: [
+                        { role: "system", content: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts." },
+                        { role: "user", content: fullContextPrompt }
+                    ],
+                    temperature: 0.7,
+                })
+            });
+            if (!tRes.ok) {
+                const errText = await tRes.text();
+                return NextResponse.json({ error: "Ошибка Polza API: " + errText }, { status: 500 });
+            }
+            textData = await tRes.json();
+            finalText = textData.choices[0].message.content.trim();
+
+        } else if (textProvider === "groq") {
+            const groqKey = process.env.GROQ_API_KEY;
+            if (!groqKey) return NextResponse.json({ error: "Не настроен GROQ_API_KEY в AI Hub" }, { status: 500 });
+
+            tRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: textModelId,
+                    messages: [
+                        { role: "system", content: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts." },
+                        { role: "user", content: fullContextPrompt }
+                    ],
+                    temperature: 0.7,
+                })
+            });
+
+            if (!tRes.ok) {
+                const errText = await tRes.text();
+                return NextResponse.json({ error: "Ошибка Groq API: " + errText }, { status: 500 });
+            }
+            textData = await tRes.json();
+            finalText = textData.choices[0].message.content.trim();
+
+        } else {
+            // Default OpenRouter fallback for text if provider not matched
+            const orKey = process.env.OPENROUTER_API_KEY;
+            if (!orKey) return NextResponse.json({ error: "Не настроен OPENROUTER_API_KEY в AI Hub" }, { status: 500 });
+
+            tRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${orKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: textModelId,
+                    messages: [
+                        { role: "system", content: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts." },
+                        { role: "user", content: fullContextPrompt }
+                    ],
+                    temperature: 0.7,
+                })
+            });
+
+            if (!tRes.ok) {
+                const errText = await tRes.text();
+                return NextResponse.json({ error: "Ошибка OpenRouter API: " + errText }, { status: 500 });
+            }
+            textData = await tRes.json();
+            finalText = textData.choices[0].message.content.trim();
         }
-        const textData = await tRes.json();
-        let finalText = textData.choices[0].message.content.trim();
 
         // Очистка от маркдауна, если Llama всё-таки его добавила
         if (finalText.startsWith('\`\`\`markdown')) finalText = finalText.replace(/^\`\`\`markdown\n/, '').replace(/\n\`\`\`$/, '');
