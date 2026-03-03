@@ -1,0 +1,742 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 5rem);
+    /* Take full height minus header/padding */
+    padding-bottom: 1rem;
+}
+
+.headerTitle {
+    font-size: 1.875rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-bottom: 0.5rem;
+}
+
+/* Chat Layout Container */
+.chatContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: transparent;
+    border: none;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Scrollable History Area */
+.chatHistory {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 1.5rem 3rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    scroll-behavior: smooth;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.topBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem 0 1.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.emptyState {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    text-align: center;
+    gap: 1rem;
+    margin: auto 0;
+}
+
+/* Message Bubbles */
+.message {
+    display: flex;
+    gap: 1rem;
+    max-width: 95%;
+    /* Increased from 85% */
+}
+
+.messageUser {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.messageAi {
+    align-self: flex-start;
+}
+
+.avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.avatarUser {
+    background-color: var(--border);
+    color: var(--foreground);
+}
+
+.avatarAi {
+    background: var(--accent-cta);
+    color: white;
+}
+
+.messageContent {
+    padding: 1rem;
+    border-radius: 1rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    position: relative;
+    background-color: var(--background);
+    border: 1px solid var(--border);
+}
+
+.messageUser .messageContent {
+    background-color: var(--border);
+    border-top-right-radius: 0.25rem;
+}
+
+.messageAi .messageContent {
+    border-top-left-radius: 0.25rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Attached Image Thumbnail */
+.attachedImage {
+    max-width: 200px;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    display: block;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Vision Attributes in AI response */
+.attributesGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    background-color: rgba(0, 0, 0, 0.02);
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    .attributesGrid {
+        background-color: rgba(255, 255, 255, 0.02);
+    }
+}
+
+.attrLabel {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #6b7280;
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+}
+
+.attrValue {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Preset Action Chips */
+.presetsContainer {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    overflow-x: auto;
+    border-top: none;
+    background-color: transparent;
+    scrollbar-width: none;
+    margin-bottom: 0.5rem;
+}
+
+.presetsContainer::-webkit-scrollbar {
+    display: none;
+}
+
+.presetChip {
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background-color: var(--background);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--foreground);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.presetChip:hover {
+    background-color: var(--border);
+}
+
+/* Bottom Input Area */
+.inputArea {
+    padding: 0.75rem 1.5rem 2rem 1.5rem;
+    background-color: transparent;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.imageUploadRow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.mainInputRow {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-end;
+}
+
+/* Forced Image Warning */
+.imageWarning {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.imagePreviewWrapper {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.imagePreviewSmall {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.btnRemoveSmall {
+    position: absolute;
+    top: -0.4rem;
+    right: -0.4rem;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btnAttach {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 1rem;
+    border: 1px dashed var(--border);
+    background: var(--background);
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.btnAttach:hover {
+    border-color: var(--accent-cta);
+    color: var(--foreground);
+}
+
+.textareaContainer {
+    flex: 1;
+    position: relative;
+    background-color: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    transition: border-color 0.2s;
+    min-width: 70%;
+    /* Ensures the text area takes up most of the space */
+}
+
+.textareaContainer:focus-within {
+    border-color: var(--accent-cta);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+}
+
+.textarea {
+    width: 100%;
+    height: 85px;
+    min-height: 85px;
+    max-height: 350px;
+    padding: 0.875rem 1rem;
+    border: none;
+    background: transparent;
+    resize: none;
+    color: var(--foreground);
+    font-family: inherit;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.textarea:focus {
+    outline: none;
+}
+
+.btnSend {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 1rem;
+    background: var(--accent-cta);
+    color: var(--cta-text);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.btnSend:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--border);
+    color: #9ca3af;
+}
+
+.btnSend:not(:disabled):active {
+    transform: scale(0.95);
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.copyBtn {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--foreground);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.copyBtn:hover {
+    background: var(--border);
+}
+
+/* Custom Model Dropdown */
+.modelDropdownContainer {
+    position: relative;
+    display: inline-block;
+}
+
+.modelDropdownButton {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--foreground);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 200px;
+}
+
+.modelDropdownButton:hover {
+    border-color: var(--accent-cta);
+}
+
+.modelDropdownMenu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    width: 340px;
+    background: var(--surface-opaque);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+    z-index: 50;
+    overflow-y: auto;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.modelOption {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    text-align: left;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    color: var(--foreground);
+    transition: background 0.2s;
+}
+
+.modelOption:last-child {
+    border-bottom: none;
+}
+
+.modelOption:hover {
+    background: var(--background);
+}
+
+.modelOptionActive {
+    background: var(--background);
+    border-left: 3px solid var(--accent-cta);
+    padding-left: calc(1rem - 3px);
+}
+
+.modelHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.modelDesc {
+    font-size: 0.75rem;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+.modelBadgeEconomy {
+    background: var(--border);
+    color: var(--foreground);
+    font-size: 0.65rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modelBadgePremium {
+    background: #8b5cf6;
+    color: white;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.modelBadgeFree {
+    background: #10b981;
+    color: white;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Scenario Button */
+.scenarioBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--foreground);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.scenarioBtn:hover {
+    background: var(--border);
+}
+
+.scenarioBtnActive {
+    background: #8b5cf6;
+    color: white;
+    border-color: #8b5cf6;
+}
+
+.scenarioBtnActive:hover {
+    background: #7c3aed;
+}
+
+.scenariosMenu {
+    right: 0;
+    left: auto;
+    width: 320px;
+}
+
+/* Scenario Indicator */
+.scenarioIndicator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background: rgba(139, 92, 246, 0.1);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    font-size: 0.8rem;
+    color: #a78bfa;
+}
+
+.scenarioClearBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.4rem;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    background: transparent;
+    color: #a78bfa;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background 0.2s;
+}
+
+.scenarioClearBtn:hover {
+    background: rgba(139, 92, 246, 0.2);
+}
+
+/* AI Actions Row */
+.aiActions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.debugToggleBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.debugToggleBtn:hover {
+    color: #60a5fa;
+    border-color: rgba(96, 165, 250, 0.3);
+    background: rgba(96, 165, 250, 0.05);
+}
+
+/* Debug Panel */
+.debugPanel {
+    margin-top: 0.75rem;
+    border: 1px solid rgba(96, 165, 250, 0.2);
+    border-radius: 0.75rem;
+    background: rgba(96, 165, 250, 0.04);
+    overflow: hidden;
+}
+
+.debugSection {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(96, 165, 250, 0.1);
+}
+
+.debugSection:last-child {
+    border-bottom: none;
+}
+
+.debugSectionTitle {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #60a5fa;
+    margin-bottom: 0.5rem;
+}
+
+.debugContent {
+    font-size: 0.78rem;
+    color: #9ca3af;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    line-height: 1.5;
+}
+
+.debugContent strong {
+    color: #d1d5db;
+}
+
+.debugList {
+    margin: 0.25rem 0 0 1.2rem;
+    padding: 0;
+    list-style: disc;
+}
+
+.debugList li {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.debugPrompt {
+    font-size: 0.72rem;
+    color: #9ca3af;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    line-height: 1.5;
+}
+
+/* Chat Management */
+.newChatBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--foreground);
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.newChatBtn:hover {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: white;
+}
+
+.chatListBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--foreground);
+    cursor: pointer;
+    font-size: 0.78rem;
+    transition: all 0.2s;
+}
+
+.chatListBtn:hover {
+    border-color: var(--accent-cta);
+}
+
+.chatListMenu {
+    width: 300px;
+    left: 0;
+    right: auto;
+}
+
+.chatListItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 0.5rem;
+}
+
+.chatListTitle {
+    font-size: 0.8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    text-align: left;
+}
+
+.chatDeleteBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 0.3rem;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.chatDeleteBtn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}

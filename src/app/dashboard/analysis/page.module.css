@@ -1,0 +1,214 @@
+.container {
+    padding: 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    color: var(--foreground);
+}
+
+.header h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.subtitle {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-left: auto;
+}
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    color: #6b7280;
+}
+
+.emptyState h3 {
+    margin: 1rem 0 0.5rem;
+    color: var(--foreground);
+    font-size: 1.1rem;
+}
+
+.emptyState p {
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+/* Logs List */
+.logsList {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.logCard {
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background: var(--surface);
+    overflow: hidden;
+}
+
+.logHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: rgba(96, 165, 250, 0.05);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.logTime {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: #6b7280;
+}
+
+.logModels {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.modelTag {
+    font-size: 0.72rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.4rem;
+    background: rgba(96, 165, 250, 0.1);
+    color: #60a5fa;
+    border: 1px solid rgba(96, 165, 250, 0.15);
+}
+
+.logUserPrompt {
+    padding: 0.6rem 1rem;
+    font-size: 0.82rem;
+    color: #9ca3af;
+    border-bottom: 1px solid var(--border);
+}
+
+.logUserPrompt strong {
+    color: var(--foreground);
+}
+
+/* Section */
+.section {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.section:last-child {
+    border-bottom: none;
+}
+
+.sectionTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #60a5fa;
+    margin-bottom: 0.75rem;
+}
+
+.sectionContent {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Vision Fields */
+.visionField {
+    font-size: 0.82rem;
+    color: #9ca3af;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.fieldLabel {
+    color: #6b7280;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.attributesBlock {
+    margin-top: 0.5rem;
+}
+
+.attrGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
+
+.attrItem {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.6rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 0.4rem;
+}
+
+.attrKey {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.attrVal {
+    color: #d1d5db;
+}
+
+/* Tags */
+.tagsRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.tagsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.tag {
+    font-size: 0.72rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.3rem;
+    background: rgba(139, 92, 246, 0.1);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.15);
+}
+
+/* Prompt Block */
+.promptBlock {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    line-height: 1.5;
+    margin: 0;
+}

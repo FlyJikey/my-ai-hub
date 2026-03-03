@@ -1,25 +1,52 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f9fa; /* Very light, clean background */
+  --foreground: #111111;
+  --surface: rgba(255, 255, 255, 0.85); /* For glassmorphism */
+  --surface-opaque: #ffffff;
+  --border: rgba(0, 0, 0, 0.06);
+  --border-glass: rgba(255, 255, 255, 0.6);
+
+  /* Typography */
+  --font-heading: var(--font-geist-sans), Inter, sans-serif;
+  
+  /* Accents */
+  --accent-cta: #0a0a0a; /* Coal black */
+  --accent-cta-hover: #222222;
+  --cta-text: #ffffff;
+
+  /* Card and Layout properties */
+  --radius-bento: 32px; /* Huge border radius for Bento Grid */
+  --radius-button: 9999px; /* Pill shape */
+
+  /* Special Effects */
+  --glow-internal-blue: inset 0 0 60px rgba(0, 112, 243, 0.15), inset 0 0 20px rgba(0, 112, 243, 0.1);
+  --mesh-pink: #ff7eb3;
+  --mesh-orange: #ff758c;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #09090b;
+    --foreground: #fafafa;
+    --surface: rgba(20, 20, 22, 0.75);
+    --surface-opaque: #121214;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-glass: rgba(255, 255, 255, 0.05);
+
+    --accent-cta: #ffffff;
+    --accent-cta-hover: #e4e4e7;
+    --cta-text: #050505;
+
+    --glow-internal-blue: inset 0 0 60px rgba(0, 112, 243, 0.2), inset 0 0 20px rgba(0, 112, 243, 0.2);
   }
 }
 
-html,
-body {
+html, body {
   max-width: 100vw;
   overflow-x: hidden;
-}
-
-body {
+  background-color: var(--background);
   color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -35,8 +62,37 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* Glassmorphism utility */
+.glass {
+  background: var(--surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-glass);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+.dark .glass {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Typography Utilities */
+.hero-title {
+  font-family: var(--font-heading);
+  font-weight: 800; /* Massive bold */
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+/* Bento Grid System Base */
+.bento-card {
+  border-radius: var(--radius-bento);
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
 }
