@@ -170,7 +170,34 @@ export async function GET(req) {
         }
 
         if (data && data.data) {
-            return NextResponse.json(data.data, { headers: corsHeaders });
+            // Merge custom models with potentially updated default models
+            const dbSettings = data.data;
+            const customTextModels = (dbSettings.textModels || []).filter(m => m.isCustom);
+            const customVisionModels = (dbSettings.visionModels || []).filter(m => m.isCustom);
+
+            // Re-map defaults to pick up any changes from config/models.js, but retain "enabled" state from DB
+            const defaultTextModels = AI_MODELS.text.map(defaultModel => {
+                const dbInfo = (dbSettings.textModels || []).find(m => m.id === defaultModel.id);
+                return { ...defaultModel, enabled: dbInfo ? dbInfo.enabled : true };
+            });
+
+            const defaultVisionModels = AI_MODELS.vision.map(defaultModel => {
+                const dbInfo = (dbSettings.visionModels || []).find(m => m.id === defaultModel.id);
+                return { ...defaultModel, enabled: dbInfo ? dbInfo.enabled : true };
+            });
+
+            // Merge scenarios same way
+            const customScenarios = (dbSettings.scenarios || []).filter(s => s.id.startsWith('sc_'));
+            const defaultScens = DEFAULT_SCENARIOS.map(defaultScen => {
+                const dbInfo = (dbSettings.scenarios || []).find(s => s.id === defaultScen.id);
+                return { ...defaultScen, enabled: dbInfo ? dbInfo.enabled : true };
+            });
+
+            return NextResponse.json({
+                textModels: [...defaultTextModels, ...customTextModels],
+                visionModels: [...defaultVisionModels, ...customVisionModels],
+                scenarios: [...defaultScens, ...customScenarios]
+            }, { headers: corsHeaders });
         }
 
         // Initialize default if not exists

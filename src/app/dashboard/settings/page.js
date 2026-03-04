@@ -10,6 +10,7 @@ export default function SettingsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState({ text: "", type: "" });
     const [editingScenario, setEditingScenario] = useState(null);
+    const [editingModel, setEditingModel] = useState(null);
 
     useEffect(() => {
         fetchSettings();
@@ -91,6 +92,26 @@ export default function SettingsPage() {
         setEditingScenario(null);
     };
 
+    const deleteModel = (type, id) => {
+        if (!confirm("Вы уверены, что хотите удалить эту модель?")) return;
+        setSettings(prev => ({
+            ...prev,
+            [type]: prev[type].filter(m => m.id !== id)
+        }));
+    };
+
+    const saveModel = (modelStr) => {
+        const newModel = { ...modelStr };
+        newModel.enabled = true;
+
+        if (newModel.modelType === 'text') {
+            setSettings(prev => ({ ...prev, textModels: [...prev.textModels, newModel] }));
+        } else {
+            setSettings(prev => ({ ...prev, visionModels: [...prev.visionModels, newModel] }));
+        }
+        setEditingModel(null);
+    };
+
     if (isLoading) {
         return <div className={styles.loadingState}><RefreshCw className={styles.spin} /> Загрузка настроек...</div>;
     }
@@ -126,7 +147,12 @@ export default function SettingsPage() {
             <div className={styles.grid}>
                 {/* ТЕКСТОВЫЕ МОДЕЛИ */}
                 <div className={styles.card}>
-                    <h2 className={styles.cardTitle}>Текстовые Нейросети</h2>
+                    <div className={styles.cardHeader}>
+                        <h2 className={styles.cardTitle}>Текстовые Нейросети</h2>
+                        <button className={styles.addBtn} onClick={() => setEditingModel({ id: "", name: "", description: "", provider: "polza", tier: "premium", modelType: "text", isCustom: true })}>
+                            <Plus size={16} /> Добавить
+                        </button>
+                    </div>
                     <div className={styles.list}>
                         {settings.textModels.map(model => (
                             <div key={model.id} className={styles.listItem}>
@@ -136,17 +162,25 @@ export default function SettingsPage() {
                                         <span className={model.tier === 'free' ? styles.badgeFree : styles.badgePremium}>
                                             {model.tier === 'free' ? 'БЕСПЛАТНО' : 'PRO'}
                                         </span>
+                                        {model.isCustom && <span className={styles.badgeCustom}>КАСТОМ</span>}
                                     </div>
                                     <div className={styles.itemDesc}>{model.description}</div>
                                 </div>
-                                <label className={styles.switch}>
-                                    <input
-                                        type="checkbox"
-                                        checked={model.enabled !== false}
-                                        onChange={() => toggleModel('textModels', model.id)}
-                                    />
-                                    <span className={styles.slider}></span>
-                                </label>
+                                <div className={styles.scenarioActions}>
+                                    {model.isCustom && (
+                                        <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('textModels', model.id)} title="Удалить">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
+                                    <label className={styles.switch}>
+                                        <input
+                                            type="checkbox"
+                                            checked={model.enabled !== false}
+                                            onChange={() => toggleModel('textModels', model.id)}
+                                        />
+                                        <span className={styles.slider}></span>
+                                    </label>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -154,7 +188,12 @@ export default function SettingsPage() {
 
                 {/* МОДЕЛИ ДЛЯ ФОТО */}
                 <div className={styles.card}>
-                    <h2 className={styles.cardTitle}>Нейросети для Фото</h2>
+                    <div className={styles.cardHeader}>
+                        <h2 className={styles.cardTitle}>Нейросети для Фото</h2>
+                        <button className={styles.addBtn} onClick={() => setEditingModel({ id: "", name: "", description: "", provider: "polza", tier: "premium", modelType: "vision", isCustom: true })}>
+                            <Plus size={16} /> Добавить
+                        </button>
+                    </div>
                     <div className={styles.list}>
                         {settings.visionModels.map(model => (
                             <div key={model.id} className={styles.listItem}>
@@ -164,17 +203,25 @@ export default function SettingsPage() {
                                         <span className={model.tier === 'free' ? styles.badgeFree : styles.badgePremium}>
                                             {model.tier === 'free' ? 'БЕСПЛАТНО' : 'PRO'}
                                         </span>
+                                        {model.isCustom && <span className={styles.badgeCustom}>КАСТОМ</span>}
                                     </div>
                                     <div className={styles.itemDesc}>{model.description}</div>
                                 </div>
-                                <label className={styles.switch}>
-                                    <input
-                                        type="checkbox"
-                                        checked={model.enabled !== false}
-                                        onChange={() => toggleModel('visionModels', model.id)}
-                                    />
-                                    <span className={styles.slider}></span>
-                                </label>
+                                <div className={styles.scenarioActions}>
+                                    {model.isCustom && (
+                                        <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('visionModels', model.id)} title="Удалить">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
+                                    <label className={styles.switch}>
+                                        <input
+                                            type="checkbox"
+                                            checked={model.enabled !== false}
+                                            onChange={() => toggleModel('visionModels', model.id)}
+                                        />
+                                        <span className={styles.slider}></span>
+                                    </label>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -274,6 +321,90 @@ export default function SettingsPage() {
                                 disabled={!editingScenario.name || !editingScenario.prompt}
                             >
                                 Сохранить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* МОДАЛКА ДОБАВЛЕНИЯ МОДЕЛИ */}
+            {editingModel && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modal}>
+                        <h3 className={styles.modalTitle}>Добавить свою модель</h3>
+                        <div className={styles.modalBody}>
+                            <div className={styles.inputGroup}>
+                                <label>ID Модели (из Polza.ai / OpenRouter / Groq)</label>
+                                <input
+                                    type="text"
+                                    value={editingModel.id}
+                                    onChange={e => setEditingModel({ ...editingModel, id: e.target.value })}
+                                    placeholder="Например: openai/gpt-4o-mini"
+                                />
+                            </div>
+                            <div className={styles.inputGroup}>
+                                <label>Название (для отображения)</label>
+                                <input
+                                    type="text"
+                                    value={editingModel.name}
+                                    onChange={e => setEditingModel({ ...editingModel, name: e.target.value })}
+                                    placeholder="Например: Моя GPT-4o Mini"
+                                />
+                            </div>
+                            <div className={styles.inputGroup}>
+                                <label>Краткое описание</label>
+                                <input
+                                    type="text"
+                                    value={editingModel.description}
+                                    onChange={e => setEditingModel({ ...editingModel, description: e.target.value })}
+                                    placeholder="Описание модели..."
+                                />
+                            </div>
+                            <div className={styles.inputGroupRow}>
+                                <div className={styles.inputGroup} style={{ flex: 1 }}>
+                                    <label>Провайдер</label>
+                                    <select
+                                        className={styles.selectInput}
+                                        value={editingModel.provider}
+                                        onChange={e => setEditingModel({ ...editingModel, provider: e.target.value })}
+                                    >
+                                        <option value="polza">Polza.ai</option>
+                                        <option value="openrouter">OpenRouter</option>
+                                        <option value="groq">Groq</option>
+                                    </select>
+                                </div>
+                                <div className={styles.inputGroup} style={{ flex: 1 }}>
+                                    <label>Тип модели</label>
+                                    <select
+                                        className={styles.selectInput}
+                                        value={editingModel.modelType}
+                                        onChange={e => setEditingModel({ ...editingModel, modelType: e.target.value })}
+                                    >
+                                        <option value="text">Текст (Text)</option>
+                                        <option value="vision">Фото (Vision)</option>
+                                    </select>
+                                </div>
+                                <div className={styles.inputGroup} style={{ flex: 1 }}>
+                                    <label>Платность</label>
+                                    <select
+                                        className={styles.selectInput}
+                                        value={editingModel.tier}
+                                        onChange={e => setEditingModel({ ...editingModel, tier: e.target.value })}
+                                    >
+                                        <option value="premium">PRO (Платно)</option>
+                                        <option value="free">БЕСПЛАТНО</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div className={styles.modalFooter}>
+                            <button className={styles.cancelBtn} onClick={() => setEditingModel(null)}>Отмена</button>
+                            <button
+                                className={styles.saveModalBtn}
+                                onClick={() => saveModel(editingModel)}
+                                disabled={!editingModel.id || !editingModel.name}
+                            >
+                                Добавить
                             </button>
                         </div>
                     </div>

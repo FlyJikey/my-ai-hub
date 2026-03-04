@@ -47,11 +47,28 @@ async function handlePost(req) {
         const scenarioObj = scenarios.find(s => s.id === scenarioId);
         let scenarioPrompt = scenarioObj ? scenarioObj.prompt : "Напиши продающее описание товара.";
 
-        // На фронтенде (my-shop2) переменные называются `textModel` и `visionModel`, без provider
+        const textModelId = body.textModelId || body.textModel || body.modelId || "llama-3.3-70b-versatile";
         const visionModelId = body.visionModelId || body.visionModel || "nvidia/nemotron-nano-12b-v2-vl:free";
-        let visionProvider = body.visionProvider || "openrouter";
-        if (!body.visionProvider && visionModelId !== 'none') {
-            if (visionModelId.includes('gpt') || visionModelId.includes('gemini')) visionProvider = 'polza';
+
+        const textModels = settingsData?.data?.textModels || [];
+        const visionModels = settingsData?.data?.visionModels || [];
+
+        // Determine providers from settings or body, fallback to logic
+        const matchedTextModel = textModels.find(m => m.id === textModelId);
+        const matchedVisionModel = visionModels.find(m => m.id === visionModelId);
+
+        let visionProvider = body.visionProvider || matchedVisionModel?.provider || "openrouter";
+        if (!body.visionProvider && !matchedVisionModel && visionModelId !== 'none') {
+            if (visionModelId.includes('gpt') || visionModelId.includes('gemini') || visionModelId.includes('polza')) visionProvider = 'polza';
+        }
+
+        let textProvider = body.textProvider || body.provider || matchedTextModel?.provider;
+        if (!textProvider) {
+            if (textModelId.includes('/')) {
+                textProvider = "polza"; // openai/gpt-4o, deepseek/deepseek-chat и др.
+            } else {
+                textProvider = "groq"; // llama-3.3-70b-versatile, qwen
+            }
         }
 
         // ============================================
@@ -146,21 +163,8 @@ async function handlePost(req) {
             }
         }
 
-        // Принимаем параметры для текста с фронтенда:
-        const textModelId = body.textModelId || body.textModel || body.modelId || "llama-3.3-70b-versatile"; // Fallback to llama
-
-        // Автоматически определяем провайдера, если фронтенд (my-shop2) его не прислал
-        let textProvider = body.textProvider || body.provider;
-        if (!textProvider) {
-            if (textModelId.includes('/')) {
-                textProvider = "polza"; // openai/gpt-4o, deepseek/deepseek-chat и др.
-            } else {
-                textProvider = "groq"; // llama-3.3-70b-versatile, qwen
-            }
-        }
-
         // ============================================
-        // ЭТАП 2: TEXT (Dynamic Provider: Polza / Groq)
+        // ЭТАП 2: TEXT (Dynamic Provider: Polza / Groq / OpenRouter)
         // ============================================
 
         const characteristics = Object.entries(visionData.attributes || {}).map(([k, v]) => `${k}: ${v}`).join(", ");
