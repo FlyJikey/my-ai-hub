@@ -60,9 +60,6 @@ const SCENARIOS = {
 async function handlePost(req) {
     try {
         const body = await req.json();
-        console.log("=== VERCEL DEBUG: INCOMING PAYLOAD FROM SPRT-SHOP ===");
-        console.log(JSON.stringify(body, null, 2));
-
         // Принимаем параметры: либо name, либо productName.
         const productName = body.name || body.productName;
         const imageUrl = body.imageUrl;
@@ -74,8 +71,12 @@ async function handlePost(req) {
 
         const scenarioPrompt = SCENARIOS[scenarioId] || SCENARIOS["seo"];
 
-        const visionProvider = body.visionProvider || "openrouter";
-        const visionModelId = body.visionModelId || "nvidia/nemotron-nano-12b-v2-vl:free";
+        // На фронтенде (my-shop2) переменные называются `textModel` и `visionModel`, без provider
+        const visionModelId = body.visionModelId || body.visionModel || "nvidia/nemotron-nano-12b-v2-vl:free";
+        let visionProvider = body.visionProvider || "openrouter";
+        if (!body.visionProvider && visionModelId !== 'none') {
+            if (visionModelId.includes('gpt') || visionModelId.includes('gemini')) visionProvider = 'polza';
+        }
 
         // ============================================
         // ЭТАП 1: VISION (Dynamic Provider)
@@ -170,8 +171,17 @@ async function handlePost(req) {
         }
 
         // Принимаем параметры для текста с фронтенда:
-        const textProvider = body.textProvider || body.provider || "polza";
-        const textModelId = body.textModelId || body.modelId || "llama-3.3-70b-versatile"; // Fallback to llama
+        const textModelId = body.textModelId || body.textModel || body.modelId || "llama-3.3-70b-versatile"; // Fallback to llama
+
+        // Автоматически определяем провайдера, если фронтенд (my-shop2) его не прислал
+        let textProvider = body.textProvider || body.provider;
+        if (!textProvider) {
+            if (textModelId.includes('/')) {
+                textProvider = "polza"; // openai/gpt-4o, deepseek/deepseek-chat и др.
+            } else {
+                textProvider = "groq"; // llama-3.3-70b-versatile, qwen
+            }
+        }
 
         // ============================================
         // ЭТАП 2: TEXT (Dynamic Provider: Polza / Groq)
