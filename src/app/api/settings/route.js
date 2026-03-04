@@ -193,6 +193,30 @@ export async function GET(req) {
 
 export async function POST(req) {
     try {
+        const { searchParams } = new URL(req.url);
+        const action = searchParams.get('action');
+
+        if (action === 'restore_scenarios') {
+            const { data: currentData } = await supabase
+                .from('ai_settings')
+                .select('data')
+                .eq('id', 'global')
+                .single();
+
+            const newData = currentData?.data || {};
+            newData.scenarios = DEFAULT_SCENARIOS;
+
+            const { error } = await supabase
+                .from('ai_settings')
+                .upsert({ id: 'global', data: newData }, { onConflict: 'id' });
+
+            if (error) {
+                console.error('Settings Restore Error:', error);
+                return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
+            }
+            return NextResponse.json({ success: true, data: newData }, { headers: corsHeaders });
+        }
+
         const body = await req.json();
 
         const { error } = await supabase

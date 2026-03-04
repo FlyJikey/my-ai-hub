@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Plus, Trash2, Edit2, CheckCircle, AlertCircle, RefreshCw, ChevronUp, ChevronDown } from "lucide-react";
+import { Save, Plus, Trash2, Edit2, CheckCircle, AlertCircle, RefreshCw, ChevronUp, ChevronDown, RotateCcw } from "lucide-react";
 import styles from "./page.module.css";
 
 export default function SettingsPage() {
@@ -51,6 +51,28 @@ export default function SettingsPage() {
             }
         } catch (err) {
             setMessage({ text: "Ошибка сети при сохранении.", type: "error" });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const restoreScenarios = async () => {
+        if (!confirm("Внимание! Это удалит все ваши текущие сценарии и вернет 6 стандартных шаблонов. Вы уверены?")) return;
+
+        setIsSaving(true);
+        setMessage({ text: "", type: "" });
+        try {
+            const res = await fetch('/api/settings?action=restore_scenarios', { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                setSettings(prev => ({ ...prev, scenarios: data.data.scenarios }));
+                setMessage({ text: "Сценарии успешно сброшены к стандартным!", type: "success" });
+                setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+            } else {
+                setMessage({ text: "Ошибка сброса: " + data.error, type: "error" });
+            }
+        } catch (err) {
+            setMessage({ text: "Ошибка сети при сбросе.", type: "error" });
         } finally {
             setIsSaving(false);
         }
@@ -266,11 +288,19 @@ export default function SettingsPage() {
                 {/* СЦЕНАРИИ */}
                 <div className={`${styles.card} ${styles.fullWidth}`}>
                     <div className={styles.cardHeader}>
-                        <h2 className={styles.cardTitle}>Сценарии (Промпты)</h2>
-                        <button className={styles.addBtn} onClick={() => setEditingScenario({ name: "", icon: "📝", description: "", prompt: "" })}>
-                            <Plus size={16} /> Создать сценарий
-                        </button>
+                        <h2 className={styles.cardTitle}>Пресеты и Сценарии (Промпты)</h2>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className={styles.addBtn} onClick={restoreScenarios} style={{ background: '#3f3f46' }} title="Сбросить к заводским настройкам">
+                                <RotateCcw size={16} /> Сбросить
+                            </button>
+                            <button className={styles.addBtn} onClick={() => setEditingScenario({ name: "", icon: "📝", description: "", prompt: "" })}>
+                                <Plus size={16} /> Создать пресет
+                            </button>
+                        </div>
                     </div>
+                    <p style={{ fontSize: '13px', color: '#a1a1aa', marginBottom: '16px' }}>
+                        Создавайте различные пресеты (например: "Обувь", "Характеристики не нужны") и задавайте в промпте, какие параметры надо писать, а какие нет. Затем выбирайте их прямо при генерации на Спартаке!
+                    </p>
 
                     <div className={styles.list}>
                         {settings.scenarios.map((scenario, index) => (
