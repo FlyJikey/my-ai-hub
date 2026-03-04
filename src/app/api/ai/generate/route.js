@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabase } from '@/lib/supabase';
 
 export const runtime = 'nodejs'; // or edge does not matter but good practice
+export const maxDuration = 60; // Set timeout to 60 seconds (max for Hobby)
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
