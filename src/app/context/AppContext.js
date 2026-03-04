@@ -11,8 +11,30 @@ export function AppProvider({ children }) {
     const [visionImagePreview, setVisionImagePreview] = useState(null);
 
     // Store the full model objects
+    const [availableTextModels, setAvailableTextModels] = useState([]);
+    const [availableVisionModels, setAvailableVisionModels] = useState([]);
+    const [availableScenarios, setAvailableScenarios] = useState([]);
+
     const [selectedTextModel, setSelectedTextModel] = useState(AI_MODELS.text[0]);
     const [selectedVisionModel, setSelectedVisionModel] = useState(AI_MODELS.vision[0]);
+
+    useEffect(() => {
+        fetch('/api/settings')
+            .then(res => res.json())
+            .then(data => {
+                if (data && !data.error) {
+                    const txt = (data.textModels || []).filter(m => m.enabled !== false);
+                    const vis = (data.visionModels || []).filter(m => m.enabled !== false);
+                    const sc = (data.scenarios || []).filter(s => s.enabled !== false);
+                    setAvailableTextModels(txt);
+                    setAvailableVisionModels(vis);
+                    setAvailableScenarios(sc);
+                    if (txt.length > 0) setSelectedTextModel(txt[0]);
+                    if (vis.length > 0) setSelectedVisionModel(vis[0]);
+                }
+            })
+            .catch(err => console.error('Failed to load global settings', err));
+    }, []);
 
     // History State
     const [history, setHistory] = useState([]);
@@ -66,6 +88,9 @@ export function AppProvider({ children }) {
             setSelectedTextModel,
             selectedVisionModel,
             setSelectedVisionModel,
+            availableTextModels,
+            availableVisionModels,
+            availableScenarios,
             history,
             addToHistory,
             stats,
