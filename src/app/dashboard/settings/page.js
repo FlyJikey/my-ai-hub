@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Plus, Trash2, Edit2, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
+import { Save, Plus, Trash2, Edit2, CheckCircle, AlertCircle, RefreshCw, ChevronUp, ChevronDown } from "lucide-react";
 import styles from "./page.module.css";
 
 export default function SettingsPage() {
@@ -100,6 +100,30 @@ export default function SettingsPage() {
         }));
     };
 
+    const moveModel = (type, index, direction) => {
+        setSettings(prev => {
+            const arr = [...prev[type]];
+            if (direction === 'up' && index > 0) {
+                [arr[index], arr[index - 1]] = [arr[index - 1], arr[index]];
+            } else if (direction === 'down' && index < arr.length - 1) {
+                [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
+            }
+            return { ...prev, [type]: arr };
+        });
+    };
+
+    const moveScenario = (index, direction) => {
+        setSettings(prev => {
+            const arr = [...prev.scenarios];
+            if (direction === 'up' && index > 0) {
+                [arr[index], arr[index - 1]] = [arr[index - 1], arr[index]];
+            } else if (direction === 'down' && index < arr.length - 1) {
+                [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
+            }
+            return { ...prev, scenarios: arr };
+        });
+    };
+
     const saveModel = (modelStr) => {
         const newModel = { ...modelStr };
         newModel.enabled = true;
@@ -154,7 +178,7 @@ export default function SettingsPage() {
                         </button>
                     </div>
                     <div className={styles.list}>
-                        {settings.textModels.map(model => (
+                        {settings.textModels.map((model, index) => (
                             <div key={model.id} className={styles.listItem}>
                                 <div className={styles.itemInfo}>
                                     <div className={styles.itemName}>
@@ -167,6 +191,12 @@ export default function SettingsPage() {
                                     <div className={styles.itemDesc}>{model.description}</div>
                                 </div>
                                 <div className={styles.scenarioActions}>
+                                    <button className={styles.iconBtn} onClick={() => moveModel('textModels', index, 'up')} disabled={index === 0} title="Вверх" style={{ opacity: index === 0 ? 0.3 : 1 }}>
+                                        <ChevronUp size={16} />
+                                    </button>
+                                    <button className={styles.iconBtn} onClick={() => moveModel('textModels', index, 'down')} disabled={index === settings.textModels.length - 1} title="Вниз" style={{ opacity: index === settings.textModels.length - 1 ? 0.3 : 1 }}>
+                                        <ChevronDown size={16} />
+                                    </button>
                                     {model.isCustom && (
                                         <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('textModels', model.id)} title="Удалить">
                                             <Trash2 size={16} />
@@ -195,7 +225,7 @@ export default function SettingsPage() {
                         </button>
                     </div>
                     <div className={styles.list}>
-                        {settings.visionModels.map(model => (
+                        {settings.visionModels.map((model, index) => (
                             <div key={model.id} className={styles.listItem}>
                                 <div className={styles.itemInfo}>
                                     <div className={styles.itemName}>
@@ -208,6 +238,12 @@ export default function SettingsPage() {
                                     <div className={styles.itemDesc}>{model.description}</div>
                                 </div>
                                 <div className={styles.scenarioActions}>
+                                    <button className={styles.iconBtn} onClick={() => moveModel('visionModels', index, 'up')} disabled={index === 0} title="Вверх" style={{ opacity: index === 0 ? 0.3 : 1 }}>
+                                        <ChevronUp size={16} />
+                                    </button>
+                                    <button className={styles.iconBtn} onClick={() => moveModel('visionModels', index, 'down')} disabled={index === settings.visionModels.length - 1} title="Вниз" style={{ opacity: index === settings.visionModels.length - 1 ? 0.3 : 1 }}>
+                                        <ChevronDown size={16} />
+                                    </button>
                                     {model.isCustom && (
                                         <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('visionModels', model.id)} title="Удалить">
                                             <Trash2 size={16} />
@@ -237,13 +273,19 @@ export default function SettingsPage() {
                     </div>
 
                     <div className={styles.list}>
-                        {settings.scenarios.map(scenario => (
+                        {settings.scenarios.map((scenario, index) => (
                             <div key={scenario.id} className={styles.scenarioItem}>
                                 <div className={styles.scenarioInfo}>
                                     <div className={styles.itemName}>{scenario.icon} {scenario.name}</div>
                                     <div className={styles.itemDesc}>{scenario.description}</div>
                                 </div>
                                 <div className={styles.scenarioActions}>
+                                    <button className={styles.iconBtn} onClick={() => moveScenario(index, 'up')} disabled={index === 0} title="Вверх" style={{ opacity: index === 0 ? 0.3 : 1 }}>
+                                        <ChevronUp size={16} />
+                                    </button>
+                                    <button className={styles.iconBtn} onClick={() => moveScenario(index, 'down')} disabled={index === settings.scenarios.length - 1} title="Вниз" style={{ opacity: index === settings.scenarios.length - 1 ? 0.3 : 1 }}>
+                                        <ChevronDown size={16} />
+                                    </button>
                                     <button className={styles.iconBtn} onClick={() => setEditingScenario(scenario)} title="Редактировать">
                                         <Edit2 size={16} />
                                     </button>
