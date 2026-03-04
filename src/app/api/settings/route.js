@@ -143,8 +143,21 @@ const DEFAULT_SCENARIOS = [
     }
 ];
 
-export async function GET() {
+export async function GET(req) {
     try {
+        const { searchParams } = new URL(req.url);
+        if (searchParams.get('debug') === '1') {
+            return NextResponse.json({
+                hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+                urlPrefix: process.env.NEXT_PUBLIC_SUPABASE_URL ? process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 15) : null,
+                hasRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+                rolePrefix: process.env.SUPABASE_SERVICE_ROLE_KEY ? process.env.SUPABASE_SERVICE_ROLE_KEY.substring(0, 10) : null,
+                hasAnon: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+                anonPrefix: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 10) : null,
+                NODE_ENV: process.env.NODE_ENV
+            }, { headers: corsHeaders });
+        }
+
         const { data, error } = await supabase
             .from('ai_settings')
             .select('*')
