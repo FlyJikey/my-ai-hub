@@ -23,26 +23,6 @@ const DEFAULT_SCENARIOS = [
         enabled: true,
         prompt: `ОЧЕНЬ ВАЖНО: Тебя просят написать продающий текст.
 СТРОГОЕ ПРАВИЛО ФОРМАТИРОВАНИЯ: ЗАПРЕЩЕНО использовать любые спецсимволы Markdown (никаких #, ##, ###, *, **). Используй только чистый текст. Если нужно сделать заголовок — просто напиши его с заглавной буквы с новой строки.
-Для таблицы характеристик ЗАПРЕЩЕНО писать в формате markdown (никаких знаков "|"). Используй СТРОГО следующий HTML-код для красивой сетки (Вставь этот HTML блок прямо в свой ответ и подставь реальные значения, если значений для поля нет, напиши "Неизвестно"):
-
-<div class="ai-attributes-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 24px 0;">
-  <div style="display: flex; flex-direction: column; gap: 4px;">
-    <span style="font-size: 11px; text-transform: uppercase; color: #8F8F8F; font-weight: 600;">ЦВЕТ</span>
-    <span style="font-size: 15px; color: #FFFFFF; font-weight: 500;">[ЗДЕСЬ_ЦВЕТ]</span>
-  </div>
-  <div style="display: flex; flex-direction: column; gap: 4px;">
-    <span style="font-size: 11px; text-transform: uppercase; color: #8F8F8F; font-weight: 600;">ФОРМА</span>
-    <span style="font-size: 15px; color: #FFFFFF; font-weight: 500;">[ЗДЕСЬ_ФОРМА]</span>
-  </div>
-  <div style="display: flex; flex-direction: column; gap: 4px;">
-    <span style="font-size: 11px; text-transform: uppercase; color: #8F8F8F; font-weight: 600;">МАТЕРИАЛ</span>
-    <span style="font-size: 15px; color: #FFFFFF; font-weight: 500;">[ЗДЕСЬ_МАТЕРИАЛ]</span>
-  </div>
-  <div style="display: flex; flex-direction: column; gap: 4px;">
-    <span style="font-size: 11px; text-transform: uppercase; color: #8F8F8F; font-weight: 600;">НАДПИСИ НА КОРПУСЕ</span>
-    <span style="font-size: 15px; color: #FFFFFF; font-weight: 500; line-height: 1.4;">[ЗДЕСЬ_ВСЕ_НАДПИСИ]</span>
-  </div>
-</div>
 
 Обязательная структура ответа:
 Заголовок (Название товара)
@@ -54,7 +34,10 @@ const DEFAULT_SCENARIOS = [
 - преимущество 2
 
 Характеристики:
-[ВСТАВЬ ТУТ HTML БЛОК СДЕЛАННЫЙ ПО ШАБЛОНУ ВЫШЕ]
+Цвет: [цвет]
+Форма: [форма]
+Материал: [материал]
+Надписи на корпусе: [все надписи]
 
 Почему стоит выбрать этот товар? (нумерованный список)
 
@@ -83,26 +66,11 @@ const DEFAULT_SCENARIOS = [
         description: "Описание товара плюс список характеристик.",
         enabled: true,
         prompt: `Напиши краткое продающее описание товара (1-2 абзаца). ЗАПРЕЩЕНО использовать Markdown (никаких #, *, |).
-Затем выведи характеристики СТРОГО используя этот готовый HTML-код (подставь реальные значения вместо скобок):
-
-<div class="ai-attributes-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 24px 0;">
-  <div style="display: flex; flex-direction: column; gap: 4px;">
-    <span style="font-size: 11px; text-transform: uppercase; color: #8F8F8F; font-weight: 600;">ЦВЕТ</span>
-    <span style="font-size: 15px; color: #FFFFFF; font-weight: 500;">[ЗДЕСЬ_ЦВЕТ]</span>
-  </div>
-  <div style="display: flex; flex-direction: column; gap: 4px;">
-    <span style="font-size: 11px; text-transform: uppercase; color: #8F8F8F; font-weight: 600;">ФОРМА</span>
-    <span style="font-size: 15px; color: #FFFFFF; font-weight: 500;">[ЗДЕСЬ_ФОРМА]</span>
-  </div>
-  <div style="display: flex; flex-direction: column; gap: 4px;">
-    <span style="font-size: 11px; text-transform: uppercase; color: #8F8F8F; font-weight: 600;">МАТЕРИАЛ</span>
-    <span style="font-size: 15px; color: #FFFFFF; font-weight: 500;">[ЗДЕСЬ_МАТЕРИАЛ]</span>
-  </div>
-  <div style="display: flex; flex-direction: column; gap: 4px;">
-    <span style="font-size: 11px; text-transform: uppercase; color: #8F8F8F; font-weight: 600;">НАДПИСИ НА КОРПУСЕ</span>
-    <span style="font-size: 15px; color: #FFFFFF; font-weight: 500; line-height: 1.4;">[ЗДЕСЬ_ВСЕ_НАДПИСИ]</span>
-  </div>
-</div>`
+Затем выведи характеристики просто текстом, в формате:
+Цвет: [цвет]
+Форма: [форма]
+Материал: [материал]
+Надписи на корпусе: [все надписи]`
     },
     {
         id: "creative",

@@ -278,47 +278,8 @@ ${scenarioPrompt}
         }
 
         // Очистка от маркдауна, если Llama всё-таки его добавила
-        if (finalText.startsWith('\`\`\`markdown')) finalText = finalText.replace(/^\`\`\`markdown\n/, '').replace(/\n\`\`\`$/, '');
-        else if (finalText.startsWith('\`\`\`')) finalText = finalText.replace(/^\`\`\`\n/, '').replace(/\n\`\`\`$/, '');
-
-        // Парсинг Markdown-таблиц (свойства -> значения) в красивую HTML сетку
-        const tableRegex = /(?:(?:^|\n)\|.*\|)+\n?/g;
-        finalText = finalText.replace(tableRegex, (match) => {
-            const lines = match.trim().split('\n');
-            if (lines.length < 3) return match;
-
-            const parsedRows = lines.map(line => {
-                let cleanLine = line.trim();
-                if (cleanLine.startsWith('|')) cleanLine = cleanLine.substring(1);
-                if (cleanLine.endsWith('|')) cleanLine = cleanLine.substring(0, cleanLine.length - 1);
-                return cleanLine.split('|').map(cell => cell.trim());
-            });
-
-            let htmlGrid = '<div class="ai-attributes-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 24px 0;">\n';
-
-            let startIndex = 0;
-            if (parsedRows.length > 1 && parsedRows[1][0] && parsedRows[1][0].match(/^-+:?|:?-+:?$/)) {
-                startIndex = 2; // skip header and separator
-            }
-
-            let addedItems = false;
-            for (let i = startIndex; i < parsedRows.length; i++) {
-                const row = parsedRows[i];
-                if (row.length >= 2) {
-                    const key = row[0];
-                    const value = row.slice(1).join(', ');
-
-                    htmlGrid += `  <div style="display: flex; flex-direction: column; gap: 4px;">\n`;
-                    htmlGrid += `    <span style="font-size: 11px; text-transform: uppercase; color: #8F8F8F; font-weight: 600;">${key}</span>\n`;
-                    htmlGrid += `    <span style="font-size: 15px; color: #FFFFFF; font-weight: 500;">${value}</span>\n`;
-                    htmlGrid += `  </div>\n`;
-                    addedItems = true;
-                }
-            }
-
-            htmlGrid += '</div>';
-            return addedItems ? htmlGrid : match;
-        });
+        if (finalText.startsWith('```markdown')) finalText = finalText.replace(/^```markdown\n/, '').replace(/\n```$/, '');
+        else if (finalText.startsWith('```')) finalText = finalText.replace(/^```\n/, '').replace(/\n```$/, '');
 
         // 3. Возврат результата (возвращаем и description, и resultText для совместимости)
         return NextResponse.json({
