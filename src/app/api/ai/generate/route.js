@@ -53,6 +53,31 @@ async function handlePost(req) {
 
         const textModels = settingsData?.data?.textModels || [];
         const visionModels = settingsData?.data?.visionModels || [];
+        const behaviors = settingsData?.data?.behaviors || [];
+
+        // Determine active behavior
+        const activeBehavior = behaviors.find(b => b.isActive) || {
+            visionPrompt: `СТРОГОЕ ПРАВИЛО: Описывай ТОЛЬКО то, что БУКВАЛЬНО ВИДИШЬ на фото. ЗАПРЕЩЕНО додумывать.
+ВАЖНОЕ ПРАВИЛО ЯЗЫКА: Весь твой ответ должен быть СТРОГО на русском языке. Исключение — оригинальные иностранные надписи, бренды: их переписывай дословно на оригинальном языке.
+ВАЖНОЕ ПРАВИЛО JSON: ЗАПРЕЩЕНО использовать двойные кавычки (") внутри текстовых значений! Используй одинарные (').
+
+Задача:
+1. Изучи ВСЕ надписи и детали на предмете (дословно).
+2. Подробно опиши форму, цвет, материал.
+Ответь ТОЛЬКО валидным JSON:
+{
+  "productName": "Тип предмета СТРОГО на русском языке + бренд (оригинал).",
+  "description": "Фактическое описание внешнего вида: форма, размеры, кнопки, расположение элементов",
+  "attributes": {
+    "Цвет": "цвет",
+    "Форма": "форма",
+    "Материал": "материал, если понятен",
+    "Надписи на корпусе": "весь найденный текст дословно"
+  },
+  "tags": ["тип", "факт1"]
+}`,
+            systemPrompt: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts."
+        };
 
         // Determine providers from settings or body, fallback to logic
         const matchedTextModel = textModels.find(m => m.id === textModelId);
@@ -78,26 +103,7 @@ async function handlePost(req) {
         let visionData = { attributes: {}, tags: [], description: "Нет фото" };
 
         if (imageUrl) {
-            const visionPromptText = `
-СТРОГОЕ ПРАВИЛО: Описывай ТОЛЬКО то, что БУКВАЛЬНО ВИДИШЬ на фото. ЗАПРЕЩЕНО додумывать.
-ВАЖНОЕ ПРАВИЛО ЯЗЫКА: Весь твой ответ должен быть СТРОГО на русском языке. Исключение — оригинальные иностранные надписи, бренды: их переписывай дословно на оригинальном языке.
-ВАЖНОЕ ПРАВИЛО JSON: ЗАПРЕЩЕНО использовать двойные кавычки (") внутри текстовых значений! Используй одинарные (').
-
-Задача:
-1. Изучи ВСЕ надписи и детали на предмете (дословно).
-2. Подробно опиши форму, цвет, материал.
-Ответь ТОЛЬКО валидным JSON:
-{
-  "productName": "Тип предмета СТРОГО на русском языке + бренд (оригинал).",
-  "description": "Фактическое описание внешнего вида: форма, размеры, кнопки, расположение элементов",
-  "attributes": {
-    "Цвет": "цвет",
-    "Форма": "форма",
-    "Материал": "материал, если понятен",
-    "Надписи на корпусе": "весь найденный текст дословно"
-  },
-  "tags": ["тип", "факт1"]
-}`;
+            const visionPromptText = activeBehavior.visionPrompt;
 
             try {
                 let vRes;
@@ -210,7 +216,7 @@ ${scenarioPrompt}
                 body: JSON.stringify({
                     model: textModelId,
                     messages: [
-                        { role: "system", content: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts." },
+                        { role: "system", content: activeBehavior.systemPrompt },
                         { role: "user", content: fullContextPrompt }
                     ],
                     temperature: 0.7,
@@ -235,7 +241,7 @@ ${scenarioPrompt}
                 body: JSON.stringify({
                     model: textModelId,
                     messages: [
-                        { role: "system", content: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts." },
+                        { role: "system", content: activeBehavior.systemPrompt },
                         { role: "user", content: fullContextPrompt }
                     ],
                     temperature: 0.7,
@@ -262,7 +268,7 @@ ${scenarioPrompt}
                 body: JSON.stringify({
                     model: textModelId,
                     messages: [
-                        { role: "system", content: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts." },
+                        { role: "system", content: activeBehavior.systemPrompt },
                         { role: "user", content: fullContextPrompt }
                     ],
                     temperature: 0.7,

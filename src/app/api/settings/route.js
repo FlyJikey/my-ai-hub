@@ -14,6 +14,40 @@ export async function OPTIONS() {
     return NextResponse.json({}, { headers: corsHeaders });
 }
 
+// -----------------------------------------------------------------------------
+// DEFAULT DATA PRESETS
+// -----------------------------------------------------------------------------
+
+export const DEFAULT_BEHAVIORS = [
+    {
+        id: "bh_default_gold",
+        name: "Стандартный (Эталон)",
+        description: "Оригинальные настройки по умолчанию. Извлекает все возможные характеристики (цвет, материал, форму).",
+        icon: "⭐",
+        isActive: true,
+        visionPrompt: `СТРОГОЕ ПРАВИЛО: Описывай ТОЛЬКО то, что БУКВАЛЬНО ВИДИШЬ на фото. ЗАПРЕЩЕНО додумывать.
+ВАЖНОЕ ПРАВИЛО ЯЗЫКА: Весь твой ответ должен быть СТРОГО на русском языке. Исключение — оригинальные иностранные надписи, бренды: их переписывай дословно на оригинальном языке.
+ВАЖНОЕ ПРАВИЛО JSON: ЗАПРЕЩЕНО использовать двойные кавычки (") внутри текстовых значений! Используй одинарные (').
+
+Задача:
+1. Изучи ВСЕ надписи и детали на предмете (дословно).
+2. Подробно опиши форму, цвет, материал.
+Ответь ТОЛЬКО валидным JSON:
+{
+  "productName": "Тип предмета СТРОГО на русском языке + бренд (оригинал).",
+  "description": "Фактическое описание внешнего вида: форма, размеры, кнопки, расположение элементов",
+  "attributes": {
+    "Цвет": "цвет",
+    "Форма": "форма",
+    "Материал": "материал, если понятен",
+    "Надписи на корпусе": "весь найденный текст дословно"
+  },
+  "tags": ["тип", "факт1"]
+}`,
+        systemPrompt: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts."
+    }
+];
+
 const DEFAULT_SCENARIOS = [
     {
         id: "seo_full",
@@ -161,10 +195,18 @@ export async function GET(req) {
                 return { ...defaultScen, enabled: dbInfo ? dbInfo.enabled : true };
             });
 
+            const customBehaviors = (dbSettings.behaviors || []).filter(b => b.id.startsWith('bh_custom_'));
+            const defaultBehaviors = DEFAULT_BEHAVIORS.map(defaultBh => {
+                const dbInfo = (dbSettings.behaviors || []).find(b => b.id === defaultBh.id);
+                // Behavior properties like visionPrompt can be overridden by the user, we keep everything db has or fallback to default
+                return dbInfo ? { ...defaultBh, ...dbInfo } : defaultBh;
+            });
+
             return NextResponse.json({
                 textModels: [...defaultTextModels, ...customTextModels],
                 visionModels: [...defaultVisionModels, ...customVisionModels],
-                scenarios: [...defaultScens, ...customScenarios]
+                scenarios: [...defaultScens, ...customScenarios],
+                behaviors: [...defaultBehaviors, ...customBehaviors]
             }, { headers: corsHeaders });
         }
 
@@ -172,7 +214,8 @@ export async function GET(req) {
         const defaultSettings = {
             textModels: AI_MODELS.text.map(m => ({ ...m, enabled: true })),
             visionModels: AI_MODELS.vision.map(m => ({ ...m, enabled: true })),
-            scenarios: DEFAULT_SCENARIOS
+            scenarios: DEFAULT_SCENARIOS,
+            behaviors: DEFAULT_BEHAVIORS
         };
 
         const { error: insertError } = await supabase
@@ -212,6 +255,27 @@ export async function POST(req) {
 
             if (error) {
                 console.error('Settings Restore Error:', error);
+                return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
+            }
+            return NextResponse.json({ success: true, data: newData }, { headers: corsHeaders });
+        }
+
+        if (action === 'restore_behaviors') {
+            const { data: currentData } = await supabase
+                .from('ai_settings')
+                .select('data')
+                .eq('id', 'global')
+                .single();
+
+            const newData = currentData?.data || {};
+            newData.behaviors = DEFAULT_BEHAVIORS;
+
+            const { error } = await supabase
+                .from('ai_settings')
+                .upsert({ id: 'global', data: newData }, { onConflict: 'id' });
+
+            if (error) {
+                console.error('Settings Behavior Restore Error:', error);
                 return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
             }
             return NextResponse.json({ success: true, data: newData }, { headers: corsHeaders });

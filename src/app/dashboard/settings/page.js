@@ -11,6 +11,7 @@ export default function SettingsPage() {
     const [message, setMessage] = useState({ text: "", type: "" });
     const [editingScenario, setEditingScenario] = useState(null);
     const [editingModel, setEditingModel] = useState(null);
+    const [editingBehavior, setEditingBehavior] = useState(null);
 
     useEffect(() => {
         fetchSettings();
@@ -78,6 +79,28 @@ export default function SettingsPage() {
         }
     };
 
+    const restoreBehaviors = async () => {
+        if (!confirm("Внимание! Это удалит все ваши текущие пресеты поведения ИИ и вернет один стандартный заводской пресет. Вы уверены?")) return;
+
+        setIsSaving(true);
+        setMessage({ text: "", type: "" });
+        try {
+            const res = await fetch('/api/settings?action=restore_behaviors', { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                setSettings(prev => ({ ...prev, behaviors: data.data.behaviors }));
+                setMessage({ text: "Поведение ИИ успешно сброшено к эталону!", type: "success" });
+                setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+            } else {
+                setMessage({ text: "Ошибка сброса: " + data.error, type: "error" });
+            }
+        } catch (err) {
+            setMessage({ text: "Ошибка сети при сбросе.", type: "error" });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const toggleModel = (type, id) => {
         setSettings(prev => ({
             ...prev,
@@ -112,6 +135,39 @@ export default function SettingsPage() {
             }));
         }
         setEditingScenario(null);
+    };
+
+    const setActiveBehavior = (id) => {
+        setSettings(prev => ({
+            ...prev,
+            behaviors: prev.behaviors.map(b => ({ ...b, isActive: b.id === id }))
+        }));
+    };
+
+    const deleteBehavior = (id) => {
+        if (!confirm("Вы уверены, что хотите удалить этот пресет поведения?")) return;
+        setSettings(prev => {
+            const newBehaviors = prev.behaviors.filter(b => b.id !== id);
+            // Ensure at least one is active if possible
+            if (newBehaviors.length > 0 && !newBehaviors.some(b => b.isActive)) {
+                newBehaviors[0].isActive = true;
+            }
+            return { ...prev, behaviors: newBehaviors };
+        });
+    };
+
+    const saveBehavior = (behavior) => {
+        if (!behavior.id) {
+            behavior.id = "bh_custom_" + Date.now();
+            behavior.isActive = false; // By default don't activate automatically
+            setSettings(prev => ({ ...prev, behaviors: [...prev.behaviors, behavior] }));
+        } else {
+            setSettings(prev => ({
+                ...prev,
+                behaviors: prev.behaviors.map(b => b.id === behavior.id ? behavior : b)
+            }));
+        }
+        setEditingBehavior(null);
     };
 
     const deleteModel = (type, id) => {
@@ -338,6 +394,57 @@ export default function SettingsPage() {
                         )}
                     </div>
                 </div>
+
+                {/* ПОВЕДЕНИЕ ИИ (СИСТЕМНЫЕ ИНСТРУКЦИИ) */}
+                <div className={`${styles.card} ${styles.fullWidth}`}>
+                    <div className={styles.cardHeader}>
+                        <h2 className={styles.cardTitle}>Поведение ИИ (Системные инструкции)</h2>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className={styles.addBtn} onClick={restoreBehaviors} style={{ background: '#3f3f46' }} title="Сбросить к заводским настройкам (эталону)">
+                                <RotateCcw size={16} /> Сбросить к эталону
+                            </button>
+                            <button className={styles.addBtn} onClick={() => setEditingBehavior({
+                                name: "", icon: "🧠", description: "",
+                                visionPrompt: settings.behaviors?.[0]?.visionPrompt || "",
+                                systemPrompt: settings.behaviors?.[0]?.systemPrompt || ""
+                            })}>
+                                <Plus size={16} /> Создать поведение
+                            </button>
+                        </div>
+                    </div>
+                    <p style={{ fontSize: '13px', color: '#a1a1aa', marginBottom: '16px' }}>
+                        ВНИМАНИЕ: Здесь настраиваются жесткие базовые правила для ИИ. Меняйте аккуратно, чтобы не сломать JSON-формат для таблицы характеристик!
+                    </p>
+
+                    <div className={styles.list}>
+                        {(settings.behaviors || []).map(behavior => (
+                            <div key={behavior.id} className={styles.scenarioItem} style={{ borderLeft: behavior.isActive ? '4px solid #10b981' : 'none' }}>
+                                <div className={styles.scenarioInfo}>
+                                    <div className={styles.itemName}>
+                                        {behavior.icon} {behavior.name}
+                                        {behavior.isActive && <span style={{ fontSize: '10px', background: 'rgba(16,185,129,0.15)', color: '#34d399', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>АКТИВЕН</span>}
+                                    </div>
+                                    <div className={styles.itemDesc}>{behavior.description}</div>
+                                </div>
+                                <div className={styles.scenarioActions}>
+                                    {!behavior.isActive && (
+                                        <button className={styles.addBtn} onClick={() => setActiveBehavior(behavior.id)} style={{ padding: '4px 10px', fontSize: '12px' }}>
+                                            Включить
+                                        </button>
+                                    )}
+                                    <button className={styles.iconBtn} onClick={() => setEditingBehavior(behavior)} title="Редактировать инструкции">
+                                        <Edit2 size={16} />
+                                    </button>
+                                    {behavior.id !== "bh_default_gold" && (
+                                        <button className={styles.iconBtnTextDelete} onClick={() => deleteBehavior(behavior.id)} title="Удалить">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* МОДАЛКА РЕДАКТИРОВАНИЯ СЦЕНАРИЯ */}
@@ -477,6 +584,78 @@ export default function SettingsPage() {
                                 disabled={!editingModel.id || !editingModel.name}
                             >
                                 Добавить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* МОДАЛКА РЕДАКТИРОВАНИЯ ПОВЕДЕНИЯ ИИ */}
+            {editingBehavior && (
+                <div className={styles.modalOverlay}>
+                    <div className={styles.modal} style={{ maxWidth: '800px', width: '95%' }}>
+                        <h3 className={styles.modalTitle}>{editingBehavior.id ? "Редактировать системное поведение" : "Новое системное поведение"}</h3>
+                        <div className={styles.modalBody}>
+                            <div className={styles.inputGroupRow}>
+                                <div className={styles.inputGroup}>
+                                    <label>Эмодзи</label>
+                                    <input
+                                        type="text"
+                                        value={editingBehavior.icon}
+                                        onChange={e => setEditingBehavior({ ...editingBehavior, icon: e.target.value })}
+                                        maxLength={5}
+                                    />
+                                </div>
+                                <div className={styles.inputGroup} style={{ flex: 1 }}>
+                                    <label>Название (для вас)</label>
+                                    <input
+                                        type="text"
+                                        value={editingBehavior.name}
+                                        onChange={e => setEditingBehavior({ ...editingBehavior, name: e.target.value })}
+                                        placeholder="Например: ИИ (Без материалов)"
+                                    />
+                                </div>
+                            </div>
+                            <div className={styles.inputGroup}>
+                                <label>Краткое описание (что делает этот ИИ)</label>
+                                <input
+                                    type="text"
+                                    value={editingBehavior.description}
+                                    onChange={e => setEditingBehavior({ ...editingBehavior, description: e.target.value })}
+                                    placeholder="Инструкция без указания материалов..."
+                                />
+                            </div>
+                            <div className={styles.inputGroup}>
+                                <label style={{ color: '#ef4444' }}>Системный Промпт для Vision (ВАЖНО: Должен возвращать JSON таблицы характеристик!)</label>
+                                <textarea
+                                    value={editingBehavior.visionPrompt}
+                                    onChange={e => setEditingBehavior({ ...editingBehavior, visionPrompt: e.target.value })}
+                                    className={styles.textareaInput}
+                                    placeholder="СТРОГОЕ ПРАВИЛО:..."
+                                    rows={8}
+                                    style={{ fontFamily: 'monospace', fontSize: '13px' }}
+                                />
+                            </div>
+                            <div className={styles.inputGroup}>
+                                <label>Системная Роль для Text 모델 (Основа копирайтера)</label>
+                                <textarea
+                                    value={editingBehavior.systemPrompt}
+                                    onChange={e => setEditingBehavior({ ...editingBehavior, systemPrompt: e.target.value })}
+                                    className={styles.textareaInput}
+                                    placeholder="You are a professional SEO copywriter..."
+                                    rows={3}
+                                    style={{ fontFamily: 'monospace', fontSize: '13px' }}
+                                />
+                            </div>
+                        </div>
+                        <div className={styles.modalFooter}>
+                            <button className={styles.cancelBtn} onClick={() => setEditingBehavior(null)}>Отмена</button>
+                            <button
+                                className={styles.saveModalBtn}
+                                onClick={() => saveBehavior(editingBehavior)}
+                                disabled={!editingBehavior.name || !editingBehavior.visionPrompt || !editingBehavior.systemPrompt}
+                            >
+                                Сохранить
                             </button>
                         </div>
                     </div>
