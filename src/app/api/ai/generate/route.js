@@ -102,8 +102,10 @@ async function handlePost(req) {
             try {
                 let vRes;
                 if (visionProvider === "polza") {
-                    const polzaKey = process.env.POLZA_API_KEY;
+                    const polzaKey = (process.env.POLZA_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
                     if (!polzaKey) return NextResponse.json({ error: "Не настроен POLZA_API_KEY в AI Hub" }, { status: 500 });
+
+                    console.log(`[Vision] Using Polza. Model: ${visionModelId}. Key length: ${polzaKey.length}, Starts with: ${polzaKey.substring(0, 4)}***`);
 
                     vRes = await fetch("https://api.polza.ai/v1/chat/completions", {
                         method: "POST",
@@ -124,8 +126,10 @@ async function handlePost(req) {
                     });
                 } else {
                     // Default to OpenRouter
-                    const orKey = process.env.OPENROUTER_API_KEY;
+                    const orKey = (process.env.OPENROUTER_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
                     if (!orKey) return NextResponse.json({ error: "Не настроен OPENROUTER_API_KEY в AI Hub" }, { status: 500 });
+
+                    console.log(`[Vision] Using OpenRouter. Model: ${visionModelId}. Key length: ${orKey.length}, Starts with: ${orKey.substring(0, 4)}***`);
 
                     vRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                         method: "POST",
@@ -157,10 +161,13 @@ async function handlePost(req) {
 
                     visionData = JSON.parse(rawContent);
                 } else {
-                    console.error("Vision API Error", await vRes.text());
+                    const errText = await vRes.text();
+                    console.error("Vision API Error", errText);
+                    return NextResponse.json({ error: "Ошибка Vision API: " + errText }, { status: 500 });
                 }
             } catch (e) {
                 console.error("Failed Vision parsing or fetch", e);
+                return NextResponse.json({ error: "Ошибка при обработке Vision: " + e.message }, { status: 500 });
             }
         }
 
@@ -192,8 +199,10 @@ ${scenarioPrompt}
         let textData;
 
         if (textProvider === "polza") {
-            const polzaKey = process.env.POLZA_API_KEY;
+            const polzaKey = (process.env.POLZA_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
             if (!polzaKey) return NextResponse.json({ error: "Не настроен POLZA_API_KEY в AI Hub" }, { status: 500 });
+
+            console.log(`[Text] Using Polza. Model: ${textModelId}. Key length: ${polzaKey.length}, Starts with: ${polzaKey.substring(0, 4)}***`);
 
             tRes = await fetch("https://api.polza.ai/v1/chat/completions", {
                 method: "POST",
@@ -215,8 +224,10 @@ ${scenarioPrompt}
             finalText = textData.choices[0].message.content.trim();
 
         } else if (textProvider === "groq") {
-            const groqKey = process.env.GROQ_API_KEY;
+            const groqKey = (process.env.GROQ_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
             if (!groqKey) return NextResponse.json({ error: "Не настроен GROQ_API_KEY в AI Hub" }, { status: 500 });
+
+            console.log(`[Text] Using Groq. Model: ${textModelId}. Key length: ${groqKey.length}, Starts with: ${groqKey.substring(0, 4)}***`);
 
             tRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: "POST",
@@ -240,8 +251,10 @@ ${scenarioPrompt}
 
         } else {
             // Default OpenRouter fallback for text if provider not matched
-            const orKey = process.env.OPENROUTER_API_KEY;
+            const orKey = (process.env.OPENROUTER_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
             if (!orKey) return NextResponse.json({ error: "Не настроен OPENROUTER_API_KEY в AI Hub" }, { status: 500 });
+
+            console.log(`[Text] Using OpenRouter. Model: ${textModelId}. Key length: ${orKey.length}, Starts with: ${orKey.substring(0, 4)}***`);
 
             tRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
