@@ -630,25 +630,33 @@ export default function SettingsPage() {
                                     placeholder="Инструкция без указания материалов..."
                                 />
                             </div>
-                            <div className={styles.inputGroup}>
-                                <label style={{ color: '#ef4444' }}>Системный Промпт для Vision (ВАЖНО: Должен возвращать JSON таблицы характеристик!)</label>
+                            <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '14px', color: '#e4e4e7', borderBottom: '1px solid #3f3f46', paddingBottom: '8px' }}>
+                                Блок 1: Настройки для Фото ИИ (Vision)
+                            </h4>
+                            <div className={styles.inputGroup} style={{ opacity: 0.7 }}>
+                                <label style={{ color: '#a1a1aa' }}>Системный Промпт (Зашит в код для надежности, чтобы не ломался JSON Спартака)</label>
                                 <textarea
-                                    value={editingBehavior.visionPrompt}
-                                    onChange={e => setEditingBehavior({ ...editingBehavior, visionPrompt: e.target.value })}
+                                    value={`СТРОГОЕ ПРАВИЛО: Описывай ТОЛЬКО то, что БУКВАЛЬНО ВИДИШЬ на фото. ЗАПРЕЩЕНО додумывать.
+ВАЖНОЕ ПРАВИЛО ЯЗЫКА: Весь твой ответ должен быть СТРОГО на русском языке.
+ВАЖНОЕ ПРАВИЛО JSON: ЗАПРЕЩЕНО использовать двойные кавычки (") внутри текстовых значений!`}
+                                    disabled
                                     className={styles.textareaInput}
-                                    placeholder="СТРОГОЕ ПРАВИЛО:..."
-                                    rows={8}
-                                    style={{ fontFamily: 'monospace', fontSize: '13px' }}
+                                    rows={4}
+                                    style={{ fontFamily: 'monospace', fontSize: '13px', background: 'rgba(255,255,255,0.05)', cursor: 'not-allowed' }}
                                 />
                             </div>
+
+                            <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '14px', color: '#e4e4e7', borderBottom: '1px solid #3f3f46', paddingBottom: '8px' }}>
+                                Блок 2: Настройки для Текстового ИИ (Генерация текста)
+                            </h4>
                             <div className={styles.inputGroup}>
-                                <label>Системная Роль для Text 모델 (Основа копирайтера)</label>
+                                <label>Системная Роль (Основная инструкция копирайтера)</label>
                                 <textarea
                                     value={editingBehavior.systemPrompt}
                                     onChange={e => setEditingBehavior({ ...editingBehavior, systemPrompt: e.target.value })}
                                     className={styles.textareaInput}
-                                    placeholder="You are a professional SEO copywriter..."
-                                    rows={3}
+                                    placeholder="Твоя задача: Генерировать глубоко проработанные и содержательные описания..."
+                                    rows={12}
                                     style={{ fontFamily: 'monospace', fontSize: '13px' }}
                                 />
                             </div>
@@ -711,7 +719,7 @@ export default function SettingsPage() {
                             <button
                                 className={styles.saveModalBtn}
                                 onClick={() => saveBehavior(editingBehavior)}
-                                disabled={!editingBehavior.name || !editingBehavior.visionPrompt || !editingBehavior.systemPrompt}
+                                disabled={!editingBehavior.name || !editingBehavior.systemPrompt}
                             >
                                 Сохранить
                             </button>
