@@ -406,7 +406,12 @@ export default function SettingsPage() {
                             <button className={styles.addBtn} onClick={() => setEditingBehavior({
                                 name: "", icon: "🧠", description: "",
                                 visionPrompt: settings.behaviors?.[0]?.visionPrompt || "",
-                                systemPrompt: settings.behaviors?.[0]?.systemPrompt || ""
+                                systemPrompt: settings.behaviors?.[0]?.systemPrompt || "",
+                                temperature: settings.behaviors?.[0]?.temperature || 0.5,
+                                top_p: settings.behaviors?.[0]?.top_p || 0.9,
+                                top_k: settings.behaviors?.[0]?.top_k || 40,
+                                repetition_penalty: settings.behaviors?.[0]?.repetition_penalty || 1.15,
+                                max_tokens: settings.behaviors?.[0]?.max_tokens || 2000
                             })}>
                                 <Plus size={16} /> Создать поведение
                             </button>
@@ -646,6 +651,59 @@ export default function SettingsPage() {
                                     rows={3}
                                     style={{ fontFamily: 'monospace', fontSize: '13px' }}
                                 />
+                            </div>
+
+                            <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '14px', color: '#e4e4e7', borderBottom: '1px solid #3f3f46', paddingBottom: '8px' }}>
+                                Технические настройки (Параметры генерации Text AI)
+                            </h4>
+                            <div className={styles.inputGroupRow}>
+                                <div className={styles.inputGroup} style={{ flex: 1 }}>
+                                    <label>Temperature (Температура)</label>
+                                    <input
+                                        type="number" step="0.1" min="0" max="2"
+                                        value={editingBehavior.temperature ?? 0.5}
+                                        onChange={e => setEditingBehavior({ ...editingBehavior, temperature: parseFloat(e.target.value) })}
+                                        title="Баланс: 0.5 обеспечивает профессиональный, точный результат. Выше = больше креатива."
+                                    />
+                                </div>
+                                <div className={styles.inputGroup} style={{ flex: 1 }}>
+                                    <label>Top-P</label>
+                                    <input
+                                        type="number" step="0.05" min="0" max="1"
+                                        value={editingBehavior.top_p ?? 0.9}
+                                        onChange={e => setEditingBehavior({ ...editingBehavior, top_p: parseFloat(e.target.value) })}
+                                        title="Позволяет модели выбирать наиболее естественные слова (0.9 обычно)."
+                                    />
+                                </div>
+                                <div className={styles.inputGroup} style={{ flex: 1 }}>
+                                    <label>Top-K</label>
+                                    <input
+                                        type="number" step="1" min="1" max="100"
+                                        value={editingBehavior.top_k ?? 40}
+                                        onChange={e => setEditingBehavior({ ...editingBehavior, top_k: parseInt(e.target.value) || 40 })}
+                                        title="Ограничивает выборку слов, предотвращая странные термины (Обычно 40)."
+                                    />
+                                </div>
+                            </div>
+                            <div className={styles.inputGroupRow}>
+                                <div className={styles.inputGroup} style={{ flex: 1 }}>
+                                    <label>Repetition Penalty</label>
+                                    <input
+                                        type="number" step="0.05" min="1" max="2"
+                                        value={editingBehavior.repetition_penalty ?? 1.15}
+                                        onChange={e => setEditingBehavior({ ...editingBehavior, repetition_penalty: parseFloat(e.target.value) })}
+                                        title="Штраф за повторы. Исключает повторение одних и тех же фраз (1.15 норм)."
+                                    />
+                                </div>
+                                <div className={styles.inputGroup} style={{ flex: 1 }}>
+                                    <label>Max Tokens</label>
+                                    <input
+                                        type="number" step="100" min="100" max="8000"
+                                        value={editingBehavior.max_tokens ?? 2000}
+                                        onChange={e => setEditingBehavior({ ...editingBehavior, max_tokens: parseInt(e.target.value) || 2000 })}
+                                        title="Дает модели место, чтобы раскрыть описание (2000 обычно хватает)."
+                                    />
+                                </div>
                             </div>
                         </div>
                         <div className={styles.modalFooter}>

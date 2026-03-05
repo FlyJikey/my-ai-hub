@@ -76,7 +76,12 @@ async function handlePost(req) {
   },
   "tags": ["тип", "факт1"]
 }`,
-            systemPrompt: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts."
+            systemPrompt: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts.",
+            temperature: 0.5,
+            top_p: 0.9,
+            top_k: 40,
+            repetition_penalty: 1.15,
+            max_tokens: 2000
         };
 
         // Determine providers from settings or body, fallback to logic
@@ -219,7 +224,11 @@ ${scenarioPrompt}
                         { role: "system", content: activeBehavior.systemPrompt },
                         { role: "user", content: fullContextPrompt }
                     ],
-                    temperature: 0.7,
+                    temperature: Number(activeBehavior.temperature) || 0.5,
+                    top_p: Number(activeBehavior.top_p) || 0.9,
+                    top_k: Number(activeBehavior.top_k) || 40,
+                    repetition_penalty: Number(activeBehavior.repetition_penalty) || 1.15,
+                    max_tokens: Number(activeBehavior.max_tokens) || 2000
                 })
             });
             if (!tRes.ok) {
@@ -244,7 +253,10 @@ ${scenarioPrompt}
                         { role: "system", content: activeBehavior.systemPrompt },
                         { role: "user", content: fullContextPrompt }
                     ],
-                    temperature: 0.7,
+                    temperature: activeBehavior.temperature != null ? Number(activeBehavior.temperature) : 0.5,
+                    top_p: activeBehavior.top_p != null ? Number(activeBehavior.top_p) : 0.9,
+                    max_tokens: activeBehavior.max_tokens != null ? Number(activeBehavior.max_tokens) : 2000
+                    // Groq usually doesn't strictly support repetition_penalty or top_k natively via OpenAI compat depending on the model
                 })
             });
 
@@ -271,7 +283,11 @@ ${scenarioPrompt}
                         { role: "system", content: activeBehavior.systemPrompt },
                         { role: "user", content: fullContextPrompt }
                     ],
-                    temperature: 0.7,
+                    temperature: activeBehavior.temperature != null ? Number(activeBehavior.temperature) : 0.5,
+                    top_p: activeBehavior.top_p != null ? Number(activeBehavior.top_p) : 0.9,
+                    top_k: activeBehavior.top_k != null ? Number(activeBehavior.top_k) : 40,
+                    repetition_penalty: activeBehavior.repetition_penalty != null ? Number(activeBehavior.repetition_penalty) : 1.15,
+                    max_tokens: activeBehavior.max_tokens != null ? Number(activeBehavior.max_tokens) : 2000
                 })
             });
 

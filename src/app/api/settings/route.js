@@ -44,7 +44,12 @@ export const DEFAULT_BEHAVIORS = [
   },
   "tags": ["тип", "факт1"]
 }`,
-        systemPrompt: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts."
+        systemPrompt: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts.",
+        temperature: 0.5,
+        top_p: 0.9,
+        top_k: 40,
+        repetition_penalty: 1.15,
+        max_tokens: 2000
     }
 ];
 
