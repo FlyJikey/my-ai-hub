@@ -172,41 +172,46 @@ export async function GET(req) {
         }
 
         if (data && data.data) {
-            // Merge custom models with potentially updated default models
             const dbSettings = data.data;
-            const customTextModels = (dbSettings.textModels || []).filter(m => m.isCustom);
-            const customVisionModels = (dbSettings.visionModels || []).filter(m => m.isCustom);
 
-            // Re-map defaults to pick up any changes from config/models.js, but retain "enabled" state from DB
-            const defaultTextModels = AI_MODELS.text.map(defaultModel => {
-                const dbInfo = (dbSettings.textModels || []).find(m => m.id === defaultModel.id);
-                return { ...defaultModel, enabled: dbInfo ? dbInfo.enabled : true };
-            });
+            // Merge helper: keeps exact DB order, updates defaults, and appends new defaults
+            const mergeKeepingOrder = (dbArray = [], defaultArray = []) => {
+                const result = [];
+                const seenIds = new Set();
 
-            const defaultVisionModels = AI_MODELS.vision.map(defaultModel => {
-                const dbInfo = (dbSettings.visionModels || []).find(m => m.id === defaultModel.id);
-                return { ...defaultModel, enabled: dbInfo ? dbInfo.enabled : true };
-            });
+                // 1. Add items in DB order
+                for (const dbItem of dbArray) {
+                    const defaultItem = defaultArray.find(d => d.id === dbItem.id);
+                    if (defaultItem) {
+                        // Merge: default base, with DB overrides (like enabled, custom prompts, etc)
+                        result.push({ ...defaultItem, ...dbItem });
+                    } else {
+                        // Custom items or orphaned items
+                        result.push(dbItem);
+                    }
+                    seenIds.add(dbItem.id);
+                }
 
-            // Merge scenarios same way
-            const customScenarios = (dbSettings.scenarios || []).filter(s => s.id.startsWith('sc_'));
-            const defaultScens = DEFAULT_SCENARIOS.map(defaultScen => {
-                const dbInfo = (dbSettings.scenarios || []).find(s => s.id === defaultScen.id);
-                return { ...defaultScen, enabled: dbInfo ? dbInfo.enabled : true };
-            });
+                // 2. Append new defaults missing from DB
+                for (const defaultItem of defaultArray) {
+                    if (!seenIds.has(defaultItem.id)) {
+                        result.push({ ...defaultItem, enabled: true });
+                    }
+                }
 
-            const customBehaviors = (dbSettings.behaviors || []).filter(b => b.id.startsWith('bh_custom_'));
-            const defaultBehaviors = DEFAULT_BEHAVIORS.map(defaultBh => {
-                const dbInfo = (dbSettings.behaviors || []).find(b => b.id === defaultBh.id);
-                // Behavior properties like visionPrompt can be overridden by the user, we keep everything db has or fallback to default
-                return dbInfo ? { ...defaultBh, ...dbInfo } : defaultBh;
-            });
+                return result;
+            };
+
+            const textModels = mergeKeepingOrder(dbSettings.textModels, AI_MODELS.text);
+            const visionModels = mergeKeepingOrder(dbSettings.visionModels, AI_MODELS.vision);
+            const scenarios = mergeKeepingOrder(dbSettings.scenarios, DEFAULT_SCENARIOS);
+            const behaviors = mergeKeepingOrder(dbSettings.behaviors, DEFAULT_BEHAVIORS);
 
             return NextResponse.json({
-                textModels: [...defaultTextModels, ...customTextModels],
-                visionModels: [...defaultVisionModels, ...customVisionModels],
-                scenarios: [...defaultScens, ...customScenarios],
-                behaviors: [...defaultBehaviors, ...customBehaviors]
+                textModels,
+                visionModels,
+                scenarios,
+                behaviors
             }, { headers: corsHeaders });
         }
 
