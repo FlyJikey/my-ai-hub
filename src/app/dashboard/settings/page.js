@@ -528,12 +528,20 @@ export default function SettingsPage() {
                                 <div className={styles.limitStatusWrapper}>
                                     <div className={styles.limitStatusLabel}>Баланс:</div>
                                     <div className={`${styles.limitStatusValue} ${limitsData.openrouter?.status === 'active' ? styles.statusActive : styles.statusError}`}>
-                                        {limitsData.openrouter?.balance || 'Проверка...'}
+                                        {limitsData.openrouter?.balance !== 'Активен' ? limitsData.openrouter?.balance : 'Доступно'}
                                     </div>
                                 </div>
+                                {limitsData.openrouter?.status === 'active' && (
+                                    <div className={styles.limitStatusWrapper} style={{ marginTop: '-8px' }}>
+                                        <div className={styles.limitStatusLabel}>Бесплатные модели:</div>
+                                        <div className={styles.limitStatusValue} style={{ fontSize: '15px' }}>
+                                            ~20 запросов / мин (200 / день)
+                                        </div>
+                                    </div>
+                                )}
                                 <p className={styles.limitHint}>
                                     {limitsData.openrouter?.status === 'active'
-                                        ? 'OpenRouter дает доступ к тысячам бесплатных и платных моделей напрямую.'
+                                        ? 'Лимиты на бесплатные модели зависят от загруженности сети OpenRouter.'
                                         : 'Ключ OpenRouter не настроен. Бесплатные модели могут не работать.'}
                                 </p>
                             </div>
@@ -544,12 +552,20 @@ export default function SettingsPage() {
                                 <div className={styles.limitStatusWrapper}>
                                     <div className={styles.limitStatusLabel}>Статус:</div>
                                     <div className={`${styles.limitStatusValue} ${limitsData.groq?.status === 'active' ? styles.statusActive : styles.statusError}`}>
-                                        {limitsData.groq?.balance || 'Проверка...'}
+                                        {limitsData.groq?.status === 'active' ? 'Работает' : limitsData.groq?.balance}
                                     </div>
                                 </div>
+                                {limitsData.groq?.status === 'active' && (
+                                    <div className={styles.limitStatusWrapper} style={{ marginTop: '-8px' }}>
+                                        <div className={styles.limitStatusLabel}>Лимит запросов:</div>
+                                        <div className={styles.limitStatusValue} style={{ fontSize: '15px' }}>
+                                            ~30 запросов / мин (14400 / день)
+                                        </div>
+                                    </div>
+                                )}
                                 <p className={styles.limitHint}>
                                     {limitsData.groq?.status === 'active'
-                                        ? 'Groq обеспечивает самую быструю генерацию текста (Llama 3/Qwen) бесплатно, но имеет жесткие лимиты запросов в минуту.'
+                                        ? 'Groq обеспечивает самую быструю генерацию текста (Llama 3/Qwen) бесплатно.'
                                         : 'Ключ Groq не настроен.'}
                                 </p>
                             </div>
