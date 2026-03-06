@@ -13,6 +13,10 @@ export default function SettingsPage() {
     const [editingModel, setEditingModel] = useState(null);
     const [editingBehavior, setEditingBehavior] = useState(null);
 
+    const [activeTab, setActiveTab] = useState('models'); // 'models' or 'limits'
+    const [limitsData, setLimitsData] = useState(null);
+    const [isLoadingLimits, setIsLoadingLimits] = useState(false);
+
     useEffect(() => {
         fetchSettings();
     }, []);
@@ -33,6 +37,29 @@ export default function SettingsPage() {
             setIsLoading(false);
         }
     };
+
+    const fetchLimits = async () => {
+        setIsLoadingLimits(true);
+        try {
+            const res = await fetch('/api/limits');
+            const data = await res.json();
+            if (res.ok) {
+                setLimitsData(data.providers);
+            } else {
+                setMessage({ text: "Ошибка загрузки лимитов: " + data.error, type: "error" });
+            }
+        } catch (err) {
+            setMessage({ text: "Ошибка получения лимитов.", type: "error" });
+        } finally {
+            setIsLoadingLimits(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'limits' && !limitsData) {
+            fetchLimits();
+        }
+    }, [activeTab]);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -227,15 +254,32 @@ export default function SettingsPage() {
             <div className={styles.header}>
                 <div>
                     <h1 className={styles.title}>Настройки AI / Спартак</h1>
-                    <p className={styles.subtitle}>Управляйте доступными нейросетями и сценариями. Изменения применятся здесь и на сайте Спартак.</p>
+                    <p className={styles.subtitle}>Управляйте доступными нейросетями, сценариями и проверяйте лимиты API.</p>
                 </div>
+                {activeTab === 'models' && (
+                    <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className={styles.saveBtn}
+                    >
+                        {isSaving ? <RefreshCw className={styles.spin} size={18} /> : <Save size={18} />}
+                        Сохранить настройки
+                    </button>
+                )}
+            </div>
+
+            <div className={styles.tabsContainer}>
                 <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className={styles.saveBtn}
+                    className={`${styles.tabBtn} ${activeTab === 'models' ? styles.tabBtnActive : ''}`}
+                    onClick={() => setActiveTab('models')}
                 >
-                    {isSaving ? <RefreshCw className={styles.spin} size={18} /> : <Save size={18} />}
-                    Сохранить настройки
+                    Модели и Промпты
+                </button>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'limits' ? styles.tabBtnActive : ''}`}
+                    onClick={() => setActiveTab('limits')}
+                >
+                    Лимиты и API
                 </button>
             </div>
 
@@ -246,211 +290,275 @@ export default function SettingsPage() {
                 </div>
             )}
 
-            <div className={styles.grid}>
-                {/* ТЕКСТОВЫЕ МОДЕЛИ */}
-                <div className={styles.card}>
-                    <div className={styles.cardHeader}>
-                        <h2 className={styles.cardTitle}>Текстовые Нейросети</h2>
-                        <button className={styles.addBtn} onClick={() => setEditingModel({ id: "", name: "", description: "", provider: "polza", tier: "premium", modelType: "text", isCustom: true })}>
-                            <Plus size={16} /> Добавить
-                        </button>
-                    </div>
-                    <div className={styles.list}>
-                        {settings.textModels.map((model, index) => (
-                            <div key={model.id} className={styles.listItem}>
-                                <div className={styles.itemInfo}>
-                                    <div className={styles.itemName}>
-                                        {model.name}
-                                        <span className={model.tier === 'free' ? styles.badgeFree : styles.badgePremium}>
-                                            {model.tier === 'free' ? 'БЕСПЛАТНО' : 'PRO'}
-                                        </span>
-                                        {model.isCustom && <span className={styles.badgeCustom}>КАСТОМ</span>}
-                                    </div>
-                                    <div className={styles.itemDesc}>{model.description}</div>
-                                </div>
-                                <div className={styles.scenarioActions}>
-                                    <button className={styles.iconBtn} onClick={() => moveModel('textModels', index, 'up')} disabled={index === 0} title="Вверх" style={{ opacity: index === 0 ? 0.3 : 1 }}>
-                                        <ChevronUp size={16} />
-                                    </button>
-                                    <button className={styles.iconBtn} onClick={() => moveModel('textModels', index, 'down')} disabled={index === settings.textModels.length - 1} title="Вниз" style={{ opacity: index === settings.textModels.length - 1 ? 0.3 : 1 }}>
-                                        <ChevronDown size={16} />
-                                    </button>
-                                    {model.isCustom && (
-                                        <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('textModels', model.id)} title="Удалить">
-                                            <Trash2 size={16} />
-                                        </button>
-                                    )}
-                                    <label className={styles.switch}>
-                                        <input
-                                            type="checkbox"
-                                            checked={model.enabled !== false}
-                                            onChange={() => toggleModel('textModels', model.id)}
-                                        />
-                                        <span className={styles.slider}></span>
-                                    </label>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* МОДЕЛИ ДЛЯ ФОТО */}
-                <div className={styles.card}>
-                    <div className={styles.cardHeader}>
-                        <h2 className={styles.cardTitle}>Нейросети для Фото</h2>
-                        <button className={styles.addBtn} onClick={() => setEditingModel({ id: "", name: "", description: "", provider: "polza", tier: "premium", modelType: "vision", isCustom: true })}>
-                            <Plus size={16} /> Добавить
-                        </button>
-                    </div>
-                    <div className={styles.list}>
-                        {settings.visionModels.map((model, index) => (
-                            <div key={model.id} className={styles.listItem}>
-                                <div className={styles.itemInfo}>
-                                    <div className={styles.itemName}>
-                                        {model.name}
-                                        <span className={model.tier === 'free' ? styles.badgeFree : styles.badgePremium}>
-                                            {model.tier === 'free' ? 'БЕСПЛАТНО' : 'PRO'}
-                                        </span>
-                                        {model.isCustom && <span className={styles.badgeCustom}>КАСТОМ</span>}
-                                    </div>
-                                    <div className={styles.itemDesc}>{model.description}</div>
-                                </div>
-                                <div className={styles.scenarioActions}>
-                                    <button className={styles.iconBtn} onClick={() => moveModel('visionModels', index, 'up')} disabled={index === 0} title="Вверх" style={{ opacity: index === 0 ? 0.3 : 1 }}>
-                                        <ChevronUp size={16} />
-                                    </button>
-                                    <button className={styles.iconBtn} onClick={() => moveModel('visionModels', index, 'down')} disabled={index === settings.visionModels.length - 1} title="Вниз" style={{ opacity: index === settings.visionModels.length - 1 ? 0.3 : 1 }}>
-                                        <ChevronDown size={16} />
-                                    </button>
-                                    {model.isCustom && (
-                                        <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('visionModels', model.id)} title="Удалить">
-                                            <Trash2 size={16} />
-                                        </button>
-                                    )}
-                                    <label className={styles.switch}>
-                                        <input
-                                            type="checkbox"
-                                            checked={model.enabled !== false}
-                                            onChange={() => toggleModel('visionModels', model.id)}
-                                        />
-                                        <span className={styles.slider}></span>
-                                    </label>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* СЦЕНАРИИ */}
-                <div className={`${styles.card} ${styles.fullWidth}`}>
-                    <div className={styles.cardHeader}>
-                        <h2 className={styles.cardTitle}>Пресеты и Сценарии (Промпты)</h2>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <button className={styles.addBtn} onClick={restoreScenarios} style={{ background: '#3f3f46' }} title="Сбросить к заводским настройкам">
-                                <RotateCcw size={16} /> Сбросить
-                            </button>
-                            <button className={styles.addBtn} onClick={() => setEditingScenario({ name: "", icon: "📝", description: "", prompt: "" })}>
-                                <Plus size={16} /> Создать пресет
+            {/* TAB: MODELS & PROMPTS */}
+            {activeTab === 'models' && (
+                <div className={styles.grid}>
+                    {/* ТЕКСТОВЫЕ МОДЕЛИ */}
+                    <div className={styles.card}>
+                        <div className={styles.cardHeader}>
+                            <h2 className={styles.cardTitle}>Текстовые Нейросети</h2>
+                            <button className={styles.addBtn} onClick={() => setEditingModel({ id: "", name: "", description: "", provider: "polza", tier: "premium", modelType: "text", isCustom: true })}>
+                                <Plus size={16} /> Добавить
                             </button>
                         </div>
-                    </div>
-                    <p style={{ fontSize: '13px', color: '#a1a1aa', marginBottom: '16px' }}>
-                        Создавайте различные пресеты (например: "Обувь", "Характеристики не нужны") и задавайте в промпте, какие параметры надо писать, а какие нет. Затем выбирайте их прямо при генерации на Спартаке!
-                    </p>
-
-                    <div className={styles.list}>
-                        {settings.scenarios.map((scenario, index) => (
-                            <div key={scenario.id} className={styles.scenarioItem}>
-                                <div className={styles.scenarioInfo}>
-                                    <div className={styles.itemName}>{scenario.icon} {scenario.name}</div>
-                                    <div className={styles.itemDesc}>{scenario.description}</div>
+                        <div className={styles.list}>
+                            {settings.textModels.map((model, index) => (
+                                <div key={model.id} className={styles.listItem}>
+                                    <div className={styles.itemInfo}>
+                                        <div className={styles.itemName}>
+                                            {model.name}
+                                            <span className={model.tier === 'free' ? styles.badgeFree : styles.badgePremium}>
+                                                {model.tier === 'free' ? 'БЕСПЛАТНО' : 'PRO'}
+                                            </span>
+                                            {model.isCustom && <span className={styles.badgeCustom}>КАСТОМ</span>}
+                                        </div>
+                                        <div className={styles.itemDesc}>{model.description}</div>
+                                    </div>
+                                    <div className={styles.scenarioActions}>
+                                        <button className={styles.iconBtn} onClick={() => moveModel('textModels', index, 'up')} disabled={index === 0} title="Вверх" style={{ opacity: index === 0 ? 0.3 : 1 }}>
+                                            <ChevronUp size={16} />
+                                        </button>
+                                        <button className={styles.iconBtn} onClick={() => moveModel('textModels', index, 'down')} disabled={index === settings.textModels.length - 1} title="Вниз" style={{ opacity: index === settings.textModels.length - 1 ? 0.3 : 1 }}>
+                                            <ChevronDown size={16} />
+                                        </button>
+                                        {model.isCustom && (
+                                            <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('textModels', model.id)} title="Удалить">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                        <label className={styles.switch}>
+                                            <input
+                                                type="checkbox"
+                                                checked={model.enabled !== false}
+                                                onChange={() => toggleModel('textModels', model.id)}
+                                            />
+                                            <span className={styles.slider}></span>
+                                        </label>
+                                    </div>
                                 </div>
-                                <div className={styles.scenarioActions}>
-                                    <button className={styles.iconBtn} onClick={() => moveScenario(index, 'up')} disabled={index === 0} title="Вверх" style={{ opacity: index === 0 ? 0.3 : 1 }}>
-                                        <ChevronUp size={16} />
-                                    </button>
-                                    <button className={styles.iconBtn} onClick={() => moveScenario(index, 'down')} disabled={index === settings.scenarios.length - 1} title="Вниз" style={{ opacity: index === settings.scenarios.length - 1 ? 0.3 : 1 }}>
-                                        <ChevronDown size={16} />
-                                    </button>
-                                    <button className={styles.iconBtn} onClick={() => setEditingScenario(scenario)} title="Редактировать">
-                                        <Edit2 size={16} />
-                                    </button>
-                                    <button className={styles.iconBtnTextDelete} onClick={() => deleteScenario(scenario.id)} title="Удалить">
-                                        <Trash2 size={16} />
-                                    </button>
-                                    <label className={styles.switch}>
-                                        <input
-                                            type="checkbox"
-                                            checked={scenario.enabled !== false}
-                                            onChange={() => toggleScenario(scenario.id)}
-                                        />
-                                        <span className={styles.slider}></span>
-                                    </label>
-                                </div>
-                            </div>
-                        ))}
-                        {settings.scenarios.length === 0 && (
-                            <div className={styles.emptyState}>Нет сценариев. Создайте первый!</div>
-                        )}
-                    </div>
-                </div>
-
-                {/* ПОВЕДЕНИЕ ИИ (СИСТЕМНЫЕ ИНСТРУКЦИИ) */}
-                <div className={`${styles.card} ${styles.fullWidth}`}>
-                    <div className={styles.cardHeader}>
-                        <h2 className={styles.cardTitle}>Поведение ИИ (Системные инструкции)</h2>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <button className={styles.addBtn} onClick={restoreBehaviors} style={{ background: '#3f3f46' }} title="Сбросить к заводским настройкам (эталону)">
-                                <RotateCcw size={16} /> Сбросить к эталону
-                            </button>
-                            <button className={styles.addBtn} onClick={() => setEditingBehavior({
-                                name: "", icon: "🧠", description: "",
-                                visionPrompt: settings.behaviors?.[0]?.visionPrompt || "",
-                                systemPrompt: settings.behaviors?.[0]?.systemPrompt || "",
-                                temperature: settings.behaviors?.[0]?.temperature || 0.5,
-                                top_p: settings.behaviors?.[0]?.top_p || 0.9,
-                                top_k: settings.behaviors?.[0]?.top_k || 40,
-                                repetition_penalty: settings.behaviors?.[0]?.repetition_penalty || 1.15,
-                                max_tokens: settings.behaviors?.[0]?.max_tokens || 2000
-                            })}>
-                                <Plus size={16} /> Создать поведение
-                            </button>
+                            ))}
                         </div>
                     </div>
-                    <p style={{ fontSize: '13px', color: '#a1a1aa', marginBottom: '16px' }}>
-                        ВНИМАНИЕ: Здесь настраиваются жесткие базовые правила для ИИ. Меняйте аккуратно, чтобы не сломать JSON-формат для таблицы характеристик!
-                    </p>
 
-                    <div className={styles.list}>
-                        {(settings.behaviors || []).map(behavior => (
-                            <div key={behavior.id} className={styles.scenarioItem} style={{ borderLeft: behavior.isActive ? '4px solid #10b981' : 'none' }}>
-                                <div className={styles.scenarioInfo}>
-                                    <div className={styles.itemName}>
-                                        {behavior.icon} {behavior.name}
-                                        {behavior.isActive && <span style={{ fontSize: '10px', background: 'rgba(16,185,129,0.15)', color: '#34d399', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>АКТИВЕН</span>}
+                    {/* МОДЕЛИ ДЛЯ ФОТО */}
+                    <div className={styles.card}>
+                        <div className={styles.cardHeader}>
+                            <h2 className={styles.cardTitle}>Нейросети для Фото</h2>
+                            <button className={styles.addBtn} onClick={() => setEditingModel({ id: "", name: "", description: "", provider: "polza", tier: "premium", modelType: "vision", isCustom: true })}>
+                                <Plus size={16} /> Добавить
+                            </button>
+                        </div>
+                        <div className={styles.list}>
+                            {settings.visionModels.map((model, index) => (
+                                <div key={model.id} className={styles.listItem}>
+                                    <div className={styles.itemInfo}>
+                                        <div className={styles.itemName}>
+                                            {model.name}
+                                            <span className={model.tier === 'free' ? styles.badgeFree : styles.badgePremium}>
+                                                {model.tier === 'free' ? 'БЕСПЛАТНО' : 'PRO'}
+                                            </span>
+                                            {model.isCustom && <span className={styles.badgeCustom}>КАСТОМ</span>}
+                                        </div>
+                                        <div className={styles.itemDesc}>{model.description}</div>
                                     </div>
-                                    <div className={styles.itemDesc}>{behavior.description}</div>
-                                </div>
-                                <div className={styles.scenarioActions}>
-                                    {!behavior.isActive && (
-                                        <button className={styles.addBtn} onClick={() => setActiveBehavior(behavior.id)} style={{ padding: '4px 10px', fontSize: '12px' }}>
-                                            Включить
+                                    <div className={styles.scenarioActions}>
+                                        <button className={styles.iconBtn} onClick={() => moveModel('visionModels', index, 'up')} disabled={index === 0} title="Вверх" style={{ opacity: index === 0 ? 0.3 : 1 }}>
+                                            <ChevronUp size={16} />
                                         </button>
-                                    )}
-                                    <button className={styles.iconBtn} onClick={() => setEditingBehavior(behavior)} title="Редактировать инструкции">
-                                        <Edit2 size={16} />
-                                    </button>
-                                    {behavior.id !== "bh_default_gold" && (
-                                        <button className={styles.iconBtnTextDelete} onClick={() => deleteBehavior(behavior.id)} title="Удалить">
+                                        <button className={styles.iconBtn} onClick={() => moveModel('visionModels', index, 'down')} disabled={index === settings.visionModels.length - 1} title="Вниз" style={{ opacity: index === settings.visionModels.length - 1 ? 0.3 : 1 }}>
+                                            <ChevronDown size={16} />
+                                        </button>
+                                        {model.isCustom && (
+                                            <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('visionModels', model.id)} title="Удалить">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                        <label className={styles.switch}>
+                                            <input
+                                                type="checkbox"
+                                                checked={model.enabled !== false}
+                                                onChange={() => toggleModel('visionModels', model.id)}
+                                            />
+                                            <span className={styles.slider}></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* СЦЕНАРИИ */}
+                    <div className={`${styles.card} ${styles.fullWidth}`}>
+                        <div className={styles.cardHeader}>
+                            <h2 className={styles.cardTitle}>Пресеты и Сценарии (Промпты)</h2>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button className={styles.addBtn} onClick={restoreScenarios} style={{ background: '#3f3f46' }} title="Сбросить к заводским настройкам">
+                                    <RotateCcw size={16} /> Сбросить
+                                </button>
+                                <button className={styles.addBtn} onClick={() => setEditingScenario({ name: "", icon: "📝", description: "", prompt: "" })}>
+                                    <Plus size={16} /> Создать пресет
+                                </button>
+                            </div>
+                        </div>
+                        <p style={{ fontSize: '13px', color: '#a1a1aa', marginBottom: '16px' }}>
+                            Создавайте различные пресеты (например: &quot;Обувь&quot;, &quot;Характеристики не нужны&quot;) и задавайте в промпте, какие параметры надо писать, а какие нет. Затем выбирайте их прямо при генерации на Спартаке!
+                        </p>
+
+                        <div className={styles.list}>
+                            {settings.scenarios.map((scenario, index) => (
+                                <div key={scenario.id} className={styles.scenarioItem}>
+                                    <div className={styles.scenarioInfo}>
+                                        <div className={styles.itemName}>{scenario.icon} {scenario.name}</div>
+                                        <div className={styles.itemDesc}>{scenario.description}</div>
+                                    </div>
+                                    <div className={styles.scenarioActions}>
+                                        <button className={styles.iconBtn} onClick={() => moveScenario(index, 'up')} disabled={index === 0} title="Вверх" style={{ opacity: index === 0 ? 0.3 : 1 }}>
+                                            <ChevronUp size={16} />
+                                        </button>
+                                        <button className={styles.iconBtn} onClick={() => moveScenario(index, 'down')} disabled={index === settings.scenarios.length - 1} title="Вниз" style={{ opacity: index === settings.scenarios.length - 1 ? 0.3 : 1 }}>
+                                            <ChevronDown size={16} />
+                                        </button>
+                                        <button className={styles.iconBtn} onClick={() => setEditingScenario(scenario)} title="Редактировать">
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button className={styles.iconBtnTextDelete} onClick={() => deleteScenario(scenario.id)} title="Удалить">
                                             <Trash2 size={16} />
                                         </button>
-                                    )}
+                                        <label className={styles.switch}>
+                                            <input
+                                                type="checkbox"
+                                                checked={scenario.enabled !== false}
+                                                onChange={() => toggleScenario(scenario.id)}
+                                            />
+                                            <span className={styles.slider}></span>
+                                        </label>
+                                    </div>
                                 </div>
+                            ))}
+                            {settings.scenarios.length === 0 && (
+                                <div className={styles.emptyState}>Нет сценариев. Создайте первый!</div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ПОВЕДЕНИЕ ИИ (СИСТЕМНЫЕ ИНСТРУКЦИИ) */}
+                    <div className={`${styles.card} ${styles.fullWidth}`}>
+                        <div className={styles.cardHeader}>
+                            <h2 className={styles.cardTitle}>Поведение ИИ (Системные инструкции)</h2>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button className={styles.addBtn} onClick={restoreBehaviors} style={{ background: '#3f3f46' }} title="Сбросить к заводским настройкам (эталону)">
+                                    <RotateCcw size={16} /> Сбросить к эталону
+                                </button>
+                                <button className={styles.addBtn} onClick={() => setEditingBehavior({
+                                    name: "", icon: "🧠", description: "",
+                                    visionPrompt: settings.behaviors?.[0]?.visionPrompt || "",
+                                    systemPrompt: settings.behaviors?.[0]?.systemPrompt || "",
+                                    temperature: settings.behaviors?.[0]?.temperature || 0.5,
+                                    top_p: settings.behaviors?.[0]?.top_p || 0.9,
+                                    top_k: settings.behaviors?.[0]?.top_k || 40,
+                                    repetition_penalty: settings.behaviors?.[0]?.repetition_penalty || 1.15,
+                                    max_tokens: settings.behaviors?.[0]?.max_tokens || 2000
+                                })}>
+                                    <Plus size={16} /> Создать поведение
+                                </button>
                             </div>
-                        ))}
+                        </div>
+                        <p style={{ fontSize: '13px', color: '#a1a1aa', marginBottom: '16px' }}>
+                            ВНИМАНИЕ: Здесь настраиваются жесткие базовые правила для ИИ. Меняйте аккуратно, чтобы не сломать JSON-формат для таблицы характеристик!
+                        </p>
+
+                        <div className={styles.list}>
+                            {(settings.behaviors || []).map(behavior => (
+                                <div key={behavior.id} className={styles.scenarioItem} style={{ borderLeft: behavior.isActive ? '4px solid #10b981' : 'none' }}>
+                                    <div className={styles.scenarioInfo}>
+                                        <div className={styles.itemName}>
+                                            {behavior.icon} {behavior.name}
+                                            {behavior.isActive && <span style={{ fontSize: '10px', background: 'rgba(16,185,129,0.15)', color: '#34d399', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>АКТИВЕН</span>}
+                                        </div>
+                                        <div className={styles.itemDesc}>{behavior.description}</div>
+                                    </div>
+                                    <div className={styles.scenarioActions}>
+                                        {!behavior.isActive && (
+                                            <button className={styles.addBtn} onClick={() => setActiveBehavior(behavior.id)} style={{ padding: '4px 10px', fontSize: '12px' }}>
+                                                Включить
+                                            </button>
+                                        )}
+                                        <button className={styles.iconBtn} onClick={() => setEditingBehavior(behavior)} title="Редактировать инструкции">
+                                            <Edit2 size={16} />
+                                        </button>
+                                        {behavior.id !== "bh_default_gold" && (
+                                            <button className={styles.iconBtnTextDelete} onClick={() => deleteBehavior(behavior.id)} title="Удалить">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
+
+            {/* TAB: LIMITS */}
+            {activeTab === 'limits' && (
+                <div className={styles.limitsTab}>
+                    {isLoadingLimits ? (
+                        <div className={styles.loadingState} style={{ minHeight: '200px' }}><RefreshCw className={styles.spin} /> Загрузка лимитов...</div>
+                    ) : limitsData ? (
+                        <div className={styles.grid}>
+                            {/* Polza.ai Limits */}
+                            <div className={`${styles.card} ${styles.limitCard}`}>
+                                <h3 className={styles.cardTitle}>Polza.ai (Российские API)</h3>
+                                <div className={styles.limitStatusWrapper}>
+                                    <div className={styles.limitStatusLabel}>Баланс:</div>
+                                    <div className={`${styles.limitStatusValue} ${limitsData.polza?.status === 'active' ? styles.statusActive : styles.statusError}`}>
+                                        {limitsData.polza?.balance || 'Проверка...'}
+                                    </div>
+                                </div>
+                                <p className={styles.limitHint}>
+                                    {limitsData.polza?.status === 'active'
+                                        ? 'Polza.ai используется для рублевых оплат GPT-4o, Gemini и DeepSeek.'
+                                        : 'Ключ Polza.ai не настроен или содержит ошибку.'}
+                                </p>
+                            </div>
+
+                            {/* OpenRouter Limits */}
+                            <div className={`${styles.card} ${styles.limitCard}`}>
+                                <h3 className={styles.cardTitle}>OpenRouter (Зарубежные API)</h3>
+                                <div className={styles.limitStatusWrapper}>
+                                    <div className={styles.limitStatusLabel}>Баланс:</div>
+                                    <div className={`${styles.limitStatusValue} ${limitsData.openrouter?.status === 'active' ? styles.statusActive : styles.statusError}`}>
+                                        {limitsData.openrouter?.balance || 'Проверка...'}
+                                    </div>
+                                </div>
+                                <p className={styles.limitHint}>
+                                    {limitsData.openrouter?.status === 'active'
+                                        ? 'OpenRouter дает доступ к тысячам бесплатных и платных моделей напрямую.'
+                                        : 'Ключ OpenRouter не настроен. Бесплатные модели могут не работать.'}
+                                </p>
+                            </div>
+
+                            {/* Groq Limits */}
+                            <div className={`${styles.card} ${styles.limitCard}`}>
+                                <h3 className={styles.cardTitle}>Groq (Сверхбыстрые API)</h3>
+                                <div className={styles.limitStatusWrapper}>
+                                    <div className={styles.limitStatusLabel}>Статус:</div>
+                                    <div className={`${styles.limitStatusValue} ${limitsData.groq?.status === 'active' ? styles.statusActive : styles.statusError}`}>
+                                        {limitsData.groq?.balance || 'Проверка...'}
+                                    </div>
+                                </div>
+                                <p className={styles.limitHint}>
+                                    {limitsData.groq?.status === 'active'
+                                        ? 'Groq обеспечивает самую быструю генерацию текста (Llama 3/Qwen) бесплатно, но имеет жесткие лимиты запросов в минуту.'
+                                        : 'Ключ Groq не настроен.'}
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className={styles.errorState}>Ошбика загрузки лимитов.</div>
+                    )}
+                </div>
+            )}
 
             {/* МОДАЛКА РЕДАКТИРОВАНИЯ СЦЕНАРИЯ */}
             {editingScenario && (
