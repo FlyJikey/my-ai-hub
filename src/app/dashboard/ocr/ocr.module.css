@@ -255,20 +255,121 @@
     to { transform: rotate(360deg); }
 }
 
-.modelSelector {
+.modelDropdownContainer {
+    position: relative;
+    display: inline-block;
+}
+
+.modelDropdownButton {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
     border-radius: 9999px;
     border: 1px solid var(--border);
     background: var(--background);
+    color: var(--foreground);
     font-size: 0.8125rem;
     cursor: pointer;
     transition: all 0.2s;
-    width: fit-content;
+    min-width: 200px;
 }
 
-.modelSelector:hover {
+.modelDropdownButton:hover {
     border-color: var(--accent-cta);
+}
+
+.modelDropdownMenu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    width: 340px;
+    background: var(--surface-opaque);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+    z-index: 50;
+    overflow-y: auto;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.modelOption {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    text-align: left;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    color: var(--foreground);
+    transition: background 0.2s;
+}
+
+.modelOption:last-child {
+    border-bottom: none;
+}
+
+.modelOption:hover {
+    background: var(--background);
+}
+
+.modelOptionActive {
+    background: var(--background);
+    border-left: 3px solid var(--accent-cta);
+    padding-left: calc(1rem - 3px);
+}
+
+.modelHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.modelDesc {
+    font-size: 0.75rem;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+.modelBadgeEconomy {
+    background: var(--border);
+    color: var(--foreground);
+    font-size: 0.65rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modelBadgePremium {
+    background: #8b5cf6;
+    color: white;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.modelBadgeFree {
+    background: #10b981;
+    color: white;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.6rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }

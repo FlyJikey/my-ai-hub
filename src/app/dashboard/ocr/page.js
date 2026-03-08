@@ -11,6 +11,7 @@ import {
     RefreshCw,
     Camera,
     ChevronDown,
+    ChevronUp,
     Zap
 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
@@ -113,14 +114,41 @@ export default function OCRPage() {
             <div className={styles.mainGrid}>
                 {/* Scan Section */}
                 <section className={styles.scanSection}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div
-                            className={styles.modelSelector}
-                            onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
-                        >
-                            <Zap size={14} style={{ color: '#fbbf24' }} />
-                            <span>ИИ: {selectedVisionModel.name}</span>
-                            <ChevronDown size={14} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 50 }}>
+                        <div className={styles.modelDropdownContainer}>
+                            <button
+                                className={styles.modelDropdownButton}
+                                onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
+                                title="Выбрать нейросеть для фото"
+                            >
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Zap size={14} style={{ color: '#fbbf24' }} /> ИИ: {selectedVisionModel?.name || 'Выбрать'}
+                                </span>
+                                {isModelMenuOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+
+                            {isModelMenuOpen && (
+                                <div className={styles.modelDropdownMenu}>
+                                    {availableVisionModels?.map(m => (
+                                        <button
+                                            key={m.key || m.id}
+                                            className={`${styles.modelOption} ${selectedVisionModel?.id === m.id ? styles.modelOptionActive : ''}`}
+                                            onClick={() => {
+                                                setSelectedVisionModel(m);
+                                                setIsModelMenuOpen(false);
+                                            }}
+                                        >
+                                            <div className={styles.modelHeader}>
+                                                <span>{m.name}</span>
+                                                <span className={m.tier === 'economy' ? styles.modelBadgeEconomy : m.tier === 'free' ? styles.modelBadgeFree : styles.modelBadgePremium}>
+                                                    {m.tier === 'economy' ? 'ЭКОНОМ' : m.tier === 'free' ? 'БЕСПЛАТНО' : 'PRO'}
+                                                </span>
+                                            </div>
+                                            <div className={styles.modelDesc}>{m.description}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
 
