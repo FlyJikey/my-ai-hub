@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { logApiError } from "@/lib/logger";
 
 export const runtime = 'nodejs'; // Keep as nodejs or edge
 
@@ -56,6 +57,7 @@ export async function POST(req) {
                 } else {
                     const err = await res.json();
                     errorMsg = err.error?.message || err.message || "Ошибка API Polza";
+                    await logApiError('text', provider, modelId, errorMsg, err);
                 }
             } catch (e) { errorMsg = e.message; }
         } else if (provider === "groq" || !provider) {
@@ -89,6 +91,7 @@ export async function POST(req) {
                 } else {
                     const err = await res.json();
                     errorMsg = err.error?.message || err.message || "Ошибка API Groq";
+                    await logApiError('text', provider, finalModelId, errorMsg, err);
                 }
             } catch (e) { errorMsg = e.message; }
         } else if (provider === "gemini") {
@@ -105,6 +108,7 @@ export async function POST(req) {
                 resultText = response.text;
             } catch (e) {
                 errorMsg = e.message || "Ошибка API Gemini";
+                await logApiError('text', provider, modelId, errorMsg, { stack: e.stack });
             }
         } else if (provider === "groq") {
             const groqKey = process.env.GROQ_API_KEY;
@@ -134,6 +138,7 @@ export async function POST(req) {
                 } else {
                     const err = await res.json();
                     errorMsg = err.error?.message || err.message || "Ошибка API Groq";
+                    await logApiError('text', provider, modelId, errorMsg, err);
                 }
             } catch (e) { errorMsg = e.message; }
         } else if (provider === "openrouter") {
@@ -164,6 +169,7 @@ export async function POST(req) {
                 } else {
                     const err = await res.json();
                     errorMsg = err.error?.message || err.message || "Ошибка API OpenRouter";
+                    await logApiError('text', provider, modelId, errorMsg, err);
                 }
             } catch (e) { errorMsg = e.message; }
         } else {
@@ -178,6 +184,10 @@ export async function POST(req) {
 
     } catch (error) {
         console.error("Text API error:", error);
+        try {
+            await logApiError('text', 'unknown', 'unknown', error.message || "Unknown error inside text API", { stack: error.stack });
+        } catch (e) { }
+
         return NextResponse.json(
             { error: "Внутренняя ошибка сервера: " + error.message },
             { status: 500, headers: corsHeaders }

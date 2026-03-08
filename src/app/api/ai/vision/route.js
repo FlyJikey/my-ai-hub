@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { logApiError } from "@/lib/logger";
 
 export const runtime = 'nodejs'; // Keep as nodejs or edge
 
@@ -93,7 +94,9 @@ export async function POST(req) {
             if (!res.ok) {
                 const errorData = await res.json();
                 console.error("Vision Error:", errorData);
-                throw new Error(errorData.error?.message || errorData.message || "Ошибка Vision API Polza");
+                const errMsg = errorData.error?.message || errorData.message || "Ошибка Vision API Polza";
+                await logApiError('vision', provider, modelId, errMsg, errorData);
+                throw new Error(errMsg);
             }
 
             const data = await res.json();
@@ -133,7 +136,9 @@ export async function POST(req) {
             if (!res.ok) {
                 const errorData = await res.json();
                 console.error("OpenRouter Vision Error", errorData);
-                throw new Error(errorData.error?.message || "Ошибка Vision API OpenRouter");
+                const errMsg = errorData.error?.message || "Ошибка Vision API OpenRouter";
+                await logApiError('vision', provider, modelId, errMsg, errorData);
+                throw new Error(errMsg);
             }
 
             const data = await res.json();
@@ -176,6 +181,11 @@ export async function POST(req) {
 
     } catch (error) {
         console.error("Vision AI error:", error);
+        // Best effort logging if not already caught inside
+        try {
+            await logApiError('vision', 'unknown', 'unknown', error.message || "Неизвестная ошибка", { stack: error.stack });
+        } catch (e) { }
+
         return NextResponse.json(
             { error: "Внутренняя ошибка сервера: " + error.message },
             { status: 500, headers: corsHeaders }

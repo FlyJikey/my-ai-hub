@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Plus, Trash2, Edit2, CheckCircle, AlertCircle, RefreshCw, ChevronUp, ChevronDown, RotateCcw } from "lucide-react";
+import { Save, Plus, Trash2, Edit2, CheckCircle, AlertCircle, RefreshCw, ChevronUp, ChevronDown, RotateCcw, FileText } from "lucide-react";
 import styles from "./page.module.css";
 
 export default function SettingsPage() {
@@ -13,9 +13,11 @@ export default function SettingsPage() {
     const [editingModel, setEditingModel] = useState(null);
     const [editingBehavior, setEditingBehavior] = useState(null);
 
-    const [activeTab, setActiveTab] = useState('models'); // 'models' or 'limits'
+    const [activeTab, setActiveTab] = useState('models'); // 'models' or 'limits' or 'logs'
     const [limitsData, setLimitsData] = useState(null);
     const [isLoadingLimits, setIsLoadingLimits] = useState(false);
+    const [logsData, setLogsData] = useState([]);
+    const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
     useEffect(() => {
         fetchSettings();
@@ -55,9 +57,39 @@ export default function SettingsPage() {
         }
     };
 
+    const fetchLogs = async () => {
+        setIsLoadingLogs(true);
+        try {
+            const res = await fetch('/api/logs');
+            const data = await res.json();
+            if (res.ok) {
+                setLogsData(data.logs || []);
+            } else {
+                setMessage({ text: "Ошибка загрузки логов: " + data.error, type: "error" });
+            }
+        } catch (err) {
+            setMessage({ text: "Ошибка получения логов.", type: "error" });
+        } finally {
+            setIsLoadingLogs(false);
+        }
+    };
+
+    const clearLogs = async () => {
+        if (!confirm("Вы уверены, что хотите удалить все логи?")) return;
+        try {
+            await fetch('/api/logs', { method: 'DELETE' });
+            setLogsData([]);
+            setMessage({ text: "Логи успешно очищены.", type: "success" });
+            setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+        } catch (e) { }
+    };
+
     useEffect(() => {
         if (activeTab === 'limits' && !limitsData) {
             fetchLimits();
+        }
+        if (activeTab === 'logs' && logsData.length === 0) {
+            fetchLogs();
         }
     }, [activeTab]);
 
@@ -280,6 +312,12 @@ export default function SettingsPage() {
                     onClick={() => setActiveTab('limits')}
                 >
                     Лимиты и API
+                </button>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'logs' ? styles.tabBtnActive : ''}`}
+                    onClick={() => setActiveTab('logs')}
+                >
+                    <FileText size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: '-2px' }} /> Логи Ошибок
                 </button>
             </div>
 
@@ -572,6 +610,67 @@ export default function SettingsPage() {
                         </div>
                     ) : (
                         <div className={styles.errorState}>Ошбика загрузки лимитов.</div>
+                    )}
+                </div>
+            )}
+
+            {/* TAB: LOGS */}
+            {activeTab === 'logs' && (
+                <div className={styles.limitsTab}>
+                    <div className={styles.header} style={{ marginBottom: '1.5rem', background: 'transparent' }}>
+                        <div>
+                            <h2 className={styles.cardTitle}>Журнал системных ошибок ИИ</h2>
+                            <p className={styles.limitHint} style={{ marginTop: '0.25rem' }}>Здесь хранится до 100 последних ошибок генерации API. Подробности внутри каждого лога.</p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className={styles.addBtn} onClick={fetchLogs}>
+                                <RefreshCw size={16} /> Обновить
+                            </button>
+                            <button className={styles.addBtn} style={{ background: '#ef4444' }} onClick={clearLogs}>
+                                <Trash2 size={16} /> Очистить
+                            </button>
+                        </div>
+                    </div>
+
+                    {isLoadingLogs ? (
+                        <div className={styles.loadingState} style={{ minHeight: '200px' }}><RefreshCw className={styles.spin} /> Загрузка логов...</div>
+                    ) : logsData.length === 0 ? (
+                        <div className={styles.emptyState}>
+                            <CheckCircle size={48} color="#22c55e" opacity={0.5} style={{ marginBottom: '1rem' }} />
+                            Ошибок пока нет. Все генерации проходят без системных сбоев!
+                        </div>
+                    ) : (
+                        <div className={styles.grid} style={{ gridTemplateColumns: '1fr' }}>
+                            {logsData.map(log => (
+                                <div key={log.id} className={styles.card} style={{ padding: '1.5rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                                        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem', padding: '0.25rem 0.5rem', background: log.type === 'vision' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(59, 130, 246, 0.15)', color: log.type === 'vision' ? '#c084fc' : '#60a5fa', borderRadius: '0.5rem' }}>
+                                                {log.type === 'vision' ? 'ФОТО (VISION)' : 'ТЕКСТ (TEXT)'}
+                                            </span>
+                                            <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}><b>Провайдер:</b> {log.provider}</span>
+                                            <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}><b>Модель:</b> {log.model}</span>
+                                        </div>
+                                        <div style={{ color: '#6b7280', fontSize: '0.875rem', display: 'flex', alignItems: 'center' }}>
+                                            {new Date(log.timestamp).toLocaleString('ru-RU')}
+                                        </div>
+                                    </div>
+
+                                    <h3 style={{ color: '#f87171', marginBottom: '1.25rem', fontSize: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                                        <AlertCircle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
+                                        <span>{log.message}</span>
+                                    </h3>
+
+                                    {log.details && (
+                                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1.25rem', borderRadius: '0.75rem', overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <pre style={{ fontSize: '0.75rem', color: '#d1d5db', margin: 0, fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                                                {JSON.stringify(log.details, null, 2)}
+                                            </pre>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     )}
                 </div>
             )}
