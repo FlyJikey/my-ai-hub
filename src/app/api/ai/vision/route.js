@@ -176,7 +176,18 @@ export async function POST(req) {
             textResponse = textResponse.replace(/^```json/g, "").replace(/```$/g, "").trim();
         }
 
-        const parsedResult = JSON.parse(textResponse);
+        let parsedResult;
+        try {
+            parsedResult = JSON.parse(textResponse);
+        } catch (parseError) {
+            console.error("JSON Parse Error:", parseError);
+            await logApiError('vision', provider, modelId, "Ошибка парсинга JSON от нейросети", {
+                raw_response: textResponse,
+                error_message: parseError.message
+            });
+            throw new Error(`Ошибка ответа нейросети: неверный формат данных. Попробуйте еще раз. Рекомендуем сменить модель.`);
+        }
+
         return NextResponse.json({ result: parsedResult }, { headers: corsHeaders });
 
     } catch (error) {
