@@ -32,6 +32,7 @@ export default function OCRPage() {
     const [copied, setCopied] = useState(false);
     const [result, setResult] = useState(null);
     const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
+    const [scanMode, setScanMode] = useState('price_tag'); // 'price_tag' or 'full'
 
     const fileInputRef = useRef(null);
 
@@ -70,6 +71,7 @@ export default function OCRPage() {
             formData.append("image", imageFile);
             formData.append("provider", selectedVisionModel.provider);
             formData.append("modelId", selectedVisionModel.id);
+            formData.append("mode", scanMode);
 
             const res = await fetch("/api/ai/vision", {
                 method: "POST",
@@ -149,6 +151,48 @@ export default function OCRPage() {
                                     ))}
                                 </div>
                             )}
+                        </div>
+
+                        {/* Mode Toggle Switch */}
+                        <div className={styles.modeToggleContainer} style={{
+                            display: 'flex',
+                            background: 'rgba(255,255,255,0.05)',
+                            borderRadius: '2rem',
+                            padding: '0.25rem',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            pointerEvents: isProcessing ? 'none' : 'auto',
+                            opacity: isProcessing ? 0.6 : 1
+                        }}>
+                            <button
+                                className={styles.modeToggleBtn}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '2rem',
+                                    fontSize: '0.875rem',
+                                    fontWeight: scanMode === 'price_tag' ? 600 : 400,
+                                    background: scanMode === 'price_tag' ? '#3b82f6' : 'transparent',
+                                    color: scanMode === 'price_tag' ? '#fff' : '#a1a1aa',
+                                    transition: 'all 0.2s'
+                                }}
+                                onClick={() => setScanMode('price_tag')}
+                            >
+                                Ценник
+                            </button>
+                            <button
+                                className={styles.modeToggleBtn}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '2rem',
+                                    fontSize: '0.875rem',
+                                    fontWeight: scanMode === 'full' ? 600 : 400,
+                                    background: scanMode === 'full' ? '#8b5cf6' : 'transparent',
+                                    color: scanMode === 'full' ? '#fff' : '#a1a1aa',
+                                    transition: 'all 0.2s'
+                                }}
+                                onClick={() => setScanMode('full')}
+                            >
+                                Всё фото
+                            </button>
                         </div>
                     </div>
 
