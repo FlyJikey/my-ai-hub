@@ -62,6 +62,8 @@ export async function POST(req) {
   "tags": ["тип предмета", "доп факты", "на русском"]
 }`;
 
+        let textResponse = "";
+
         if (provider === "polza") {
             const res = await fetch("https://api.polza.ai/v1/chat/completions", {
                 method: "POST",
