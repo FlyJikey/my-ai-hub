@@ -19,7 +19,7 @@ export async function POST(req) {
     try {
         const { prompt, provider = "polza", modelId, chatHistory } = await req.json();
 
-        if (!prompt) {
+        if (!prompt && (!chatHistory || chatHistory.length === 0)) {
             return NextResponse.json({ error: "Промпт обязателен" }, { status: 400 });
         }
         if (!modelId) {

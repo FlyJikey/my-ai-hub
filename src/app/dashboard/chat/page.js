@@ -52,10 +52,30 @@ export default function AIHubChatPage() {
         }
     }, []);
 
-    // Save messages to localStorage
+    // Save messages to localStorage (strip images to avoid QuotaExceededError)
     useEffect(() => {
         if (messages.length > 0) {
-            localStorage.setItem('aiHub_standalone_chat', JSON.stringify(messages));
+            try {
+                const messagesToSave = messages.map(m => {
+                    const { image, ...rest } = m;
+                    return rest;
+                });
+                localStorage.setItem('aiHub_standalone_chat', JSON.stringify(messagesToSave));
+            } catch (e) {
+                console.error("Failed to saveStandaloneChat", e);
+                if (e.name === 'QuotaExceededError') {
+                    // If still exceeding, save only last 10 messages
+                    try {
+                        const limited = messages.slice(-10).map(m => {
+                            const { image, ...rest } = m;
+                            return rest;
+                        });
+                        localStorage.setItem('aiHub_standalone_chat', JSON.stringify(limited));
+                    } catch (e2) {
+                        console.error("Critical storage error", e2);
+                    }
+                }
+            }
         }
     }, [messages]);
 

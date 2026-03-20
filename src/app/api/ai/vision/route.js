@@ -124,6 +124,10 @@ export async function POST(req) {
             }
 
             const data = await res.json();
+            if (!data || !data.choices || data.choices.length === 0) {
+                console.error("Polza Vision empty choices:", data);
+                throw new Error("Нейросеть Polza вернула пустой или некорректный ответ.");
+            }
             textResponse = data.choices[0].message.content;
         } else if (provider === "openrouter" || !provider) {
             const openRouterKey = process.env.OPENROUTER_API_KEY;
@@ -166,6 +170,10 @@ export async function POST(req) {
             }
 
             const data = await res.json();
+            if (!data || !data.choices || data.choices.length === 0) {
+                console.error("OpenRouter Vision empty choices:", data);
+                throw new Error("OpenRouter вернул пустой ответ (choices).");
+            }
             textResponse = data.choices[0].message.content;
         } else if (provider === "gemini") {
             const geminiKey = process.env.GEMINI_API_KEY;
