@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Settings, Shapes, Menu, History, ChevronLeft, ChevronRight, Eye, Scan } from "lucide-react";
+import { LayoutDashboard, Settings, Shapes, Menu, History, ChevronLeft, ChevronRight, Eye, Scan, MessageSquare } from "lucide-react";
 import styles from "./layout.module.css";
 
 export default function DashboardLayout({ children }) {
@@ -41,6 +41,10 @@ export default function DashboardLayout({ children }) {
                     <Link href="/dashboard/generator" className={isActive("/dashboard/generator")} title="Генератор">
                         <Shapes className={pathname === "/dashboard/generator" ? styles.linkActiveIcon : styles.linkIcon} />
                         {!collapsed && <span>Генератор + Распознавание</span>}
+                    </Link>
+                    <Link href="/dashboard/chat" className={isActive("/dashboard/chat")} title="Чат">
+                        <MessageSquare className={pathname === "/dashboard/chat" ? styles.linkActiveIcon : styles.linkIcon} />
+                        {!collapsed && <span>Чат ИИ</span>}
                     </Link>
                     <Link href="/dashboard/analysis" className={isActive("/dashboard/analysis")} title="Анализ">
                         <Eye className={pathname === "/dashboard/analysis" ? styles.linkActiveIcon : styles.linkIcon} />
