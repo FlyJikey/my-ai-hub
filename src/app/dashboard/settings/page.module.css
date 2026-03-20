@@ -889,3 +889,40 @@ input:checked+.slider:before {
         grid-template-columns: 1fr;
     }
 }
+
+.badgeCustom {
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+}
+
+.catalogFilters {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.filterSelect {
+    background: #18181b;
+    border: 1px solid #27272a;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 100px;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filterSelect:focus {
+    border-color: #6366f1;
+}
+
+.filterSelect option {
+    background: #18181b;
+    color: #fff;
+}

@@ -9,7 +9,7 @@ export async function GET() {
             return NextResponse.json({ error: "API key not configured" }, { status: 500 });
         }
 
-        const res = await fetch("https://polza.ai/api/v1/models/catalog", {
+        const res = await fetch("https://polza.ai/api/v1/models/catalog?limit=1000", {
             headers: {
                 "Authorization": `Bearer ${polzaKey.trim()}`
             }

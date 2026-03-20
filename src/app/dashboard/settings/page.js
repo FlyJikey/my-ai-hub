@@ -23,6 +23,7 @@ export default function SettingsPage() {
     const [polzaModels, setPolzaModels] = useState([]);
     const [isLoadingPolza, setIsLoadingPolza] = useState(false);
     const [polzaSearch, setPolzaSearch] = useState("");
+    const [selectedProvider, setSelectedProvider] = useState("all");
 
     useEffect(() => {
         fetchSettings();
@@ -737,14 +738,29 @@ export default function SettingsPage() {
 
                     <div className={styles.catalogHeader}>
                         <h2 className={styles.cardTitle}>Каталог моделей</h2>
-                        <div className={styles.searchWrapper}>
-                            <input 
-                                type="text" 
-                                placeholder="Поиск модели (например, gpt-4o)..." 
-                                className={styles.searchInput}
-                                value={polzaSearch}
-                                onChange={(e) => setPolzaSearch(e.target.value)}
-                            />
+                        <div className={styles.catalogFilters}>
+                            <select 
+                                className={styles.filterSelect}
+                                value={selectedProvider}
+                                onChange={(e) => setSelectedProvider(e.target.value)}
+                            >
+                                <option value="all">Все провайдеры</option>
+                                {Array.from(new Set(polzaModels.map(m => m.id.split('/')[0])))
+                                    .sort()
+                                    .map(p => (
+                                        <option key={p} value={p}>{p}</option>
+                                    ))
+                                }
+                            </select>
+                            <div className={styles.searchWrapper}>
+                                <input 
+                                    type="text" 
+                                    placeholder="Поиск по названию или ID..." 
+                                    className={styles.searchInput}
+                                    value={polzaSearch}
+                                    onChange={(e) => setPolzaSearch(e.target.value)}
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -753,67 +769,87 @@ export default function SettingsPage() {
                     ) : (
                         <div className={styles.modelGrid}>
                             {polzaModels
-                                .filter(m => m.id.toLowerCase().includes(polzaSearch.toLowerCase()) || m.name.toLowerCase().includes(polzaSearch.toLowerCase()))
-                                .map(model => (
-                                <div key={model.id} className={styles.modelCard}>
-                                    <div className={styles.modelCardHeader}>
-                                        <div className={styles.modelName}>{model.name}</div>
-                                        <div className={styles.modelId}>{model.id}</div>
-                                    </div>
-                                    <div className={styles.modelPrices}>
-                                        <div className={styles.priceItem}>
-                                            <span className={styles.priceLabel}>Вход:</span>
-                                            <span className={styles.priceValue}>{model.top_provider?.input_price_rub_1k ?? '?'} ₽ <small>/1k</small></span>
-                                        </div>
-                                        <div className={styles.priceItem}>
-                                            <span className={styles.priceLabel}>Выход:</span>
-                                            <span className={styles.priceValue}>{model.top_provider?.output_price_rub_1k ?? '?'} ₽ <small>/1k</small></span>
-                                        </div>
-                                    </div>
-                                    <div className={styles.modelCapabilities}>
-                                        {model.capabilities?.map(cap => (
-                                            <span key={cap} className={styles.capBadge}>{cap}</span>
-                                        ))}
-                                    </div>
-                                    <div className={styles.modelActions}>
-                                        <button 
-                                            className={styles.addToSettingsBtn}
-                                            onClick={() => {
-                                                const type = model.capabilities?.includes('vision') ? 'vision' : 'text';
-                                                const targetKey = type === 'text' ? 'textModels' : 'visionModels';
-                                                const exists = settings[targetKey].some(m => m.id === model.id);
-                                                
-                                                if (exists) {
-                                                    setMessage({ text: `Модель ${model.id} уже есть в настройках!`, type: "success" });
-                                                    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
-                                                    return;
-                                                }
+                                .filter(m => {
+                                    const matchesSearch = !polzaSearch || 
+                                        m.id.toLowerCase().includes(polzaSearch.toLowerCase()) || 
+                                        m.name.toLowerCase().includes(polzaSearch.toLowerCase());
+                                    const matchesProvider = selectedProvider === "all" || m.id.startsWith(selectedProvider + "/");
+                                    return matchesSearch && matchesProvider;
+                                })
+                                .slice(0, 100) // Show first 100 to avoid lag
+                                .map(model => {
+                                    const inputPrice = model.top_provider?.pricing?.prompt_per_million 
+                                        ? (parseFloat(model.top_provider.pricing.prompt_per_million) / 1000).toFixed(4)
+                                        : "?";
+                                    const outputPrice = model.top_provider?.pricing?.completion_per_million
+                                        ? (parseFloat(model.top_provider.pricing.completion_per_million) / 1000).toFixed(4)
+                                        : "?";
+                                    
+                                    return (
+                                        <div key={model.id} className={styles.modelCard}>
+                                            <div className={styles.modelCardHeader}>
+                                                <div className={styles.modelName}>{model.name}</div>
+                                                <div className={styles.modelId}>{model.id}</div>
+                                            </div>
+                                            <div className={styles.modelPrices}>
+                                                <div className={styles.priceItem}>
+                                                    <span className={styles.priceLabel}>Вход:</span>
+                                                    <span className={styles.priceValue}>{inputPrice} ₽ <small>/1k</small></span>
+                                                </div>
+                                                <div className={styles.priceItem}>
+                                                    <span className={styles.priceLabel}>Выход:</span>
+                                                    <span className={styles.priceValue}>{outputPrice} ₽ <small>/1k</small></span>
+                                                </div>
+                                            </div>
+                                            <div className={styles.modelCapabilities}>
+                                                {model.architecture?.input_modalities?.map(cap => (
+                                                    <span key={cap} className={styles.capBadge}>{cap}</span>
+                                                ))}
+                                                {model.architecture?.modality?.includes('vision') && (
+                                                    <span className={styles.capBadge}>vision</span>
+                                                )}
+                                            </div>
+                                            <div className={styles.modelActions}>
+                                                <button 
+                                                    className={styles.addToSettingsBtn}
+                                                    onClick={() => {
+                                                        const isVision = model.architecture?.modality?.includes('vision') || 
+                                                                         model.architecture?.output_modalities?.includes('image');
+                                                        const targetKey = isVision ? 'visionModels' : 'textModels';
+                                                        const exists = settings[targetKey].some(m => m.id === model.id);
+                                                        
+                                                        if (exists) {
+                                                            setMessage({ text: `Модель ${model.id} уже есть в настройках!`, type: "success" });
+                                                            setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+                                                            return;
+                                                        }
 
-                                                const newModel = {
-                                                    id: model.id,
-                                                    name: model.name,
-                                                    description: `Модель из каталога. Цена: ${model.top_provider?.input_price_rub_1k || '?'} ₽ / 1к токенов.`,
-                                                    provider: "polza",
-                                                    tier: (model.top_provider?.input_price_rub_1k || 0) > 1 ? "premium" : "economy",
-                                                    modelType: type,
-                                                    enabled: true,
-                                                    isCustom: true
-                                                };
+                                                        const newModel = {
+                                                            id: model.id,
+                                                            name: model.name,
+                                                            description: `Polza: ${model.id}. Цена: ${inputPrice} / ${outputPrice} ₽ за 1к отв.`,
+                                                            provider: "polza",
+                                                            tier: parseFloat(inputPrice) > 1 ? "premium" : "free",
+                                                            modelType: isVision ? "vision" : "text",
+                                                            enabled: true,
+                                                            isCustom: true
+                                                        };
 
-                                                setSettings(prev => ({
-                                                    ...prev,
-                                                    [targetKey]: [...prev[targetKey], newModel]
-                                                }));
-                                                
-                                                setMessage({ text: `Модель ${model.name} добавлена в список! Не забудьте нажать 'Сохранить'.`, type: "success" });
-                                                setTimeout(() => setMessage({ text: "", type: "" }), 5000);
-                                            }}
-                                        >
-                                            <Plus size={14} /> Добавить в настройки
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                                                        setSettings(prev => ({
+                                                            ...prev,
+                                                            [targetKey]: [...prev[targetKey], newModel]
+                                                        }));
+                                                        
+                                                        setMessage({ text: `Модель ${model.name} добавлена! Нажмите "Сохранить" вверху страницы.`, type: "success" });
+                                                        setTimeout(() => setMessage({ text: "", type: "" }), 5000);
+                                                    }}
+                                                >
+                                                    <Plus size={14} /> Добавить в настройки
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                         </div>
                     )}
                 </div>
