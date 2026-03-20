@@ -403,24 +403,20 @@ export default function SettingsPage() {
                                         </div>
                                         <div className={styles.itemDesc}>{model.description}</div>
                                     </div>
-                                    <div className={styles.scenarioActions}>
-                                        <button className={styles.iconBtn} onClick={() => moveModel('textModels', index, 'up')} disabled={index === 0} title="Вверх" style={{ opacity: index === 0 ? 0.3 : 1 }}>
-                                            <ChevronUp size={16} />
-                                        </button>
-                                        <button className={styles.iconBtn} onClick={() => moveModel('textModels', index, 'down')} disabled={index === settings.textModels.length - 1} title="Вниз" style={{ opacity: index === settings.textModels.length - 1 ? 0.3 : 1 }}>
-                                            <ChevronDown size={16} />
-                                        </button>
-                                        {model.isCustom && (
-                                            <>
-                                                <button className={styles.iconBtn} onClick={() => setEditingModel({ ...model, modelType: "text" })} title="Редактировать">
-                                                    <Edit2 size={16} />
-                                                </button>
-                                                <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('textModels', model.id)} title="Удалить">
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </>
-                                        )}
-                                        <label className={styles.switch}>
+                                        <div className={styles.scenarioActions}>
+                                            <button className={styles.iconBtn} onClick={() => moveModel('textModels', index, 'up')} disabled={index === 0} title="Вверх" style={{ opacity: index === 0 ? 0.3 : 1 }}>
+                                                <ChevronUp size={16} />
+                                            </button>
+                                            <button className={styles.iconBtn} onClick={() => moveModel('textModels', index, 'down')} disabled={index === settings.textModels.length - 1} title="Вниз" style={{ opacity: index === settings.textModels.length - 1 ? 0.3 : 1 }}>
+                                                <ChevronDown size={16} />
+                                            </button>
+                                            <button className={styles.iconBtn} onClick={() => setEditingModel({ ...model, modelType: "text" })} title="Редактировать">
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('textModels', model.id)} title="Удалить">
+                                                <Trash2 size={16} />
+                                            </button>
+                                            <label className={styles.switch}>
                                             <input
                                                 type="checkbox"
                                                 checked={model.enabled !== false}
@@ -455,24 +451,20 @@ export default function SettingsPage() {
                                         </div>
                                         <div className={styles.itemDesc}>{model.description}</div>
                                     </div>
-                                    <div className={styles.scenarioActions}>
-                                        <button className={styles.iconBtn} onClick={() => moveModel('visionModels', index, 'up')} disabled={index === 0} title="Вверх" style={{ opacity: index === 0 ? 0.3 : 1 }}>
-                                            <ChevronUp size={16} />
-                                        </button>
-                                        <button className={styles.iconBtn} onClick={() => moveModel('visionModels', index, 'down')} disabled={index === settings.visionModels.length - 1} title="Вниз" style={{ opacity: index === settings.visionModels.length - 1 ? 0.3 : 1 }}>
-                                            <ChevronDown size={16} />
-                                        </button>
-                                        {model.isCustom && (
-                                            <>
-                                                <button className={styles.iconBtn} onClick={() => setEditingModel({ ...model, modelType: "vision" })} title="Редактировать">
-                                                    <Edit2 size={16} />
-                                                </button>
-                                                <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('visionModels', model.id)} title="Удалить">
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </>
-                                        )}
-                                        <label className={styles.switch}>
+                                        <div className={styles.scenarioActions}>
+                                            <button className={styles.iconBtn} onClick={() => moveModel('visionModels', index, 'up')} disabled={index === 0} title="Вверх" style={{ opacity: index === 0 ? 0.3 : 1 }}>
+                                                <ChevronUp size={16} />
+                                            </button>
+                                            <button className={styles.iconBtn} onClick={() => moveModel('visionModels', index, 'down')} disabled={index === settings.visionModels.length - 1} title="Вниз" style={{ opacity: index === settings.visionModels.length - 1 ? 0.3 : 1 }}>
+                                                <ChevronDown size={16} />
+                                            </button>
+                                            <button className={styles.iconBtn} onClick={() => setEditingModel({ ...model, modelType: "vision" })} title="Редактировать">
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('visionModels', model.id)} title="Удалить">
+                                                <Trash2 size={16} />
+                                            </button>
+                                            <label className={styles.switch}>
                                             <input
                                                 type="checkbox"
                                                 checked={model.enabled !== false}
