@@ -294,15 +294,27 @@ export default function SettingsPage() {
         });
     };
 
-    const saveModel = (modelStr) => {
-        const newModel = { ...modelStr };
-        newModel.enabled = true;
-
-        if (newModel.modelType === 'text') {
-            setSettings(prev => ({ ...prev, textModels: [...prev.textModels, newModel] }));
-        } else {
-            setSettings(prev => ({ ...prev, visionModels: [...prev.visionModels, newModel] }));
-        }
+    const saveModel = (model) => {
+        const isVision = model.modelType === 'vision';
+        setSettings(prev => {
+            // Remove existing by ID from both lists
+            const filteredText = prev.textModels.filter(m => m.id !== model.id);
+            const filteredVision = prev.visionModels.filter(m => m.id !== model.id);
+            
+            if (isVision) {
+                return {
+                    ...prev,
+                    textModels: filteredText,
+                    visionModels: [...filteredVision, { ...model, enabled: model.enabled ?? true }]
+                };
+            } else {
+                return {
+                    ...prev,
+                    textModels: [...filteredText, { ...model, enabled: model.enabled ?? true }],
+                    visionModels: filteredVision
+                };
+            }
+        });
         setEditingModel(null);
     };
 
@@ -399,9 +411,14 @@ export default function SettingsPage() {
                                             <ChevronDown size={16} />
                                         </button>
                                         {model.isCustom && (
-                                            <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('textModels', model.id)} title="Удалить">
-                                                <Trash2 size={16} />
-                                            </button>
+                                            <>
+                                                <button className={styles.iconBtn} onClick={() => setEditingModel({ ...model, modelType: "text" })} title="Редактировать">
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('textModels', model.id)} title="Удалить">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </>
                                         )}
                                         <label className={styles.switch}>
                                             <input
@@ -446,9 +463,14 @@ export default function SettingsPage() {
                                             <ChevronDown size={16} />
                                         </button>
                                         {model.isCustom && (
-                                            <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('visionModels', model.id)} title="Удалить">
-                                                <Trash2 size={16} />
-                                            </button>
+                                            <>
+                                                <button className={styles.iconBtn} onClick={() => setEditingModel({ ...model, modelType: "vision" })} title="Редактировать">
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button className={styles.iconBtnTextDelete} onClick={() => deleteModel('visionModels', model.id)} title="Удалить">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </>
                                         )}
                                         <label className={styles.switch}>
                                             <input
@@ -829,7 +851,7 @@ export default function SettingsPage() {
                                                             name: model.name,
                                                             description: `Polza: ${model.id}. Цена: ${inputPrice} / ${outputPrice} ₽ за 1к отв.`,
                                                             provider: "polza",
-                                                            tier: parseFloat(inputPrice) > 1 ? "premium" : "free",
+                                                            tier: parseFloat(inputPrice) > 0 ? "premium" : "free",
                                                             modelType: isVision ? "vision" : "text",
                                                             enabled: true,
                                                             isCustom: true
@@ -918,7 +940,7 @@ export default function SettingsPage() {
             {editingModel && (
                 <div className={styles.modalOverlay}>
                     <div className={styles.modal}>
-                        <h3 className={styles.modalTitle}>Добавить свою модель</h3>
+                        <h3 className={styles.modalTitle}>{settings.textModels.some(m => m.id === editingModel.id) || settings.visionModels.some(m => m.id === editingModel.id) ? "Редактировать модель" : "Добавить свою модель"}</h3>
                         <div className={styles.modalBody}>
                             <div className={styles.inputGroup}>
                                 <label>ID Модели (из Polza.ai / OpenRouter / Groq)</label>
@@ -991,7 +1013,7 @@ export default function SettingsPage() {
                                 onClick={() => saveModel(editingModel)}
                                 disabled={!editingModel.id || !editingModel.name}
                             >
-                                Добавить
+                                {settings.textModels.some(m => m.id === editingModel.id) || settings.visionModels.some(m => m.id === editingModel.id) ? "Сохранить" : "Добавить"}
                             </button>
                         </div>
                     </div>
