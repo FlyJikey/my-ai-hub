@@ -35,7 +35,7 @@ export async function POST(req) {
                 return NextResponse.json({ error: "Ключ POLZA_API_KEY не задан в .env.local" }, { status: 400 });
             }
             try {
-                const res = await fetch("https://api.polza.ai/v1/chat/completions", {
+                const res = await fetch("https://polza.ai/api/v1/chat/completions", {
                     method: "POST",
                     headers: {
                         "Authorization": `Bearer ${polzaKey}`,

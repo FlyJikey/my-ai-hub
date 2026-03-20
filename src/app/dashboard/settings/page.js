@@ -13,11 +13,16 @@ export default function SettingsPage() {
     const [editingModel, setEditingModel] = useState(null);
     const [editingBehavior, setEditingBehavior] = useState(null);
 
-    const [activeTab, setActiveTab] = useState('models'); // 'models' or 'limits' or 'logs'
+    const [activeTab, setActiveTab] = useState('models'); // 'models' or 'limits' or 'logs' or 'polza'
     const [limitsData, setLimitsData] = useState(null);
     const [isLoadingLimits, setIsLoadingLimits] = useState(false);
     const [logsData, setLogsData] = useState([]);
     const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
+    const [polzaBalance, setPolzaBalance] = useState(null);
+    const [polzaModels, setPolzaModels] = useState([]);
+    const [isLoadingPolza, setIsLoadingPolza] = useState(false);
+    const [polzaSearch, setPolzaSearch] = useState("");
 
     useEffect(() => {
         fetchSettings();
@@ -84,12 +89,39 @@ export default function SettingsPage() {
         } catch (e) { }
     };
 
+    const fetchPolzaData = async () => {
+        setIsLoadingPolza(true);
+        try {
+            const [bRes, mRes] = await Promise.all([
+                fetch('/api/polza/balance'),
+                fetch('/api/polza/models')
+            ]);
+            
+            if (bRes.ok) {
+                const bData = await bRes.json();
+                setPolzaBalance(bData.amount);
+            }
+            
+            if (mRes.ok) {
+                const mData = await mRes.json();
+                setPolzaModels(mData.data || mData.models || []);
+            }
+        } catch (err) {
+            console.error("Error fetching Polza data:", err);
+        } finally {
+            setIsLoadingPolza(false);
+        }
+    };
+
     useEffect(() => {
         if (activeTab === 'limits' && !limitsData) {
             fetchLimits();
         }
         if (activeTab === 'logs' && logsData.length === 0) {
             fetchLogs();
+        }
+        if (activeTab === 'polza' && polzaModels.length === 0) {
+            fetchPolzaData();
         }
     }, [activeTab]);
 
@@ -318,6 +350,12 @@ export default function SettingsPage() {
                     onClick={() => setActiveTab('logs')}
                 >
                     <FileText size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: '-2px' }} /> Логи Ошибок
+                </button>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'polza' ? styles.tabBtnActive : ''}`}
+                    onClick={() => setActiveTab('polza')}
+                >
+                    🚀 Polza.ai
                 </button>
             </div>
 
@@ -668,6 +706,112 @@ export default function SettingsPage() {
                                             </pre>
                                         </div>
                                     )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* TAB: POLZA.AI */}
+            {activeTab === 'polza' && (
+                <div className={styles.polzaTab}>
+                    <div className={styles.polzaStats}>
+                        <div className={styles.polzaBalanceCard}>
+                            <div className={styles.polzaBalanceLabel}>Текущий баланс Polza.ai</div>
+                            <div className={styles.polzaBalanceValue}>
+                                {isLoadingPolza ? <RefreshCw className={styles.spin} size={24} /> : `${polzaBalance || '0'} ₽`}
+                            </div>
+                            <button className={styles.polzaRefreshBtn} onClick={fetchPolzaData} disabled={isLoadingPolza}>
+                                <RefreshCw size={14} className={isLoadingPolza ? styles.spin : ''} /> Обновить
+                            </button>
+                        </div>
+                        <div className={styles.polzaInfoCard}>
+                            <h3>Как это работает?</h3>
+                            <p>Здесь вы видите официальный каталог моделей с сайта Polza.ai. Вы можете мгновенно добавить любую из них в свои настройки для использования в генерации текста или распознавании фото.</p>
+                            <a href="https://polza.ai/dashboard" target="_blank" rel="noopener noreferrer" className={styles.externalLink}>
+                                Перейти в консоль Polza.ai
+                            </a>
+                        </div>
+                    </div>
+
+                    <div className={styles.catalogHeader}>
+                        <h2 className={styles.cardTitle}>Каталог моделей</h2>
+                        <div className={styles.searchWrapper}>
+                            <input 
+                                type="text" 
+                                placeholder="Поиск модели (например, gpt-4o)..." 
+                                className={styles.searchInput}
+                                value={polzaSearch}
+                                onChange={(e) => setPolzaSearch(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    {isLoadingPolza && polzaModels.length === 0 ? (
+                        <div className={styles.loadingState} style={{ minHeight: '300px' }}><RefreshCw className={styles.spin} /> Загрузка каталога...</div>
+                    ) : (
+                        <div className={styles.modelGrid}>
+                            {polzaModels
+                                .filter(m => m.id.toLowerCase().includes(polzaSearch.toLowerCase()) || m.name.toLowerCase().includes(polzaSearch.toLowerCase()))
+                                .map(model => (
+                                <div key={model.id} className={styles.modelCard}>
+                                    <div className={styles.modelCardHeader}>
+                                        <div className={styles.modelName}>{model.name}</div>
+                                        <div className={styles.modelId}>{model.id}</div>
+                                    </div>
+                                    <div className={styles.modelPrices}>
+                                        <div className={styles.priceItem}>
+                                            <span className={styles.priceLabel}>Вход:</span>
+                                            <span className={styles.priceValue}>{model.top_provider?.input_price_rub_1k ?? '?'} ₽ <small>/1k</small></span>
+                                        </div>
+                                        <div className={styles.priceItem}>
+                                            <span className={styles.priceLabel}>Выход:</span>
+                                            <span className={styles.priceValue}>{model.top_provider?.output_price_rub_1k ?? '?'} ₽ <small>/1k</small></span>
+                                        </div>
+                                    </div>
+                                    <div className={styles.modelCapabilities}>
+                                        {model.capabilities?.map(cap => (
+                                            <span key={cap} className={styles.capBadge}>{cap}</span>
+                                        ))}
+                                    </div>
+                                    <div className={styles.modelActions}>
+                                        <button 
+                                            className={styles.addToSettingsBtn}
+                                            onClick={() => {
+                                                const type = model.capabilities?.includes('vision') ? 'vision' : 'text';
+                                                const targetKey = type === 'text' ? 'textModels' : 'visionModels';
+                                                const exists = settings[targetKey].some(m => m.id === model.id);
+                                                
+                                                if (exists) {
+                                                    setMessage({ text: `Модель ${model.id} уже есть в настройках!`, type: "success" });
+                                                    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+                                                    return;
+                                                }
+
+                                                const newModel = {
+                                                    id: model.id,
+                                                    name: model.name,
+                                                    description: `Модель из каталога. Цена: ${model.top_provider?.input_price_rub_1k || '?'} ₽ / 1к токенов.`,
+                                                    provider: "polza",
+                                                    tier: (model.top_provider?.input_price_rub_1k || 0) > 1 ? "premium" : "economy",
+                                                    modelType: type,
+                                                    enabled: true,
+                                                    isCustom: true
+                                                };
+
+                                                setSettings(prev => ({
+                                                    ...prev,
+                                                    [targetKey]: [...prev[targetKey], newModel]
+                                                }));
+                                                
+                                                setMessage({ text: `Модель ${model.name} добавлена в список! Не забудьте нажать 'Сохранить'.`, type: "success" });
+                                                setTimeout(() => setMessage({ text: "", type: "" }), 5000);
+                                            }}
+                                        >
+                                            <Plus size={14} /> Добавить в настройки
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>

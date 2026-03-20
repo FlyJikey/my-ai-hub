@@ -90,7 +90,7 @@ export async function POST(req) {
         let textResponse = "";
 
         if (provider === "polza") {
-            const res = await fetch("https://api.polza.ai/v1/chat/completions", {
+            const res = await fetch("https://polza.ai/api/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${polzaKey}`,

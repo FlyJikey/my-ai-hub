@@ -626,3 +626,266 @@ input:checked+.slider:before {
     line-height: 1.5;
     margin: 0;
 }
+
+/* Polza.ai Tab Styles */
+.polzaTab {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.polzaStats {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 24px;
+}
+
+.polzaBalanceCard {
+    background: linear-gradient(135deg, #1e1b4b 0%, #171717 100%);
+    border: 1px solid #312e81;
+    border-radius: 20px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.polzaBalanceCard::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.polzaBalanceLabel {
+    font-size: 14px;
+    color: #a5b4fc;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+}
+
+.polzaBalanceValue {
+    font-size: 48px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+.polzaRefreshBtn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.polzaRefreshBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+
+.polzaInfoCard {
+    background: rgba(24, 24, 27, 0.5);
+    border: 1px solid #27272a;
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+}
+
+.polzaInfoCard h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #fff;
+}
+
+.polzaInfoCard p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #a1a1aa;
+}
+
+.externalLink {
+    color: #818cf8;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.externalLink:hover {
+    text-decoration: underline;
+}
+
+.catalogHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+}
+
+.searchWrapper {
+    width: 300px;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 10px 16px;
+    background: #18181b;
+    border: 1px solid #27272a;
+    border-radius: 100px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.searchInput:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.modelGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.modelCard {
+    background: #18181b;
+    border: 1px solid #27272a;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modelCard:hover {
+    border-color: #3f3f46;
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.5);
+}
+
+.modelCardHeader {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.modelName {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.modelId {
+    font-size: 12px;
+    font-family: monospace;
+    color: #71717a;
+    word-break: break-all;
+}
+
+.modelPrices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    border-radius: 12px;
+}
+
+.priceItem {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.priceLabel {
+    font-size: 10px;
+    color: #71717a;
+    text-transform: uppercase;
+}
+
+.priceValue {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f4f4f5;
+}
+
+.priceValue small {
+    font-weight: 400;
+    color: #71717a;
+}
+
+.modelCapabilities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.capBadge {
+    padding: 2px 8px;
+    background: rgba(99, 102, 241, 0.1);
+    color: #818cf8;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.modelActions {
+    margin-top: auto;
+}
+
+.addToSettingsBtn {
+    width: 100%;
+    padding: 10px;
+    background: #27272a;
+    border: 1px solid #3f3f46;
+    color: #e4e4e7;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.addToSettingsBtn:hover {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: #fff;
+}
+
+@media (max-width: 900px) {
+    .polzaStats {
+        grid-template-columns: 1fr;
+    }
+}

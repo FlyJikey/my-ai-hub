@@ -51,7 +51,7 @@ export async function GET(req) {
                     // Используем правильный эндпоинт Polza для баланса
                     // Если у Polza нет публичного /v1/users/me в совместимом API, мы попытаемся
                     // Мы используем /v1/users/me или аналогичный. Если он упадет, вернем 'active'.
-                    const pRes = await fetch("https://api.polza.ai/v1/users/me", {
+                    const pRes = await fetch("https://polza.ai/api/v1/balance", {
                         headers: { "Authorization": `Bearer ${polzaKey.trim()}` }
                     });
 
@@ -59,7 +59,7 @@ export async function GET(req) {
                         const pData = await pRes.json();
                         limitsData.polza = {
                             status: 'active',
-                            balance: pData.balance || pData.credits || 'Активен', // Зависит от структуры базы Polza
+                            balance: `${pData.amount} ₽` || 'Активен',
                             raw: pData
                         };
                     } else {
