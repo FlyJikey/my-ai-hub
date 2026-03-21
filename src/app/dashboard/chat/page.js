@@ -13,7 +13,11 @@ import {
     X, 
     Copy, 
     Check, 
-    AlertCircle 
+    AlertCircle,
+    Settings as SettingsIcon,
+    Zap,
+    Layers,
+    Sparkles
 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
 import styles from "./page.module.css";
@@ -33,7 +37,12 @@ export default function AIHubChatPage() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState("");
     const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [copiedIndex, setCopiedIndex] = useState(null);
+
+    // Vision Settings
+    const [visionMode, setVisionMode] = useState("dual"); // "dual" or "direct"
+    const [selectedVisionProcessor, setSelectedVisionProcessor] = useState(null);
 
     // Image handling
     const [imageFile, setImageFile] = useState(null);
@@ -42,15 +51,42 @@ export default function AIHubChatPage() {
     const chatEndRef = useRef(null);
     const textareaRef = useRef(null);
 
-    // Load messages from localStorage on mount
+    // Load settings and messages from localStorage on mount
     useEffect(() => {
         try {
-            const saved = localStorage.getItem('aiHub_standalone_chat');
-            if (saved) setMessages(JSON.parse(saved));
+            const savedMsgs = localStorage.getItem('aiHub_standalone_chat');
+            if (savedMsgs) setMessages(JSON.parse(savedMsgs));
+
+            const savedVisionMode = localStorage.getItem('aiHub_chat_visionMode');
+            if (savedVisionMode) setVisionMode(savedVisionMode);
+
+            const savedVisionProcId = localStorage.getItem('aiHub_chat_visionProcessor');
+            if (savedVisionProcId && availableVisionModels.length > 0) {
+                const proc = availableVisionModels.find(m => m.id === savedVisionProcId);
+                if (proc) setSelectedVisionProcessor(proc);
+            }
         } catch (e) {
-            console.error("Failed to load standalone chat", e);
+            console.error("Failed to load standalone chat data", e);
         }
-    }, []);
+    }, [availableVisionModels]);
+
+    // Set default vision processor if not set
+    useEffect(() => {
+        if (!selectedVisionProcessor && availableVisionModels.length > 0) {
+            setSelectedVisionProcessor(availableVisionModels[0]);
+        }
+    }, [availableVisionModels, selectedVisionProcessor]);
+
+    // Save vision settings
+    useEffect(() => {
+        localStorage.setItem('aiHub_chat_visionMode', visionMode);
+    }, [visionMode]);
+
+    useEffect(() => {
+        if (selectedVisionProcessor) {
+            localStorage.setItem('aiHub_chat_visionProcessor', selectedVisionProcessor.id);
+        }
+    }, [selectedVisionProcessor]);
 
     // Save messages to localStorage (strip images to avoid QuotaExceededError)
     useEffect(() => {
@@ -127,20 +163,25 @@ export default function AIHubChatPage() {
         }
     };
 
+    const isMultimodal = (model) => {
+        const id = model.id.toLowerCase();
+        const name = model.name.toLowerCase();
+        return id.includes('gpt-4o') || 
+               id.includes('claude-3') || 
+               id.includes('gemini') || 
+               id.includes('vision') ||
+               name.includes('vision') ||
+               model.modelType === 'vision';
+    };
+
     const handleSend = async () => {
         if (!prompt.trim() && !imageFile) return;
         
-        const isVisionSupported = selectedTextModel.id.includes('gpt-4o') || 
-                                 selectedTextModel.id.includes('claude-3') || 
-                                 selectedTextModel.id.includes('gemini') ||
-                                 selectedTextModel.modelType === 'vision';
+        const isSelectedMultimodal = isMultimodal(selectedTextModel);
 
-        if (imageFile && !isVisionSupported) {
-             // Fallback to specific vision model if current text model doesn't support images directly in chat?
-             // For simplicity in "standalone chat", we'll check if the text model supports it or use the selected vision model.
-             // But usually in a simple chat, users expect the current model to handle it.
-             // If not, we'll suggest switching.
-             setError("Эта модель может не поддерживать изображения. Попробуйте GPT-4o или Claude 3.");
+        if (imageFile && visionMode === "direct" && !isSelectedMultimodal) {
+             setError(`Выбранная модель (${selectedTextModel.name}) не поддерживает прямую работу с фото. Включите "Оптимизированный режим" в настройках или выберите другую модель (например GPT-4o).`);
+             return;
         }
 
         setError("");
@@ -155,59 +196,77 @@ export default function AIHubChatPage() {
         setMessages(prev => [...prev, userMsg]);
         const currentPrompt = prompt;
         const currentImageFile = imageFile;
+        const currentImagePreview = imagePreview;
         
         setPrompt("");
         clearImage();
 
         try {
             let contextResult = null;
+            let finalPrompt = currentPrompt;
             
-            // 1. If image, process with Vision first (or as part of multimodal if the API supports it)
-            // Our current /api/ai/text supports chatHistory which is good for text.
-            // Our current /api/ai/vision is for structured extraction.
-            // For a "general chat", we'll use the Vision API to get a description if the model is text-only,
-            // or pass the image if supported.
-            
-            if (currentImageFile) {
+            // --- Mode A: Dual Model (Vision Pass) ---
+            if (currentImageFile && visionMode === "dual") {
+                const processor = selectedVisionProcessor || availableVisionModels[0];
                 const formData = new FormData();
                 formData.append("image", currentImageFile);
-                formData.append("provider", selectedVisionModel.provider);
-                formData.append("modelId", selectedVisionModel.id);
+                formData.append("provider", processor.provider);
+                formData.append("modelId", processor.id);
+                formData.append("mode", "general"); // Use general description for chat
 
                 const visRes = await fetch("/api/ai/vision", {
                     method: "POST",
                     body: formData
                 });
                 const visData = await visRes.json();
-                if (visRes.ok) contextResult = visData.result;
+                if (visRes.ok && visData.result) {
+                    contextResult = visData.result;
+                    const characteristics = Object.entries(contextResult.attributes || {})
+                        .map(([k, v]) => `${k}: ${v}`).join(", ");
+                    finalPrompt = `[Контекст изображения: ${contextResult.description || 'Изображение'}. ${characteristics}]\n\n${currentPrompt}`;
+                }
             }
 
-            // 2. Prepare prompt with context if image was processed
-            let finalPrompt = currentPrompt;
-            if (contextResult) {
-                const characteristics = Object.entries(contextResult.attributes || {}).map(([k, v]) => `${k}: ${v}`).join(", ");
-                finalPrompt = `[Контекст изображения: ${contextResult.description || 'Изображение товара'}. Характеристики: ${characteristics}]\n\nПользователь: ${currentPrompt}`;
-            }
+            // --- Chat Completion ---
+            let requestBody = {
+                prompt: finalPrompt,
+                provider: selectedTextModel.provider,
+                modelId: selectedTextModel.id,
+            };
 
-            // 3. Chat completion
+            // Prepare history
             const chatHistory = [
                 { role: "system", content: "You are a helpful AI assistant in the AI HUB dashboard. You can help with text generation, analysis, and general questions. Always respond in Russian unless asked otherwise." },
                 ...messages.map(m => ({
                     role: m.role === 'user' ? 'user' : 'assistant',
                     content: m.text
-                })),
-                { role: "user", content: finalPrompt }
+                }))
             ];
+
+            // Mode B: Direct Multimodal
+            if (currentImageFile && visionMode === "direct" && isSelectedMultimodal) {
+                // OpenAI format for multimodal
+                chatHistory.push({
+                    role: "user",
+                    content: [
+                        { type: "text", text: currentPrompt || "Что на этом изображении?" },
+                        { 
+                            type: "image_url", 
+                            image_url: { url: currentImagePreview } 
+                        }
+                    ]
+                });
+                requestBody.prompt = currentPrompt || "Что на этом изображении?"; // Fallback field
+            } else {
+                chatHistory.push({ role: "user", content: finalPrompt });
+            }
+
+            requestBody.chatHistory = chatHistory.slice(-12);
 
             const res = await fetch("/api/ai/text", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    prompt: finalPrompt,
-                    provider: selectedTextModel.provider,
-                    modelId: selectedTextModel.id,
-                    chatHistory: chatHistory.slice(-10) // Last 10 messages for context
-                })
+                body: JSON.stringify(requestBody)
             });
 
             const data = await res.json();
@@ -222,8 +281,8 @@ export default function AIHubChatPage() {
             addToHistory({ type: "chat", prompt: currentPrompt, data: data.result, model: selectedTextModel.name });
 
         } catch (err) {
+            console.error("Chat Error:", err);
             setError(err.message);
-            // Optionally remove the last user message if it failed?
         } finally {
             setIsProcessing(false);
         }
@@ -257,29 +316,98 @@ export default function AIHubChatPage() {
 
                         {isModelMenuOpen && (
                             <div className={styles.modelDropdownMenu}>
-                                {availableTextModels.map(m => (
-                                    <button 
-                                        key={m.id}
-                                        className={`${styles.modelOption} ${selectedTextModel.id === m.id ? styles.modelOptionActive : ''}`}
-                                        onClick={() => {
-                                            setSelectedTextModel(m);
-                                            setIsModelMenuOpen(false);
-                                        }}
-                                    >
-                                        <div className={styles.modelHeader}>
-                                            <span>{m.name}</span>
-                                            <span className={m.tier === 'free' ? styles.modelBadgeFree : styles.modelBadgePremium}>
-                                                {m.tier === 'free' ? 'FREE' : 'PRO'}
-                                            </span>
-                                        </div>
-                                        <div className={styles.modelDesc}>{m.description}</div>
-                                    </button>
-                                ))}
+                                {availableTextModels.map(m => {
+                                    const hasVision = isMultimodal(m);
+                                    return (
+                                        <button 
+                                            key={m.id}
+                                            className={`${styles.modelOption} ${selectedTextModel.id === m.id ? styles.modelOptionActive : ''}`}
+                                            onClick={() => {
+                                                setSelectedTextModel(m);
+                                                setIsModelMenuOpen(false);
+                                            }}
+                                        >
+                                            <div className={styles.modelHeader}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span>{m.name}</span>
+                                                    {hasVision && (
+                                                        <span className={styles.modelBadgeVision} title="Поддерживает зрение">
+                                                            <Sparkles size={10} /> Vision
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className={m.tier === 'free' ? styles.modelBadgeFree : styles.modelBadgePremium}>
+                                                    {m.tier === 'free' ? 'FREE' : 'PRO'}
+                                                </span>
+                                            </div>
+                                            <div className={styles.modelDesc}>{m.description}</div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
 
-                    <div style={{ width: 36 }}></div> {/* Spacer */}
+                    <div className={styles.topBarRight}>
+                        <button 
+                            className={`${styles.settingsToggle} ${isSettingsOpen ? styles.settingsToggleActive : ''}`}
+                            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                            title="Настройки чата"
+                        >
+                            <SettingsIcon size={18} />
+                        </button>
+                    </div>
+
+                    {isSettingsOpen && (
+                        <div className={styles.settingsPanel}>
+                            <div className={styles.settingsTitle}>
+                                <SettingsIcon size={18} />
+                                <span>Настройки чата</span>
+                            </div>
+
+                            <div className={styles.settingsGroup}>
+                                <label className={styles.settingsLabel}>Режим анализа фото</label>
+                                <div 
+                                    className={styles.toggleContainer}
+                                    onClick={() => setVisionMode(prev => prev === "dual" ? "direct" : "dual")}
+                                >
+                                    <div className={styles.toggleText}>
+                                        <div className={styles.toggleTitle}>
+                                            {visionMode === "dual" ? "Оптимизированный" : "Прямой"}
+                                        </div>
+                                        <div className={styles.toggleDesc}>
+                                            {visionMode === "dual" 
+                                                ? "Сначала Vision-модель, затем текст (дешевле)" 
+                                                : "Фото напрямую в модель (выше качество)"}
+                                        </div>
+                                    </div>
+                                    <div className={`${styles.switch} ${visionMode === "direct" ? styles.switchActive : ''}`}>
+                                        <div className={styles.switchKnob}></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {visionMode === "dual" && (
+                                <div className={styles.settingsGroup}>
+                                    <label className={styles.settingsLabel}>Vision-модель для анализа</label>
+                                    <select 
+                                        className={styles.visionSelect}
+                                        value={selectedVisionProcessor?.id || ""}
+                                        onChange={(e) => {
+                                            const proc = availableVisionModels.find(m => m.id === e.target.value);
+                                            if (proc) setSelectedVisionProcessor(proc);
+                                        }}
+                                    >
+                                        {availableVisionModels.map(vm => (
+                                            <option key={vm.id} value={vm.id}>
+                                                {vm.name} {vm.recommended ? "⭐" : ""}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Messages List */}
