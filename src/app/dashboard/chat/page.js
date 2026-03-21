@@ -292,22 +292,25 @@ export default function AIHubChatPage() {
 
             // Completion
             const requestBody = {
-                prompt: finalPrompt,
+                prompt: finalPrompt, // Keep for backward compatibility
                 provider: selectedTextModel.provider,
                 modelId: selectedTextModel.id,
                 chatHistory: [
                     { role: "system", content: systemMsg },
-                    ...currentMessages.map(m => {
+                    ...currentMessages.map((m, idx) => {
+                        const isLastMessage = idx === currentMessages.length - 1;
+                        let textContent = isLastMessage ? finalPrompt : m.text;
+
                         if (m.role === 'user' && m.image && visionMode === "direct" && isSelectedMultimodal) {
                             return {
                                 role: "user",
                                 content: [
-                                    { type: "text", text: m.text || "Что на этом изображении?" },
+                                    { type: "text", text: textContent || "Что на этом изображении?" },
                                     { type: "image_url", image_url: { url: m.image } }
                                 ]
                             };
                         }
-                        return { role: m.role === 'user' ? 'user' : 'assistant', content: m.text };
+                        return { role: m.role === 'user' ? 'user' : 'assistant', content: textContent };
                     })
                 ].slice(-10)
             };
