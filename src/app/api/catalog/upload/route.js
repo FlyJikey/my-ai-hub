@@ -70,8 +70,9 @@ export async function POST(req) {
                 }
 
                 const BATCH_SIZE = 100;
-                const CONCURRENCY = 8;
+                const CONCURRENCY = 3; // Снижено до 3, чтобы не перегружать Supabase
                 let processedCount = 0;
+                let errorCount = 0;
                 const total = products.length;
 
                 // Разбиваем массив на батчи
@@ -101,7 +102,7 @@ export async function POST(req) {
                         if (!res.ok) {
                             const err = await res.text();
                             console.error("Embedding API error:", err);
-                            throw new Error("Polza API Error");
+                            throw new Error("Polza API Error: " + err);
                         }
 
                         const data = await res.json();
@@ -128,28 +129,29 @@ export async function POST(req) {
                                 .from('products')
                                 .upsert(recordsToInsert, { onConflict: 'sku' });
                             
-                            // Если пользователь не добавил UNIQUE constraint в базу, делаем обычный insert
-                            if (dbError && dbError.message && dbError.message.includes('unique or exclusion constraint')) {
-                                console.warn("Уникальный ключ на sku отсутствует, используем обычный insert");
+                            // fallback
+                            if (dbError) {
+                                console.warn("Upsert failed, trying standard insert. Reason:", dbError.message);
                                 const { error: fallbackError } = await supabase.from('products').insert(recordsToInsert);
                                 dbError = fallbackError;
                             }
 
                             if (dbError) {
-                                console.error("ОШИБКА БАЗЫ ДАННЫХ:", dbError.message);
-                                throw new Error(dbError.message);
+                                throw new Error("Supabase DB Error: " + (dbError.message || JSON.stringify(dbError)));
                             }
                         }
-
 
                         processedCount += batch.length;
 
                     } catch (e) {
                         console.error("Batch processing failed:", e);
-                        // Продолжаем выполнение следующих батчей, даже если один упал
+                        errorCount++;
+                        // Отправляем конкретную ошибку на фронтенд
+                        await sendEvent({ error: `Сбой батча: ${e.message}` });
                         processedCount += batch.length; 
                     }
                 };
+
 
                 // Обработка батчей группами для контроля concurrency
                 for (let i = 0; i < batches.length; i += CONCURRENCY) {
