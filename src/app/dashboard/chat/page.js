@@ -427,12 +427,12 @@ export default function AIHubChatPage() {
                         <div className={styles.modelDropdownContainer}>
                             <button className={styles.modelDropdownButton} onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}>
                                 <Bot size={18} color="#10b981" />
-                                <span>{selectedTextModel.name}</span>
+                                <span>{selectedTextModel?.name || 'Загрузка...'}</span>
                                 {isModelMenuOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                             </button>
                             {isModelMenuOpen && (
                                 <div className={styles.modelDropdownMenu}>
-                                    {availableTextModels.map(m => (
+                                    {availableTextModels?.map(m => (
                                         <button 
                                             key={m.id} 
                                             className={`${styles.modelOption} ${selectedTextModel.id === m.id ? styles.modelOptionActive : ''}`}

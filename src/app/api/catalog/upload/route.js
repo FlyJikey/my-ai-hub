@@ -122,11 +122,14 @@ export async function POST(req) {
                             };
                         }).filter(r => r.embedding);
 
-                        // Сохраняем в Supabase
+                        // Сохраняем в Supabase методом upsert по артикулу (sku), чтобы избежать дублей
                         if (recordsToInsert.length > 0) {
-                            const { error: insertError } = await supabase.from('products').insert(recordsToInsert);
+                            const { error: insertError } = await supabase
+                                .from('products')
+                                .upsert(recordsToInsert, { onConflict: 'sku' });
+                            
                             if (insertError) {
-                                console.error("Supabase insert error:", insertError);
+                                console.error("Supabase upsert error:", insertError.message);
                             }
                         }
 

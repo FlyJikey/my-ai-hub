@@ -172,8 +172,14 @@ export async function GET(req) {
             .single();
 
         if (error && error.code !== 'PGRST116') {
-            console.error('Settings GET Error:', error);
-            return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
+            console.warn('Settings table error, using defaults:', error.message);
+            // Fallback to defaults instead of failing with 500
+            return NextResponse.json({
+                textModels: AI_MODELS.text.map(m => ({ ...m, enabled: true })),
+                visionModels: AI_MODELS.vision.map(m => ({ ...m, enabled: true })),
+                scenarios: DEFAULT_SCENARIOS,
+                behaviors: DEFAULT_BEHAVIORS
+            }, { headers: corsHeaders });
         }
 
         if (data && data.data) {
