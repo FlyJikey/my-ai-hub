@@ -255,10 +255,17 @@ export default function AIHubChatPage() {
             // Catalog RAG Pass
             if (useCatalog) {
                 try {
+                    // Собираем последние 3 сообщения пользователя для сохранения контекста поиска
+                    const recentUserText = currentMessages
+                        .filter(m => m.role === 'user')
+                        .slice(-3)
+                        .map(m => m.text)
+                        .join(" ");
+
                     const searchRes = await fetch("/api/catalog/search", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ query: currentPrompt, limit: 10 })
+                        body: JSON.stringify({ query: recentUserText, limit: 10 })
                     });
                     if (searchRes.ok) {
                         const searchData = await searchRes.json();
