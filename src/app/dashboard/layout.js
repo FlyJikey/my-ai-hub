@@ -79,8 +79,8 @@ export default function DashboardLayout({ children }) {
                 </header>
 
                 {/* Page Content */}
-                <main className={styles.content}>
-                    <div className={styles.contentInner}>
+                <main className={`${styles.content} ${pathname === '/dashboard/chat' ? styles.contentNoPadding : ''}`}>
+                    <div className={`${styles.contentInner} ${pathname === '/dashboard/chat' ? styles.contentInnerFull : ''}`}>
                         {children}
                     </div>
                 </main>

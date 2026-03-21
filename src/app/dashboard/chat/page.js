@@ -18,7 +18,8 @@ import {
     Zap,
     Layers,
     Sparkles,
-    Globe
+    Globe,
+    PanelLeft
 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
 import styles from "./page.module.css";
@@ -387,7 +388,7 @@ export default function AIHubChatPage() {
                             onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
                             title={isSidebarOpen ? "Скрыть панель" : "Показать панель"}
                         >
-                            <Layers size={18} />
+                            <PanelLeft size={20} />
                         </button>
                         <div className={styles.modelDropdownContainer}>
                             <button className={styles.modelDropdownButton} onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}>
