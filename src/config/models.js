@@ -38,9 +38,9 @@ export const AI_MODELS = {
         },
         // === ПЛАТНЫЕ МОЩНЫЕ (Polza.ai) ===
         {
-            id: "openai/gpt-4.1-mini",
+            id: "openai/gpt-4o-mini",
             provider: "polza",
-            name: "GPT-4.1 Mini",
+            name: "GPT-4o Mini",
             description: "Новейшая мини-модель OpenAI. Polza.ai (Платно)",
             tier: "premium"
         },

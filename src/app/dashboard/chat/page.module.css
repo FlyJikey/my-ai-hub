@@ -354,12 +354,61 @@
 }
 
 .attachedImage {
-    max-width: 300px;
+    max-width: 100%;
     max-height: 300px;
-    border-radius: 12px;
-    margin-bottom: 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
     display: block;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+/* Markdown Rendering */
+.markdownContent {
+    line-height: 1.6;
+    font-size: 15px;
+}
+
+.markdownContent p {
+    margin-bottom: 0.75rem;
+}
+
+.markdownContent p:last-child {
+    margin-bottom: 0;
+}
+
+.markdownContent ul, .markdownContent ol {
+    margin-bottom: 0.75rem;
+    padding-left: 1.5rem;
+}
+
+.markdownContent li {
+    margin-bottom: 0.35rem;
+}
+
+.markdownContent strong {
+    font-weight: 600;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+.markdownContent code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-family: inherit;
+}
+
+.markdownContent h1, .markdownContent h2, .markdownContent h3 {
+    margin: 1.5rem 0 1rem 0;
+    font-weight: 600;
+}
+
+.markdownContent h1 { font-size: 1.5rem; }
+.markdownContent h2 { font-size: 1.3rem; }
+.markdownContent h3 { font-size: 1.1rem; }
 
 .copyBtn {
     margin-top: 0.5rem;
@@ -543,26 +592,47 @@
 
 .settingsPanel {
     position: absolute;
-    top: calc(100% + 4px);
-    right: 1rem;
+    top: calc(100% + 12px);
+    right: 0.5rem;
     width: 320px;
     background: #2f2f2f;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    z-index: 100;
-    padding: 1rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    padding: 1.25rem;
     pointer-events: auto;
+    animation: fadeInScale 0.2s ease-out;
+}
+
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.settingsPanel::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 14px;
+    width: 12px;
+    height: 12px;
+    background: #2f2f2f;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+    transform: rotate(45deg);
 }
 
 .settingsTitle {
-    font-weight: 500;
+    font-weight: 600;
     font-size: 1rem;
     margin-bottom: 1rem;
     color: #ececec;
     display: flex;
     align-items: center;
     gap: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 0.75rem;
 }
 
 .settingsGroup {
@@ -583,8 +653,13 @@
     align-items: center;
     background: rgba(255, 255, 255, 0.05);
     padding: 0.75rem 1rem;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
+    transition: background 0.2s;
+}
+
+.toggleContainer:hover {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .toggleTitle {

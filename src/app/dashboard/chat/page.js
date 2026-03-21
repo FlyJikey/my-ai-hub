@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
 import styles from "./page.module.css";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function AIHubChatPage() {
     const {
@@ -238,7 +240,7 @@ export default function AIHubChatPage() {
                 formData.append("image", currentImageFile);
                 formData.append("provider", processor.provider);
                 formData.append("modelId", processor.id);
-                formData.append("mode", "general");
+                formData.append("mode", "chat");
 
                 const visRes = await fetch("/api/ai/vision", { method: "POST", body: formData });
                 const visData = await visRes.json();
@@ -317,7 +319,11 @@ export default function AIHubChatPage() {
                 })
             });
             const data = await res.json();
-            if (data.result) setPrompt(data.result);
+            if (data.result) {
+                setPrompt(data.result);
+            } else if (data.error) {
+                setError("Ошибка: " + data.error);
+            }
         } catch (e) { setError("Не удалось улучшить промпт"); }
         finally { setIsProcessing(false); }
     };
@@ -467,7 +473,11 @@ export default function AIHubChatPage() {
                                     </div>
                                     <div className={styles.messageContent}>
                                         {msg.image && <img src={msg.image} alt="Upload" className={styles.attachedImage} />}
-                                        <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+                                        <div className={styles.markdownContent}>
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                {msg.text}
+                                            </ReactMarkdown>
+                                        </div>
                                         {msg.role === 'ai' && (
                                             <button className={styles.copyBtn} onClick={() => handleCopy(msg.text, idx)}>
                                                 {copiedIndex === idx ? <Check size={14} color="#34d399" /> : <Copy size={14} />}
