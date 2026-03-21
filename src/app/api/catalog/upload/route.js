@@ -124,14 +124,23 @@ export async function POST(req) {
 
                         // Сохраняем в Supabase методом upsert по артикулу (sku), чтобы избежать дублей
                         if (recordsToInsert.length > 0) {
-                            const { error: insertError } = await supabase
+                            let { error: dbError } = await supabase
                                 .from('products')
                                 .upsert(recordsToInsert, { onConflict: 'sku' });
                             
-                            if (insertError) {
-                                console.error("Supabase upsert error:", insertError.message);
+                            // Если пользователь не добавил UNIQUE constraint в базу, делаем обычный insert
+                            if (dbError && dbError.message && dbError.message.includes('unique or exclusion constraint')) {
+                                console.warn("Уникальный ключ на sku отсутствует, используем обычный insert");
+                                const { error: fallbackError } = await supabase.from('products').insert(recordsToInsert);
+                                dbError = fallbackError;
+                            }
+
+                            if (dbError) {
+                                console.error("ОШИБКА БАЗЫ ДАННЫХ:", dbError.message);
+                                throw new Error(dbError.message);
                             }
                         }
+
 
                         processedCount += batch.length;
 
