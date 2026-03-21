@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { Sparkles, Copy, Check, AlertCircle, Image as ImageIcon, UploadCloud, X, Send, User, Bot, RefreshCw, ChevronUp, ChevronDown, ListFilter, Plus, MessageSquare, Trash2 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
 import styles from "./page.module.css";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function UnifiedGeneratorPage() {
     const {
@@ -509,7 +511,11 @@ export default function UnifiedGeneratorPage() {
                                         <img src={msg.image} alt="Upload" className={styles.attachedImage} />
                                     )}
 
-                                    <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+                                    <div className={styles.markdownContent}>
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {msg.text}
+                                        </ReactMarkdown>
+                                    </div>
 
                                     {msg.role === 'ai' && msg.visionAttributes && (
                                         <div className={styles.attributesGrid}>

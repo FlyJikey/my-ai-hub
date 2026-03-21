@@ -140,6 +140,67 @@
     border-radius: 0.5rem;
 }
 
+/* Markdown Rendering */
+.markdownContent {
+    line-height: 1.6;
+    font-size: 15px;
+}
+
+.markdownContent p {
+    margin-bottom: 0.75rem;
+}
+
+.markdownContent p:last-child {
+    margin-bottom: 0;
+}
+
+.markdownContent ul, .markdownContent ol {
+    margin-bottom: 0.75rem;
+    padding-left: 1.5rem;
+}
+
+.markdownContent li {
+    margin-bottom: 0.35rem;
+}
+
+.markdownContent strong {
+    font-weight: 600;
+    color: var(--foreground);
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .markdownContent strong {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.05);
+    }
+}
+
+.markdownContent code {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-family: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+    .markdownContent code {
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+
+.markdownContent h1, .markdownContent h2, .markdownContent h3 {
+    margin: 1.5rem 0 1rem 0;
+    font-weight: 600;
+}
+
+.markdownContent h1 { font-size: 1.5rem; }
+.markdownContent h2 { font-size: 1.3rem; }
+.markdownContent h3 { font-size: 1.1rem; }
+
 @media (prefers-color-scheme: dark) {
     .attributesGrid {
         background-color: rgba(255, 255, 255, 0.02);

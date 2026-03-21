@@ -179,7 +179,6 @@ export async function GET(req) {
         if (data && data.data) {
             const dbSettings = data.data;
 
-            // Merge helper: keeps exact DB order, updates defaults, and appends new defaults
             const mergeKeepingOrder = (dbArray = [], defaultArray = []) => {
                 const result = [];
                 const seenIds = new Set();
@@ -195,13 +194,6 @@ export async function GET(req) {
                         result.push(dbItem);
                     }
                     seenIds.add(dbItem.id);
-                }
-
-                // 2. Append new defaults missing from DB
-                for (const defaultItem of defaultArray) {
-                    if (!seenIds.has(defaultItem.id)) {
-                        result.push({ ...defaultItem, enabled: true });
-                    }
                 }
 
                 return result;
