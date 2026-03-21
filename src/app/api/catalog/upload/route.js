@@ -69,8 +69,8 @@ export async function POST(req) {
                     await supabase.from('products').delete().neq('id', 0);
                 }
 
-                const BATCH_SIZE = 50;
-                const CONCURRENCY = 5;
+                const BATCH_SIZE = 100;
+                const CONCURRENCY = 8;
                 let processedCount = 0;
                 const total = products.length;
 
@@ -144,8 +144,8 @@ export async function POST(req) {
                     const group = batches.slice(i, i + CONCURRENCY);
                     await Promise.all(group.map(batch => processBatch(batch)));
                     
-                    // Отправляем прогресс
-                    const percent = Math.round((processedCount / total) * 100);
+                    // Отправляем прогресс чаще (после каждой группы батчей)
+                    const percent = Math.min(Math.round((processedCount / total) * 100), 99);
                     await sendEvent({ processed: processedCount, total, percent });
                 }
 

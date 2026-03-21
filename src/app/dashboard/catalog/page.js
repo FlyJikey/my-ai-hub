@@ -17,39 +17,12 @@ export default function CatalogPage() {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState({ percent: 0, processed: 0, total: 0, error: "" });
     const fileInputRef = useRef(null);
-
-    // Chat States
-    const [chats, setChats] = useState([]);
-    const [prompt, setPrompt] = useState("");
-    const [isGenerating, setIsGenerating] = useState(false);
-    const chatEndRef = useRef(null);
-    const textareaRef = useRef(null);
+    const abortControllerRef = useRef(null);
 
     // === On Mount ===
     useEffect(() => {
         fetchStats();
-        // Load chat history
-        try {
-            const saved = localStorage.getItem('aiHub_catalog_chat');
-            if (saved) setChats(JSON.parse(saved));
-        } catch (e) { console.error(e); }
     }, []);
-
-    useEffect(() => {
-        if (chats.length > 0) {
-            localStorage.setItem('aiHub_catalog_chat', JSON.stringify(chats));
-        }
-    }, [chats]);
-
-    const scrollToBottom = () => chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    useEffect(() => { scrollToBottom(); }, [chats, isGenerating]);
-
-    useEffect(() => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
-        }
-    }, [prompt]);
 
     // === API Calls ===
     const fetchStats = async () => {
@@ -84,6 +57,9 @@ export default function CatalogPage() {
         if (!file) return;
         setIsUploading(true);
         setUploadProgress({ percent: 0, processed: 0, total: 0, error: "" });
+        
+        // Setup AbortController
+        abortControllerRef.current = new AbortController();
 
         const formData = new FormData();
         formData.append("file", file);
@@ -92,7 +68,8 @@ export default function CatalogPage() {
         try {
             const res = await fetch("/api/catalog/upload", {
                 method: "POST",
-                body: formData
+                body: formData,
+                signal: abortControllerRef.current.signal
             });
 
             if (!res.ok) {
@@ -137,74 +114,15 @@ export default function CatalogPage() {
         }
     };
 
-    // === Chat Handlers ===
-    const handleSend = async () => {
-        if (!prompt.trim() || isGenerating) return;
-
-        const userMsg = { role: "user", content: prompt.trim() };
-        const updatedChats = [...chats, userMsg];
-        setChats(updatedChats);
-        const currentPrompt = prompt.trim();
-        setPrompt("");
-        setIsGenerating(true);
-
-        const aiMsgIndex = updatedChats.length;
-        setChats(prev => [...prev, { role: "assistant", content: "" }]);
-
-        try {
-            const res = await fetch("/api/catalog/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    message: currentPrompt,
-                    history: chats.slice(-10), // Последние 10 сообщений
-                    model: "deepseek/deepseek-chat"
-                })
-            });
-
-            if (!res.ok) throw new Error("API Error");
-
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder("utf-8");
-            let fullResponse = "";
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split('\n');
-
-                for (const line of lines) {
-                    if (line.trim() === '' || line.includes(': keep-alive')) continue;
-                    if (line.startsWith('data: ')) {
-                        const dataStr = line.replace('data: ', '').trim();
-                        if (dataStr === '[DONE]') continue;
-                        try {
-                            const parsed = JSON.parse(dataStr);
-                            const content = parsed.choices?.[0]?.delta?.content || parsed.chunk || "";
-                            if (content) {
-                                fullResponse += content;
-                                setChats(prev => {
-                                    const newChats = [...prev];
-                                    newChats[aiMsgIndex] = { role: "assistant", content: fullResponse };
-                                    return newChats;
-                                });
-                            }
-                        } catch (e) { /* ignore parse errors for partial chunks */ }
-                    }
-                }
-            }
-        } catch (err) {
-            setChats(prev => {
-                const newChats = [...prev];
-                newChats[aiMsgIndex] = { role: "assistant", content: "Произошла ошибка при обращении к серверу." };
-                return newChats;
-            });
-        } finally {
-            setIsGenerating(false);
+    const handleStopUpload = () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            setIsUploading(false);
+            setUploadProgress(prev => ({ ...prev, error: "Загрузка остановлена пользователем" }));
         }
     };
+
+    // Chat Handlers (REMOVED - now integrated in main chat)
 
     // === Render ===
     if (view === "loading") {
@@ -296,71 +214,19 @@ export default function CatalogPage() {
                         </div>
                     )}
                     
-                    {uploadProgress.error && (
-                        <div style={{ marginTop: '1rem', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                            <AlertTriangle size={18} /> {uploadProgress.error}
-                        </div>
-                    )}
-                    
-                    {stats.hasData && !isUploading && (
+                    {!isUploading && (
                         <div style={{ marginTop: '2rem' }}>
-                            <button className={styles.btnUpdate} style={{ margin: '0 auto', background: 'transparent' }} onClick={() => setView("chat")}>
-                                Вернуться к поиску по базе
+                            <button className={styles.btnUpdate} style={{ margin: '0 auto', background: 'transparent' }} onClick={() => fetchStats()}>
+                                Обновить статистику
                             </button>
                         </div>
                     )}
-                </div>
-            )}
 
-            {/* View: CHAT */}
-            {view === "chat" && (
-                <div className={styles.chatContainer}>
-                    <div className={styles.chatHistory}>
-                        {chats.length === 0 ? (
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', textAlign: 'center' }}>
-                                <div style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '1.5rem', borderRadius: '50%', marginBottom: '1rem' }}>
-                                    <Database size={40} color="#10b981" />
-                                </div>
-                                <h3 style={{ fontSize: '1.25rem', color: '#e5e7eb', marginBottom: '0.5rem' }}>База загружена!</h3>
-                                <p>Задайте любой вопрос о ваших товарах,<br/>и я найду ответ в вашем каталоге.</p>
-                            </div>
-                        ) : (
-                            chats.map((msg, idx) => (
-                                <div key={idx} className={`${styles.message} ${msg.role === 'user' ? styles.messageUser : styles.messageAi}`}>
-                                    <div className={`${styles.avatar} ${msg.role === 'user' ? styles.avatarUser : styles.avatarAi}`}>
-                                        {msg.role === 'user' ? "Вы" : <Package size={18} />}
-                                    </div>
-                                    <div className={styles.messageContent}>
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                            {msg.content}
-                                        </ReactMarkdown>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                        <div ref={chatEndRef} />
-                    </div>
-
-                    <div className={styles.inputArea}>
-                        <div className={styles.inputWrapper}>
-                            <textarea
-                                ref={textareaRef}
-                                className={styles.textarea}
-                                placeholder="Спросите о товарах (например: Есть ли синяя куртка XL?)"
-                                value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                                rows={1}
-                            />
-                            <button 
-                                className={styles.btnSend} 
-                                onClick={handleSend}
-                                disabled={!prompt.trim() || isGenerating}
-                            >
-                                <Send size={18} />
-                            </button>
-                        </div>
-                    </div>
+                    {isUploading && (
+                        <button className={styles.btnStop} onClick={handleStopUpload} style={{ marginTop: '1.5rem' }}>
+                            Остановить загрузку
+                        </button>
+                    )}
                 </div>
             )}
         </div>

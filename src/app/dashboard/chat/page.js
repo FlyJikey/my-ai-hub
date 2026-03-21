@@ -19,7 +19,8 @@ import {
     Layers,
     Sparkles,
     Globe,
-    PanelLeft
+    PanelLeft,
+    Database
 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
 import styles from "./page.module.css";
@@ -56,6 +57,7 @@ export default function AIHubChatPage() {
     // Image handling
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [useCatalog, setUseCatalog] = useState(false);
     const fileInputRef = useRef(null);
     const chatEndRef = useRef(null);
     const textareaRef = useRef(null);
@@ -247,6 +249,28 @@ export default function AIHubChatPage() {
                 if (visRes.ok && visData.result) {
                     const characteristics = Object.entries(visData.result.attributes || {}).map(([k, v]) => `${k}: ${v}`).join(", ");
                     finalPrompt = `[Контекст изображения: ${visData.result.description || 'Изображение'}. ${characteristics}]\n\n${currentPrompt}`;
+                }
+            }
+
+            // Catalog RAG Pass
+            if (useCatalog) {
+                try {
+                    const searchRes = await fetch("/api/catalog/search", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ query: currentPrompt, limit: 10 })
+                    });
+                    if (searchRes.ok) {
+                        const searchData = await searchRes.json();
+                        if (searchData.results && searchData.results.length > 0) {
+                            const context = searchData.results.map((p, i) => 
+                                `${i+1}. [Арт: ${p.sku}] ${p.name} | Кат: ${p.category} | Цена: ${p.price} руб. | ${JSON.stringify(p.attributes)}`
+                            ).join("\n");
+                            finalPrompt = `ДАННЫЕ ИЗ БАЗЫ ТОВАРОВ (используй их для ответа):\n${context}\n\nВОПРОС ПОЛЬЗОВАТЕЛЯ:\n${finalPrompt}`;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Catalog search failed", e);
                 }
             }
 
@@ -566,6 +590,17 @@ export default function AIHubChatPage() {
                                                     <div>Анализ ссылки</div>
                                                     <div className={styles.toolSubLabel}>Прочитать сайт по URL</div>
                                                 </div>
+                                            </button>
+                                            <button 
+                                                className={`${styles.toolItem} ${useCatalog ? styles.toolItemActive : ''}`} 
+                                                onClick={() => { setUseCatalog(!useCatalog); setIsToolsMenuOpen(false); }}
+                                            >
+                                                <div className={styles.toolIcon}><Database size={18} color={useCatalog ? "#10b981" : "inherit"} /></div>
+                                                <div className={styles.toolContent}>
+                                                    <div style={{ color: useCatalog ? "#10b981" : "inherit" }}>Работа с базой товаров</div>
+                                                    <div className={styles.toolSubLabel}>Ответы на основе каталога</div>
+                                                </div>
+                                                {useCatalog && <Check size={14} color="#10b981" />}
                                             </button>
                                             <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '4px 8px' }}></div>
                                             <div style={{ padding: '8px 12px', fontSize: '0.7rem', color: '#4b5563', fontWeight: 'bold' }}>СТИЛЬ ОТВЕТА</div>

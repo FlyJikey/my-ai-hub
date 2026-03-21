@@ -763,6 +763,10 @@
     background: rgba(255, 255, 255, 0.08);
 }
 
+.toolItemActive {
+    background: rgba(16, 185, 129, 0.1);
+}
+
 .toolIcon {
     width: 28px;
     height: 28px;
