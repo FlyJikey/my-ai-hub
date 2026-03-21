@@ -24,6 +24,14 @@ export async function GET() {
 
         if (countError) throw countError;
 
+        // 1.5. Vectorized count
+        const { count: vectorized, error: vectorizedError } = await supabase
+            .from('products')
+            .select('*', { count: 'exact', head: true })
+            .not('embedding', 'is', null);
+
+        if (vectorizedError) throw vectorizedError;
+
         // 2. Categories count (fetching all categories and deduplicating)
         let categories = 0;
         const { data: catData, error: catError } = await supabase
@@ -48,6 +56,7 @@ export async function GET() {
 
         return NextResponse.json({
             total: total || 0,
+            vectorized: vectorized || 0,
             categories,
             lastUpdated,
             hasData

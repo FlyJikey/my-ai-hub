@@ -110,22 +110,5 @@ export function parseCatalog(buffer, type) {
         };
     };
 
-    const normalizedData = rawData.map(normalizeRow);
-
-    // Убираем дубликаты по артикулу и исправляем пустые артикулы
-    const uniqueMap = new Map();
-    let noSkuCounter = 1;
-
-    for (const item of normalizedData) {
-        let finalSku = item.sku;
-        // Если артикула нет, генерируем уникальный, чтобы не было ошибки базы
-        if (!finalSku) {
-            finalSku = `no-sku-${Date.now()}-${noSkuCounter++}`;
-            item.sku = finalSku;
-        }
-        // При совпадении артикулов останется последняя версия
-        uniqueMap.set(finalSku, item);
-    }
-
-    return Array.from(uniqueMap.values());
+    return rawData.map(normalizeRow);
 }

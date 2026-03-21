@@ -69,8 +69,8 @@ export async function POST(req) {
                     await supabase.from('products').delete().neq('id', 0);
                 }
 
-                const BATCH_SIZE = 100;
-                const CONCURRENCY = 3; // Снижено до 3, чтобы не перегружать Supabase
+                const BATCH_SIZE = 500;
+                const CONCURRENCY = 5; 
                 let processedCount = 0;
                 let errorCount = 0;
                 const total = products.length;
@@ -83,58 +83,21 @@ export async function POST(req) {
 
                 // Функция для обработки одного батча
                 const processBatch = async (batch) => {
-                    const inputs = batch.map(p => p.raw_text);
-                    
                     try {
-                        // Получаем эмбеддинги
-                        const res = await fetch("https://polza.ai/api/v1/embeddings", {
-                            method: "POST",
-                            headers: {
-                                "Authorization": `Bearer ${polzaKey}`,
-                                "Content-Type": "application/json"
-                            },
-                            body: JSON.stringify({
-                                model: "text-embedding-3-small",
-                                input: inputs
-                            })
-                        });
+                        const recordsToInsert = batch.map(p => ({
+                            sku: p.sku,
+                            name: p.name,
+                            category: p.category,
+                            description: p.description,
+                            price: p.price,
+                            attributes: p.attributes,
+                            raw_text: p.raw_text,
+                            embedding: null // Векторизация будет происходить позже отдельным запросом
+                        }));
 
-                        if (!res.ok) {
-                            const err = await res.text();
-                            console.error("Embedding API error:", err);
-                            throw new Error("Polza API Error: " + err);
-                        }
-
-                        const data = await res.json();
-                        const embeddings = data.data;
-
-                        // Сопоставляем эмбеддинги с товарами
-                        const recordsToInsert = batch.map((p, index) => {
-                            const embedObj = embeddings.find(e => e.index === index);
-                            return {
-                                sku: p.sku,
-                                name: p.name,
-                                category: p.category,
-                                description: p.description,
-                                price: p.price,
-                                attributes: p.attributes,
-                                raw_text: p.raw_text,
-                                embedding: embedObj ? embedObj.embedding : null
-                            };
-                        }).filter(r => r.embedding);
-
-                        // Сохраняем в Supabase методом upsert по артикулу (sku), чтобы избежать дублей
+                        // Сохраняем в Supabase обычным insert (убрали upsert по просьбе пользователя)
                         if (recordsToInsert.length > 0) {
-                            let { error: dbError } = await supabase
-                                .from('products')
-                                .upsert(recordsToInsert, { onConflict: 'sku' });
-                            
-                            // fallback
-                            if (dbError) {
-                                console.warn("Upsert failed, trying standard insert. Reason:", dbError.message);
-                                const { error: fallbackError } = await supabase.from('products').insert(recordsToInsert);
-                                dbError = fallbackError;
-                            }
+                            const { error: dbError } = await supabase.from('products').insert(recordsToInsert);
 
                             if (dbError) {
                                 throw new Error("Supabase DB Error: " + (dbError.message || JSON.stringify(dbError)));
