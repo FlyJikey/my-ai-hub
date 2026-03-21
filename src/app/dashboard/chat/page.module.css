@@ -647,6 +647,31 @@
     margin-bottom: 0.5rem;
 }
 
+.visionSelect {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ececec;
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    appearance: none;
+    margin-bottom: 0.5rem;
+}
+
+.visionSelect:focus, .visionSelect:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.visionSelect option {
+    background: #2f2f2f;
+    color: #ececec;
+}
+
 .toggleContainer {
     display: flex;
     justify-content: space-between;

@@ -305,7 +305,11 @@ export default function AIHubChatPage() {
 
     // --- Tool Actions ---
     const optimizePrompt = async () => {
-        if (!prompt.trim()) return;
+        if (!prompt.trim()) {
+            setError("Пожалуйста, сначала напишите черновик вашего запроса в поле ниже.");
+            setIsToolsMenuOpen(false);
+            return;
+        }
         setIsProcessing(true);
         setIsToolsMenuOpen(false);
         try {
@@ -440,6 +444,23 @@ export default function AIHubChatPage() {
                     {isSettingsOpen && (
                         <div className={styles.settingsPanel}>
                             <div className={styles.settingsTitle}><SettingsIcon size={18} /><span>Vision Настройки</span></div>
+                            
+                            <div className={styles.settingsGroup}>
+                                <label className={styles.settingsLabel}>Используемая нейросеть для фото</label>
+                                <select 
+                                    className={styles.visionSelect} 
+                                    value={selectedVisionProcessor?.id || ''} 
+                                    onChange={(e) => {
+                                        const model = availableVisionModels.find(m => m.id === e.target.value);
+                                        if (model) setSelectedVisionProcessor(model);
+                                    }}
+                                >
+                                    {availableVisionModels.map(vm => (
+                                        <option key={vm.id} value={vm.id}>{vm.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <div className={styles.settingsGroup}>
                                 <label className={styles.settingsLabel}>Режим фото</label>
                                 <div className={styles.toggleContainer} onClick={() => setVisionMode(prev => prev === "dual" ? "direct" : "dual")}>
