@@ -17,7 +17,8 @@ import {
     Settings as SettingsIcon,
     Zap,
     Layers,
-    Sparkles
+    Sparkles,
+    Globe
 } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
 import styles from "./page.module.css";
@@ -26,23 +27,28 @@ export default function AIHubChatPage() {
     const {
         selectedTextModel, setSelectedTextModel,
         availableTextModels,
-        selectedVisionModel,
         availableVisionModels,
         addToHistory
     } = useAppContext();
 
-    // Chat persistence
-    const [messages, setMessages] = useState([]);
+    // --- State: Multiple Chats ---
+    const [chats, setChats] = useState([]);
+    const [activeChatId, setActiveChatId] = useState(null);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    
+    // UI States
     const [prompt, setPrompt] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState("");
     const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
     const [copiedIndex, setCopiedIndex] = useState(null);
 
-    // Vision Settings
-    const [visionMode, setVisionMode] = useState("dual"); // "dual" or "direct"
+    // Tools & Settings
+    const [visionMode, setVisionMode] = useState("dual"); 
     const [selectedVisionProcessor, setSelectedVisionProcessor] = useState(null);
+    const [currentStyle, setCurrentStyle] = useState("normal"); // normal, concise, formal, creative, code
 
     // Image handling
     const [imageFile, setImageFile] = useState(null);
@@ -51,80 +57,110 @@ export default function AIHubChatPage() {
     const chatEndRef = useRef(null);
     const textareaRef = useRef(null);
 
-    // Load settings and messages from localStorage on mount
+    // --- Persistence ---
     useEffect(() => {
         try {
-            const savedMsgs = localStorage.getItem('aiHub_standalone_chat');
-            if (savedMsgs) setMessages(JSON.parse(savedMsgs));
+            const savedChats = localStorage.getItem('aiHub_chats_v3');
+            if (savedChats) {
+                const parsed = JSON.parse(savedChats);
+                if (parsed.length > 0) {
+                    setChats(parsed);
+                    setActiveChatId(parsed[0].id);
+                } else {
+                    createNewChat();
+                }
+            } else {
+                createNewChat();
+            }
 
             const savedVisionMode = localStorage.getItem('aiHub_chat_visionMode');
             if (savedVisionMode) setVisionMode(savedVisionMode);
-
-            const savedVisionProcId = localStorage.getItem('aiHub_chat_visionProcessor');
-            if (savedVisionProcId && availableVisionModels.length > 0) {
-                const proc = availableVisionModels.find(m => m.id === savedVisionProcId);
-                if (proc) setSelectedVisionProcessor(proc);
-            }
         } catch (e) {
-            console.error("Failed to load standalone chat data", e);
+            console.error("Failed to load chat data", e);
+            createNewChat();
         }
-    }, [availableVisionModels]);
+    }, []);
 
-    // Set default vision processor if not set
+    useEffect(() => {
+        if (chats.length > 0) {
+            // Strip large images from messages before saving to localStorage
+            const chatsToSave = chats.map(chat => ({
+                ...chat,
+                messages: (chat.messages || []).map(m => {
+                    const { image, ...rest } = m;
+                    return rest;
+                })
+            }));
+            localStorage.setItem('aiHub_chats_v3', JSON.stringify(chatsToSave));
+        }
+    }, [chats]);
+
+    // Cleanup models
     useEffect(() => {
         if (!selectedVisionProcessor && availableVisionModels.length > 0) {
             setSelectedVisionProcessor(availableVisionModels[0]);
         }
     }, [availableVisionModels, selectedVisionProcessor]);
 
-    // Save vision settings
-    useEffect(() => {
-        localStorage.setItem('aiHub_chat_visionMode', visionMode);
-    }, [visionMode]);
-
-    useEffect(() => {
-        if (selectedVisionProcessor) {
-            localStorage.setItem('aiHub_chat_visionProcessor', selectedVisionProcessor.id);
-        }
-    }, [selectedVisionProcessor]);
-
-    // Save messages to localStorage (strip images to avoid QuotaExceededError)
-    useEffect(() => {
-        if (messages.length > 0) {
-            try {
-                const messagesToSave = messages.map(m => {
-                    const { image, ...rest } = m;
-                    return rest;
-                });
-                localStorage.setItem('aiHub_standalone_chat', JSON.stringify(messagesToSave));
-            } catch (e) {
-                console.error("Failed to saveStandaloneChat", e);
-                if (e.name === 'QuotaExceededError') {
-                    // If still exceeding, save only last 10 messages
-                    try {
-                        const limited = messages.slice(-10).map(m => {
-                            const { image, ...rest } = m;
-                            return rest;
-                        });
-                        localStorage.setItem('aiHub_standalone_chat', JSON.stringify(limited));
-                    } catch (e2) {
-                        console.error("Critical storage error", e2);
-                    }
-                }
-            }
-        }
-    }, [messages]);
-
-    // Auto-scroll to bottom
-    const scrollToBottom = () => {
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // --- Chat Management ---
+    const createNewChat = () => {
+        const newChat = {
+            id: Date.now().toString(),
+            title: "Новый чат",
+            messages: [],
+            createdAt: new Date().toISOString()
+        };
+        setChats(prev => [newChat, ...prev]);
+        setActiveChatId(newChat.id);
+        setError("");
+        setPrompt("");
+        clearImage();
     };
 
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages, isProcessing]);
+    const deleteChat = (e, id) => {
+        e.stopPropagation();
+        if (window.confirm("Удалить этот чат?")) {
+            const updated = chats.filter(c => c.id !== id);
+            setChats(updated);
+            if (activeChatId === id) {
+                if (updated.length > 0) setActiveChatId(updated[0].id);
+                else createNewChat();
+            }
+        }
+    };
 
-    // Auto-resize textarea
+    const activeChat = chats.find(c => c.id === activeChatId) || chats[0] || null;
+    const messages = activeChat?.messages || [];
+
+    const updateActiveChatMessages = (newMessages) => {
+        setChats(prev => prev.map(c => 
+            c.id === activeChatId ? { ...c, messages: newMessages } : c
+        ));
+    };
+
+    // --- Title Generation ---
+    const generateTitle = async (firstMessage) => {
+        try {
+            const res = await fetch("/api/ai/title", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: firstMessage })
+            });
+            const data = await res.json();
+            if (data.title) {
+                setChats(prev => prev.map(c => 
+                    c.id === activeChatId ? { ...c, title: data.title } : c
+                ));
+            }
+        } catch (e) {
+            console.error("Title gen failed", e);
+        }
+    };
+
+    // --- Auto-scroll & UI Helpers ---
+    const scrollToBottom = () => chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    useEffect(() => { scrollToBottom(); }, [messages, isProcessing]);
+
     useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
@@ -135,10 +171,7 @@ export default function AIHubChatPage() {
     const handleFileChange = (e) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (!file.type.startsWith("image/")) {
-                setError("Пожалуйста, выберите изображение.");
-                return;
-            }
+            if (!file.type.startsWith("image/")) { setError("Пожалуйста, выберите изображение."); return; }
             setError("");
             setImageFile(file);
             const reader = new FileReader();
@@ -153,115 +186,99 @@ export default function AIHubChatPage() {
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    const startNewChat = () => {
-        if (window.confirm("Очистить текущий чат?")) {
-            setMessages([]);
-            localStorage.removeItem('aiHub_standalone_chat');
-            setPrompt("");
-            setError("");
-            clearImage();
-        }
-    };
-
     const isMultimodal = (model) => {
-        const id = model.id.toLowerCase();
-        const name = model.name.toLowerCase();
-        return id.includes('gpt-4o') || 
-               id.includes('claude-3') || 
-               id.includes('gemini') || 
-               id.includes('vision') ||
-               name.includes('vision') ||
-               model.modelType === 'vision';
+        const name = (model.name || "").toLowerCase();
+        const id = (model.id || "").toLowerCase();
+        return id.includes('gpt-4o') || id.includes('claude-3') || id.includes('gemini') || id.includes('vision') || name.includes('vision');
     };
 
-    const handleSend = async () => {
-        if (!prompt.trim() && !imageFile) return;
+    // --- Handling AI Logic ---
+    const handleSend = async (overridePrompt = null) => {
+        const textToSend = overridePrompt || prompt;
+        if (!textToSend.trim() && !imageFile) return;
         
         const isSelectedMultimodal = isMultimodal(selectedTextModel);
-
         if (imageFile && visionMode === "direct" && !isSelectedMultimodal) {
-             setError(`Выбранная модель (${selectedTextModel.name}) не поддерживает прямую работу с фото. Включите "Оптимизированный режим" в настройках или выберите другую модель (например GPT-4o).`);
+             setError(`Выбранная модель (${selectedTextModel.name}) не поддерживает прямую работу с фото.`);
              return;
         }
 
         setError("");
         setIsProcessing(true);
+        setIsToolsMenuOpen(false);
 
         const userMsg = {
             role: "user",
-            text: prompt.trim(),
-            image: imagePreview
+            text: textToSend.trim(),
+            image: imagePreview,
+            timestamp: new Date().toISOString()
         };
 
-        setMessages(prev => [...prev, userMsg]);
-        const currentPrompt = prompt;
+        const currentMessages = [...messages, userMsg];
+        updateActiveChatMessages(currentMessages);
+        
+        const currentPrompt = textToSend;
         const currentImageFile = imageFile;
         const currentImagePreview = imagePreview;
         
         setPrompt("");
         clearImage();
 
+        // Auto-title if first message
+        if (messages.length === 0) generateTitle(currentPrompt);
+
         try {
-            let contextResult = null;
             let finalPrompt = currentPrompt;
             
-            // --- Mode A: Dual Model (Vision Pass) ---
+            // Vision Pass
             if (currentImageFile && visionMode === "dual") {
                 const processor = selectedVisionProcessor || availableVisionModels[0];
                 const formData = new FormData();
                 formData.append("image", currentImageFile);
                 formData.append("provider", processor.provider);
                 formData.append("modelId", processor.id);
-                formData.append("mode", "general"); // Use general description for chat
+                formData.append("mode", "general");
 
-                const visRes = await fetch("/api/ai/vision", {
-                    method: "POST",
-                    body: formData
-                });
+                const visRes = await fetch("/api/ai/vision", { method: "POST", body: formData });
                 const visData = await visRes.json();
                 if (visRes.ok && visData.result) {
-                    contextResult = visData.result;
-                    const characteristics = Object.entries(contextResult.attributes || {})
-                        .map(([k, v]) => `${k}: ${v}`).join(", ");
-                    finalPrompt = `[Контекст изображения: ${contextResult.description || 'Изображение'}. ${characteristics}]\n\n${currentPrompt}`;
+                    const characteristics = Object.entries(visData.result.attributes || {}).map(([k, v]) => `${k}: ${v}`).join(", ");
+                    finalPrompt = `[Контекст изображения: ${visData.result.description || 'Изображение'}. ${characteristics}]\n\n${currentPrompt}`;
                 }
             }
 
-            // --- Chat Completion ---
-            let requestBody = {
+            // System Styles
+            const stylePrompts = {
+                concise: "Отвечай максимально кратко и по делу. Без вступлений.",
+                formal: "Используй официально-деловой стиль общения. Будь вежлив и структурирован.",
+                creative: "Будь креативным, используй метафоры и вдохновляющий тон.",
+                code: "Сфокусируйся на коде. Пиши чистый, документированный код с пояснениями.",
+                normal: "Ты профессиональный ИИ-ассистент. Отвечай на русском языке."
+            };
+
+            const systemMsg = stylePrompts[currentStyle] || stylePrompts.normal;
+
+            // Completion
+            const requestBody = {
                 prompt: finalPrompt,
                 provider: selectedTextModel.provider,
                 modelId: selectedTextModel.id,
-            };
-
-            // Prepare history
-            const chatHistory = [
-                { role: "system", content: "You are a helpful AI assistant in the AI HUB dashboard. You can help with text generation, analysis, and general questions. Always respond in Russian unless asked otherwise." },
-                ...messages.map(m => ({
-                    role: m.role === 'user' ? 'user' : 'assistant',
-                    content: m.text
-                }))
-            ];
-
-            // Mode B: Direct Multimodal
-            if (currentImageFile && visionMode === "direct" && isSelectedMultimodal) {
-                // OpenAI format for multimodal
-                chatHistory.push({
-                    role: "user",
-                    content: [
-                        { type: "text", text: currentPrompt || "Что на этом изображении?" },
-                        { 
-                            type: "image_url", 
-                            image_url: { url: currentImagePreview } 
+                chatHistory: [
+                    { role: "system", content: systemMsg },
+                    ...currentMessages.map(m => {
+                        if (m.role === 'user' && m.image && visionMode === "direct" && isSelectedMultimodal) {
+                            return {
+                                role: "user",
+                                content: [
+                                    { type: "text", text: m.text || "Что на этом изображении?" },
+                                    { type: "image_url", image_url: { url: m.image } }
+                                ]
+                            };
                         }
-                    ]
-                });
-                requestBody.prompt = currentPrompt || "Что на этом изображении?"; // Fallback field
-            } else {
-                chatHistory.push({ role: "user", content: finalPrompt });
-            }
-
-            requestBody.chatHistory = chatHistory.slice(-12);
+                        return { role: m.role === 'user' ? 'user' : 'assistant', content: m.text };
+                    })
+                ].slice(-10)
+            };
 
             const res = await fetch("/api/ai/text", {
                 method: "POST",
@@ -272,18 +289,56 @@ export default function AIHubChatPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Ошибка API");
 
-            const aiMsg = {
-                role: "ai",
-                text: data.result
-            };
-
-            setMessages(prev => [...prev, aiMsg]);
+            const aiMsg = { role: "ai", text: data.result, timestamp: new Date().toISOString() };
+            updateActiveChatMessages([...currentMessages, aiMsg]);
             addToHistory({ type: "chat", prompt: currentPrompt, data: data.result, model: selectedTextModel.name });
 
         } catch (err) {
-            console.error("Chat Error:", err);
             setError(err.message);
         } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // --- Tool Actions ---
+    const optimizePrompt = async () => {
+        if (!prompt.trim()) return;
+        setIsProcessing(true);
+        setIsToolsMenuOpen(false);
+        try {
+            const res = await fetch("/api/ai/text", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: `Улучши и разверни этот промпт для нейросети, чтобы получить лучший результат. Сохрани смысл, но добавь деталей. Ответь ТОЛЬКО улучшенным промптом:\n\n${prompt}`,
+                    modelId: "openai/gpt-4o-mini",
+                    provider: "polza"
+                })
+            });
+            const data = await res.json();
+            if (data.result) setPrompt(data.result);
+        } catch (e) { setError("Не удалось улучшить промпт"); }
+        finally { setIsProcessing(false); }
+    };
+
+    const fetchWebLink = async () => {
+        const url = window.prompt("Введите URL для анализа:");
+        if (!url) return;
+        
+        setIsProcessing(true);
+        setIsToolsMenuOpen(false);
+        setError("");
+
+        try {
+            const res = await fetch(`/api/proxy/fetch?url=${encodeURIComponent(url)}`);
+            const data = await res.json();
+            
+            if (!res.ok) throw new Error(data.error || "Ошибка при загрузке ссылки");
+
+            const analysisPrompt = `Проанализируй содержимое этой страницы и кратко перескажи основные моменты:\n\nЗаголовок: ${data.title}\n\nТекст:\n${data.content}`;
+            handleSend(analysisPrompt);
+        } catch (err) {
+            setError(err.message);
             setIsProcessing(false);
         }
     };
@@ -296,45 +351,62 @@ export default function AIHubChatPage() {
 
     return (
         <div className={styles.wrapper}>
+            {/* Sidebar: Chat History */}
+            <div className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarHidden : ''}`}>
+                <div className={styles.sidebarHeader}>
+                    <button className={styles.btnNewChat} onClick={createNewChat}>
+                        <Plus size={18} />
+                        <span>Новый чат</span>
+                    </button>
+                </div>
+                <div className={styles.sidebarScroll}>
+                    {chats.map(chat => (
+                        <button 
+                            key={chat.id} 
+                            className={`${styles.chatListItem} ${activeChatId === chat.id ? styles.chatListItemActive : ''}`}
+                            onClick={() => setActiveChatId(chat.id)}
+                        >
+                            <Zap size={14} color={activeChatId === chat.id ? "#60a5fa" : "#4b5563"} />
+                            <span className={styles.chatListItemTitle}>{chat.title}</span>
+                            <X 
+                                size={14} 
+                                className={styles.btnDeleteChat} 
+                                onClick={(e) => deleteChat(e, chat.id)} 
+                            />
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             <div className={styles.chatContainer}>
-                
                 {/* Header / Top Bar */}
                 <div className={styles.topBar}>
-                    <button className={styles.newChatBtn} onClick={startNewChat} title="Новый чат">
-                        <Plus size={18} />
-                    </button>
-
-                    <div className={styles.modelDropdownContainer}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <button 
-                            className={styles.modelDropdownButton}
-                            onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
+                            className={styles.newChatBtn} 
+                            onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                            title={isSidebarOpen ? "Скрыть панель" : "Показать панель"}
                         >
-                            <Bot size={18} color="#10b981" />
-                            <span>{selectedTextModel.name}</span>
-                            {isModelMenuOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            <Layers size={18} />
                         </button>
-
-                        {isModelMenuOpen && (
-                            <div className={styles.modelDropdownMenu}>
-                                {availableTextModels.map(m => {
-                                    const hasVision = isMultimodal(m);
-                                    return (
+                        <div className={styles.modelDropdownContainer}>
+                            <button className={styles.modelDropdownButton} onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}>
+                                <Bot size={18} color="#10b981" />
+                                <span>{selectedTextModel.name}</span>
+                                {isModelMenuOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            </button>
+                            {isModelMenuOpen && (
+                                <div className={styles.modelDropdownMenu}>
+                                    {availableTextModels.map(m => (
                                         <button 
-                                            key={m.id}
+                                            key={m.id} 
                                             className={`${styles.modelOption} ${selectedTextModel.id === m.id ? styles.modelOptionActive : ''}`}
-                                            onClick={() => {
-                                                setSelectedTextModel(m);
-                                                setIsModelMenuOpen(false);
-                                            }}
+                                            onClick={() => { setSelectedTextModel(m); setIsModelMenuOpen(false); }}
                                         >
                                             <div className={styles.modelHeader}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                     <span>{m.name}</span>
-                                                    {hasVision && (
-                                                        <span className={styles.modelBadgeVision} title="Поддерживает зрение">
-                                                            <Sparkles size={10} /> Vision
-                                                        </span>
-                                                    )}
+                                                    {isMultimodal(m) && <span className={styles.modelBadgeVision}><Sparkles size={10} /> Vision</span>}
                                                 </div>
                                                 <span className={m.tier === 'free' ? styles.modelBadgeFree : styles.modelBadgePremium}>
                                                     {m.tier === 'free' ? 'FREE' : 'PRO'}
@@ -342,17 +414,17 @@ export default function AIHubChatPage() {
                                             </div>
                                             <div className={styles.modelDesc}>{m.description}</div>
                                         </button>
-                                    );
-                                })}
-                            </div>
-                        )}
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <div className={styles.topBarRight}>
                         <button 
                             className={`${styles.settingsToggle} ${isSettingsOpen ? styles.settingsToggleActive : ''}`}
                             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                            title="Настройки чата"
+                            title="Настройки Vision"
                         >
                             <SettingsIcon size={18} />
                         </button>
@@ -360,159 +432,150 @@ export default function AIHubChatPage() {
 
                     {isSettingsOpen && (
                         <div className={styles.settingsPanel}>
-                            <div className={styles.settingsTitle}>
-                                <SettingsIcon size={18} />
-                                <span>Настройки чата</span>
-                            </div>
-
+                            <div className={styles.settingsTitle}><SettingsIcon size={18} /><span>Vision Настройки</span></div>
                             <div className={styles.settingsGroup}>
-                                <label className={styles.settingsLabel}>Режим анализа фото</label>
-                                <div 
-                                    className={styles.toggleContainer}
-                                    onClick={() => setVisionMode(prev => prev === "dual" ? "direct" : "dual")}
-                                >
+                                <label className={styles.settingsLabel}>Режим фото</label>
+                                <div className={styles.toggleContainer} onClick={() => setVisionMode(prev => prev === "dual" ? "direct" : "dual")}>
                                     <div className={styles.toggleText}>
-                                        <div className={styles.toggleTitle}>
-                                            {visionMode === "dual" ? "Оптимизированный" : "Прямой"}
-                                        </div>
-                                        <div className={styles.toggleDesc}>
-                                            {visionMode === "dual" 
-                                                ? "Сначала Vision-модель, затем текст (дешевле)" 
-                                                : "Фото напрямую в модель (выше качество)"}
-                                        </div>
+                                        <div className={styles.toggleTitle}>{visionMode === "dual" ? "Оптимизированный" : "Прямой"}</div>
+                                        <div className={styles.toggleDesc}>{visionMode === "dual" ? "Сначала анализ, затем текст" : "Напрямую в модель"}</div>
                                     </div>
-                                    <div className={`${styles.switch} ${visionMode === "direct" ? styles.switchActive : ''}`}>
-                                        <div className={styles.switchKnob}></div>
+                                    <div className={`${styles.switch} ${visionMode === "direct" ? styles.switchActive : ''}`}><div className={styles.switchKnob}></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className={styles.chatMain}>
+                    {/* Messages List */}
+                    <div className={styles.chatHistory}>
+                        {messages.length === 0 ? (
+                            <div className={styles.emptyState}>
+                                <div style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '2rem', borderRadius: '50%', marginBottom: '2rem' }}>
+                                    <Sparkles size={48} color="#10b981" />
+                                </div>
+                                <h3>Привет! Я твой ИИ-помощник</h3>
+                                <p>Выбери модель выше и начни общение.<br/>Я поддерживаю анализ фото, генерацию кода и многое другое.</p>
+                            </div>
+                        ) : (
+                            messages.map((msg, idx) => (
+                                <div key={idx} className={`${styles.message} ${msg.role === 'user' ? styles.messageUser : styles.messageAi}`}>
+                                    <div className={`${styles.avatar} ${msg.role === 'user' ? styles.avatarUser : styles.avatarAi}`}>
+                                        {msg.role === 'user' ? <User size={20} /> : <Bot size={20} />}
                                     </div>
+                                    <div className={styles.messageContent}>
+                                        {msg.image && <img src={msg.image} alt="Upload" className={styles.attachedImage} />}
+                                        <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+                                        {msg.role === 'ai' && (
+                                            <button className={styles.copyBtn} onClick={() => handleCopy(msg.text, idx)}>
+                                                {copiedIndex === idx ? <Check size={14} color="#34d399" /> : <Copy size={14} />}
+                                                {copiedIndex === idx ? "Скопировано" : "Копировать"}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                        {isProcessing && (
+                            <div className={`${styles.message} ${styles.messageAi}`}>
+                                <div className={`${styles.avatar} ${styles.avatarAi}`}><Bot size={20} /></div>
+                                <div className={styles.messageContent} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}>
+                                    <RefreshCw size={18} className={styles.spin} /> Думаю...
+                                </div>
+                            </div>
+                        )}
+                        <div ref={chatEndRef} />
+                    </div>
+
+                    {/* Input Area */}
+                    <div className={styles.inputArea}>
+                        {error && <div className={styles.errorLabel}><AlertCircle size={16} />{error}</div>}
+                        
+                        <div className={styles.inputWrapper}>
+                            {/* Tools Menu Toolbar */}
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                                <div className={styles.styleBadge} title="Текущий стиль">
+                                     {currentStyle === 'concise' ? 'Кратко' : currentStyle === 'formal' ? 'Деловой' : currentStyle === 'creative' ? 'Творческий' : currentStyle === 'code' ? 'Код' : 'Обычный'}
                                 </div>
                             </div>
 
-                            {visionMode === "dual" && (
-                                <div className={styles.settingsGroup}>
-                                    <label className={styles.settingsLabel}>Vision-модель для анализа</label>
-                                    <select 
-                                        className={styles.visionSelect}
-                                        value={selectedVisionProcessor?.id || ""}
-                                        onChange={(e) => {
-                                            const proc = availableVisionModels.find(m => m.id === e.target.value);
-                                            if (proc) setSelectedVisionProcessor(proc);
-                                        }}
+                            <div className={styles.mainInputRow}>
+                                <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} accept="image/*" />
+                                
+                                <div style={{ position: 'relative' }}>
+                                    <button 
+                                        className={styles.btnAttach} 
+                                        onClick={() => setIsToolsMenuOpen(!isToolsMenuOpen)} 
+                                        title="Инструменты"
                                     >
-                                        {availableVisionModels.map(vm => (
-                                            <option key={vm.id} value={vm.id}>
-                                                {vm.name} {vm.recommended ? "⭐" : ""}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* Messages List */}
-                <div className={styles.chatHistory}>
-                    {messages.length === 0 ? (
-                        <div className={styles.emptyState}>
-                            <Bot size={64} color="#10b981" style={{ marginBottom: '1.5rem', opacity: 0.2 }} />
-                            <h3>Чем я могу помочь?</h3>
-                            <p>Задайте любой вопрос или отправьте изображение для анализа.<br/>Я использую новейшие модели ИИ для ответов.</p>
-                        </div>
-                    ) : (
-                        messages.map((msg, idx) => (
-                            <div key={idx} className={`${styles.message} ${msg.role === 'user' ? styles.messageUser : styles.messageAi}`}>
-                                <div className={`${styles.avatar} ${msg.role === 'user' ? styles.avatarUser : styles.avatarAi}`}>
-                                    {msg.role === 'user' ? <User size={20} /> : <Bot size={20} />}
-                                </div>
-                                <div className={styles.messageContent}>
-                                    {msg.image && (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={msg.image} alt="User upload" className={styles.attachedImage} />
-                                    )}
-                                    <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
-                                    
-                                    {msg.role === 'ai' && (
-                                        <button className={styles.copyBtn} onClick={() => handleCopy(msg.text, idx)}>
-                                            {copiedIndex === idx ? <Check size={14} color="#34d399" /> : <Copy size={14} />}
-                                            {copiedIndex === idx ? "Скопировано" : "Копировать"}
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ))
-                    )}
-                    
-                    {isProcessing && (
-                        <div className={`${styles.message} ${styles.messageAi}`}>
-                            <div className={`${styles.avatar} ${styles.avatarAi}`}>
-                                <Bot size={20} />
-                            </div>
-                            <div className={styles.messageContent} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}>
-                                <RefreshCw size={18} className={styles.spin} />
-                                ИИ обрабатывает запрос...
-                            </div>
-                        </div>
-                    )}
-                    <div ref={chatEndRef} />
-                </div>
-
-                {/* Input Area */}
-                <div className={styles.inputArea}>
-                    {error && (
-                        <div className={styles.errorLabel}>
-                            <AlertCircle size={16} />
-                            {error}
-                        </div>
-                    )}
-
-                    <div className={styles.inputWrapper}>
-                        <div className={styles.mainInputRow}>
-                            <input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                style={{ display: 'none' }} 
-                                onChange={handleFileChange}
-                                accept="image/*"
-                            />
-                            
-                            {!imagePreview ? (
-                                <button className={styles.btnAttach} onClick={() => fileInputRef.current?.click()} title="Прикрепить фото">
-                                    <ImageIcon size={22} />
-                                </button>
-                            ) : (
-                                <div className={styles.imagePreviewWrapper}>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={imagePreview} alt="Preview" className={styles.imagePreviewSmall} />
-                                    <button className={styles.btnRemoveSmall} onClick={clearImage}>
-                                        <X size={12} />
+                                        <Plus size={22} style={{ transform: isToolsMenuOpen ? 'rotate(45deg)' : 'none', transition: '0.2s' }} />
                                     </button>
+
+                                    {isToolsMenuOpen && (
+                                        <div className={styles.toolsMenuContainer}>
+                                            <button className={styles.toolItem} onClick={() => fileInputRef.current?.click()}>
+                                                <div className={styles.toolIcon}><ImageIcon size={18} /></div>
+                                                <div className={styles.toolContent}>
+                                                    <div>Прикрепить фото</div>
+                                                    <div className={styles.toolSubLabel}>Анализ изображений</div>
+                                                </div>
+                                            </button>
+                                            <button className={styles.toolItem} onClick={optimizePrompt}>
+                                                <div className={styles.toolIcon}><Zap size={18} /></div>
+                                                <div className={styles.toolContent}>
+                                                    <div>Улучшить промпт</div>
+                                                    <div className={styles.toolSubLabel}>Сделать запрос точнее</div>
+                                                </div>
+                                            </button>
+                                            <button className={styles.toolItem} onClick={fetchWebLink}>
+                                                <div className={styles.toolIcon}><Globe size={18} /></div>
+                                                <div className={styles.toolContent}>
+                                                    <div>Анализ ссылки</div>
+                                                    <div className={styles.toolSubLabel}>Прочитать сайт по URL</div>
+                                                </div>
+                                            </button>
+                                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '4px 8px' }}></div>
+                                            <div style={{ padding: '8px 12px', fontSize: '0.7rem', color: '#4b5563', fontWeight: 'bold' }}>СТИЛЬ ОТВЕТА</div>
+                                            {['normal', 'concise', 'formal', 'creative', 'code'].map(s => (
+                                                <button 
+                                                    key={s} 
+                                                    className={`${styles.toolItem} ${currentStyle === s ? styles.chatListItemActive : ''}`}
+                                                    onClick={() => { setCurrentStyle(s); setIsToolsMenuOpen(false); }}
+                                                >
+                                                    <div className={styles.toolContent}>
+                                                        {s === 'normal' ? 'Обычный' : s === 'concise' ? 'Краткий' : s === 'formal' ? 'Деловой' : s === 'creative' ? 'Творческий' : 'Код'}
+                                                    </div>
+                                                    {currentStyle === s && <Check size={14} color="#60a5fa" />}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
 
-                            <div className={styles.textareaContainer}>
-                                <textarea
-                                    ref={textareaRef}
-                                    className={styles.textarea}
-                                    placeholder="Спросите о чем угодно..."
-                                    value={prompt}
-                                    onChange={(e) => setPrompt(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleSend();
-                                        }
-                                    }}
-                                    rows={1}
-                                />
+                                {imagePreview && (
+                                    <div className={styles.imagePreviewWrapper}>
+                                        <img src={imagePreview} alt="P" className={styles.imagePreviewSmall} />
+                                        <button className={styles.btnRemoveSmall} onClick={clearImage}><X size={12} /></button>
+                                    </div>
+                                )}
+
+                                <div className={styles.textareaContainer}>
+                                    <textarea
+                                        ref={textareaRef}
+                                        className={styles.textarea}
+                                        placeholder="Напишите сообщение..."
+                                        value={prompt}
+                                        onChange={(e) => setPrompt(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                                        rows={1}
+                                    />
+                                </div>
+
+                                <button className={styles.btnSend} onClick={() => handleSend()} disabled={isProcessing || (!prompt.trim() && !imageFile)}>
+                                    <Send size={20} />
+                                </button>
                             </div>
-
-                            <button 
-                                className={styles.btnSend} 
-                                onClick={handleSend}
-                                disabled={isProcessing || (!prompt.trim() && !imageFile)}
-                            >
-                                <Send size={20} />
-                            </button>
                         </div>
                     </div>
                 </div>
