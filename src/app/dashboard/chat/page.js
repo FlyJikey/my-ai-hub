@@ -267,10 +267,15 @@ export default function AIHubChatPage() {
                                 `${i+1}. [Арт: ${p.sku}] ${p.name} | Кат: ${p.category} | Цена: ${p.price} руб. | ${JSON.stringify(p.attributes)}`
                             ).join("\n");
                             finalPrompt = `ДАННЫЕ ИЗ БАЗЫ ТОВАРОВ (используй их для ответа):\n${context}\n\nВОПРОС ПОЛЬЗОВАТЕЛЯ:\n${finalPrompt}`;
+                        } else {
+                            finalPrompt = `[Системное примечание: Пользователь попытался найти данные в базе товаров, но поиск по векторам ничего не дал. Скажи пользователю, что по его запросу в базе ничего не найдено.]\n\nВОПРОС ПОЛЬЗОВАТЕЛЯ:\n${finalPrompt}`;
                         }
+                    } else {
+                        throw new Error("Search API not OK");
                     }
                 } catch (e) {
                     console.error("Catalog search failed", e);
+                    finalPrompt = `[Системное примечание: Произошла техническая ошибка при поиске в базе товаров. Скажи пользователю, что не смог подключиться к базе.]\n\nВОПРОС ПОЛЬЗОВАТЕЛЯ:\n${finalPrompt}`;
                 }
             }
 
@@ -550,10 +555,25 @@ export default function AIHubChatPage() {
                         
                         <div className={styles.inputWrapper}>
                             {/* Tools Menu Toolbar */}
-                            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
                                 <div className={styles.styleBadge} title="Текущий стиль">
                                      {currentStyle === 'concise' ? 'Кратко' : currentStyle === 'formal' ? 'Деловой' : currentStyle === 'creative' ? 'Творческий' : currentStyle === 'code' ? 'Код' : 'Обычный'}
                                 </div>
+                                <button 
+                                    onClick={() => setUseCatalog(!useCatalog)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', 
+                                        padding: '4px 10px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                                        background: useCatalog ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                                        color: useCatalog ? '#10b981' : '#6b7280',
+                                        border: useCatalog ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #374151',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    title="Включить поиск по загруженной Базе товаров"
+                                >
+                                    <Database size={14} />
+                                    {useCatalog ? 'База: ВКЛЮЧЕНА' : 'База товаров'}
+                                </button>
                             </div>
 
                             <div className={styles.mainInputRow}>
@@ -591,18 +611,8 @@ export default function AIHubChatPage() {
                                                     <div className={styles.toolSubLabel}>Прочитать сайт по URL</div>
                                                 </div>
                                             </button>
-                                            <button 
-                                                className={`${styles.toolItem} ${useCatalog ? styles.toolItemActive : ''}`} 
-                                                onClick={() => { setUseCatalog(!useCatalog); setIsToolsMenuOpen(false); }}
-                                            >
-                                                <div className={styles.toolIcon}><Database size={18} color={useCatalog ? "#10b981" : "inherit"} /></div>
-                                                <div className={styles.toolContent}>
-                                                    <div style={{ color: useCatalog ? "#10b981" : "inherit" }}>Работа с базой товаров</div>
-                                                    <div className={styles.toolSubLabel}>Ответы на основе каталога</div>
-                                                </div>
-                                                {useCatalog && <Check size={14} color="#10b981" />}
-                                            </button>
                                             <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '4px 8px' }}></div>
+
                                             <div style={{ padding: '8px 12px', fontSize: '0.7rem', color: '#4b5563', fontWeight: 'bold' }}>СТИЛЬ ОТВЕТА</div>
                                             {['normal', 'concise', 'formal', 'creative', 'code'].map(s => (
                                                 <button 
