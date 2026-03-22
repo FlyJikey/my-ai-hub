@@ -48,7 +48,8 @@ async function handlePost(req) {
             },
             body: JSON.stringify({
                 model: modelId,
-                input: text
+                input: text,
+                dimensions: 384
             })
         });
 
