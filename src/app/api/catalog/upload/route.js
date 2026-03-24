@@ -17,6 +17,55 @@ export async function OPTIONS() {
     return NextResponse.json({}, { headers: corsHeaders });
 }
 
+async function readAllProductsForBackup() {
+    const allProducts = [];
+    const pageSize = 1000;
+    let from = 0;
+
+    while (true) {
+        const to = from + pageSize - 1;
+        const { data, error } = await supabase
+            .from('products')
+            .select('sku, name, category, description, price, attributes, raw_text, embedding')
+            .order('id', { ascending: true })
+            .range(from, to);
+
+        if (error) {
+            throw new Error(`Не удалось создать резервную копию каталога: ${error.message}`);
+        }
+
+        if (!data || data.length === 0) {
+            break;
+        }
+
+        allProducts.push(...data);
+
+        if (data.length < pageSize) {
+            break;
+        }
+
+        from += pageSize;
+    }
+
+    return allProducts;
+}
+
+async function restoreProducts(products) {
+    if (!products || products.length === 0) {
+        return;
+    }
+
+    const chunkSize = 500;
+    for (let i = 0; i < products.length; i += chunkSize) {
+        const chunk = products.slice(i, i + chunkSize);
+        const { error } = await supabase.from('products').insert(chunk);
+
+        if (error) {
+            throw new Error(`Не удалось восстановить резервную копию каталога: ${error.message}`);
+        }
+    }
+}
+
 export async function POST(req) {
     // Проверка авторизации для загрузки каталога
     const authResult = requireAuth(req);
@@ -63,11 +112,6 @@ export async function POST(req) {
             return NextResponse.json({ error: "Файл пуст или не содержит корректных данных" }, { status: 400, headers: corsHeaders });
         }
 
-        const polzaKey = (process.env.POLZA_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
-        if (!polzaKey) {
-            return NextResponse.json({ error: "Ключ POLZA_API_KEY не установлен на сервере" }, { status: 500, headers: corsHeaders });
-        }
-
         // Используем TransformStream для отправки SSE прогресса
         const { readable, writable } = new TransformStream();
         const writer = writable.getWriter();
@@ -78,17 +122,23 @@ export async function POST(req) {
 
         // Запускаем фоновую обработку
         (async () => {
+            let backupProducts = [];
             try {
                 if (replace === 'true') {
-                    // Удаляем старые записи
-                    await supabase.from('products').delete().neq('id', 0);
+                    backupProducts = await readAllProductsForBackup();
+
+                    const { error: deleteError } = await supabase.from('products').delete().neq('id', 0);
+                    if (deleteError) {
+                        throw new Error(`Не удалось очистить старый каталог: ${deleteError.message}`);
+                    }
                 }
 
                 const BATCH_SIZE = 500;
                 const CONCURRENCY = 5; 
                 let processedCount = 0;
-                let errorCount = 0;
+                let insertedCount = 0;
                 const total = products.length;
+                let fatalError = null;
 
                 // Разбиваем массив на батчи
                 const batches = [];
@@ -117,35 +167,62 @@ export async function POST(req) {
                             if (dbError) {
                                 throw new Error("Supabase DB Error: " + (dbError.message || JSON.stringify(dbError)));
                             }
+
+                            insertedCount += recordsToInsert.length;
                         }
 
                         processedCount += batch.length;
 
                     } catch (e) {
                         console.error("Batch processing failed:", e);
-                        errorCount++;
-                        // Отправляем конкретную ошибку на фронтенд
-                        await sendEvent({ error: `Сбой батча: ${e.message}` });
-                        processedCount += batch.length; 
+                        fatalError = e;
                     }
                 };
 
 
                 // Обработка батчей группами для контроля concurrency
                 for (let i = 0; i < batches.length; i += CONCURRENCY) {
+                    if (fatalError) {
+                        break;
+                    }
+
                     const group = batches.slice(i, i + CONCURRENCY);
                     await Promise.all(group.map(batch => processBatch(batch)));
+
+                    if (fatalError) {
+                        break;
+                    }
                     
                     // Отправляем прогресс чаще (после каждой группы батчей)
                     const percent = Math.min(Math.round((processedCount / total) * 100), 99);
                     await sendEvent({ processed: processedCount, total, percent });
                 }
 
+                if (fatalError) {
+                    throw fatalError;
+                }
+
+                if (insertedCount !== total) {
+                    throw new Error(`В базу записано ${insertedCount} из ${total} товаров`);
+                }
+
                 await sendEvent({ done: true, total });
 
             } catch (err) {
                 console.error("Upload process error:", err);
-                await sendEvent({ error: err.message });
+
+                if (replace === 'true') {
+                    try {
+                        await supabase.from('products').delete().neq('id', 0);
+                        await restoreProducts(backupProducts);
+                        await sendEvent({ error: `${err.message}. Предыдущий каталог восстановлен.` });
+                    } catch (restoreError) {
+                        console.error("Catalog restore error:", restoreError);
+                        await sendEvent({ error: `${err.message}. Не удалось автоматически восстановить предыдущий каталог: ${restoreError.message}` });
+                    }
+                } else {
+                    await sendEvent({ error: err.message });
+                }
             } finally {
                 await writer.close();
             }

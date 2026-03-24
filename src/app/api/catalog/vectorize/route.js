@@ -15,6 +15,14 @@ export async function OPTIONS() {
     return NextResponse.json({}, { headers: corsHeaders });
 }
 
+function buildFailedIdsFilter(failedIds) {
+    if (failedIds.size === 0) {
+        return null;
+    }
+
+    return `(${Array.from(failedIds).join(',')})`;
+}
+
 export async function POST(req) {
     try {
         const polzaKey = (process.env.POLZA_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
@@ -43,20 +51,29 @@ export async function POST(req) {
 
         (async () => {
             let processed = 0;
+            let failed = 0;
             const BATCH_SIZE = 100;
-            let isRunning = true;
+            const failedIds = new Set();
 
             try {
                 // Уведомим клиента о старте
                 await sendEvent({ status: "started", total: totalToVectorize, processed: 0 });
 
-                while (isRunning) {
+                while (true) {
                     // Достаем пачку не векторизованных товаров
-                    const { data: batch, error: fetchError } = await supabase
+                    let query = supabase
                         .from('products')
                         .select('id, raw_text')
                         .is('embedding', null)
+                        .order('id', { ascending: true })
                         .limit(BATCH_SIZE);
+
+                    const failedIdsFilter = buildFailedIdsFilter(failedIds);
+                    if (failedIdsFilter) {
+                        query = query.not('id', 'in', failedIdsFilter);
+                    }
+
+                    const { data: batch, error: fetchError } = await query;
 
                     if (fetchError) throw new Error("Ошибка выборки: " + fetchError.message);
                     
@@ -64,7 +81,17 @@ export async function POST(req) {
                         break; // Все готово
                     }
 
-                    const inputs = batch.map(p => p.raw_text);
+                    const validItems = batch.filter((item) => typeof item.raw_text === 'string' && item.raw_text.trim());
+                    const invalidItems = batch.filter((item) => !validItems.includes(item));
+
+                    invalidItems.forEach((item) => failedIds.add(item.id));
+                    failed += invalidItems.length;
+
+                    if (validItems.length === 0) {
+                        throw new Error('Невозможно продолжить векторизацию: у выбранных товаров отсутствует raw_text');
+                    }
+
+                    const inputs = validItems.map(p => p.raw_text);
 
                     // Стучимся в Polza.ai
                     const res = await fetch("https://polza.ai/api/v1/embeddings", {
@@ -88,28 +115,43 @@ export async function POST(req) {
                     const embeddings = json.data;
 
                     // Обновляем товары в базе
-                    for (let i = 0; i < batch.length; i++) {
-                        const embedObj = embeddings.find(e => e.index === i);
-                        if (embedObj && embedObj.embedding) {
-                            const { error: updateError } = await supabase
-                                .from('products')
-                                .update({ embedding: embedObj.embedding })
-                                .eq('id', batch[i].id);
-                                
-                            if (updateError) {
-                                console.error(`Ошибка обновления ID ${batch[i].id}:`, updateError);
-                            }
-                        }
-                    }
+                    const updates = await Promise.all(validItems.map(async (item, index) => {
+                        const embedObj = embeddings.find(e => e.index === index);
 
-                    processed += batch.length;
+                        if (!embedObj?.embedding) {
+                            failedIds.add(item.id);
+                            failed += 1;
+                            return false;
+                        }
+
+                        const { error: updateError } = await supabase
+                            .from('products')
+                            .update({ embedding: embedObj.embedding })
+                            .eq('id', item.id);
+
+                        if (updateError) {
+                            console.error(`Ошибка обновления ID ${item.id}:`, updateError);
+                            failedIds.add(item.id);
+                            failed += 1;
+                            return false;
+                        }
+
+                        return true;
+                    }));
+
+                    const successfulUpdates = updates.filter(Boolean).length;
+                    processed += successfulUpdates;
+
+                    if (successfulUpdates === 0) {
+                        throw new Error('Векторизация остановлена: текущая пачка не записалась в базу данных');
+                    }
                     
                     // Шлем прогресс
                     const percent = Math.min(Math.round((processed / totalToVectorize) * 100), 99);
-                    await sendEvent({ processed, total: totalToVectorize, percent });
+                    await sendEvent({ processed, total: totalToVectorize, percent, failed });
                 }
 
-                await sendEvent({ done: true, total: totalToVectorize });
+                await sendEvent({ done: true, total: totalToVectorize, processed, failed });
 
             } catch (err) {
                 console.error("Vectorize process error:", err);

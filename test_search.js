@@ -1,4 +1,36 @@
 const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+const path = require('path');
+
+function loadEnvFile() {
+    const envPath = path.join(process.cwd(), '.env.local');
+
+    if (!fs.existsSync(envPath)) {
+        return;
+    }
+
+    const envContent = fs.readFileSync(envPath, 'utf-8');
+    envContent.split('\n').forEach((line) => {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) {
+            return;
+        }
+
+        const separatorIndex = trimmed.indexOf('=');
+        if (separatorIndex === -1) {
+            return;
+        }
+
+        const key = trimmed.slice(0, separatorIndex).trim();
+        const value = trimmed.slice(separatorIndex + 1).trim().replace(/(^"|"$|^'|'$)/g, '');
+
+        if (key && !process.env[key]) {
+            process.env[key] = value;
+        }
+    });
+}
+
+loadEnvFile();
 
 async function testSearch(query) {
     console.log("Testing search for query:", query);

@@ -37,20 +37,20 @@ export function AppProvider({ children }) {
     }, []);
 
     // History State
-    const [history, setHistory] = useState([]);
-    const [analysisLogs, setAnalysisLogs] = useState([]);
+    const [history, setHistory] = useState(() => {
+        if (typeof window === "undefined") {
+            return [];
+        }
 
-    // Load history on mount
-    useEffect(() => {
         try {
             const savedHistory = localStorage.getItem("aiHubHistory");
-            if (savedHistory) {
-                setHistory(JSON.parse(savedHistory));
-            }
+            return savedHistory ? JSON.parse(savedHistory) : [];
         } catch (e) {
             console.error("Failed to load history", e);
+            return [];
         }
-    }, []);
+    });
+    const [analysisLogs, setAnalysisLogs] = useState([]);
 
     // Save specific generation to history
     const addToHistory = (item) => {

@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { UploadCloud, CheckCircle, Package, Send, RotateCw, RefreshCw, AlertTriangle, FileText, Database } from "lucide-react";
+import Link from "next/link";
+import { UploadCloud, CheckCircle, Package, Send, RotateCw, RefreshCw, AlertTriangle, FileText, Database, MessageSquare } from "lucide-react";
 import styles from "./page.module.css";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 export default function CatalogPage() {
     // === States ===
@@ -28,6 +27,84 @@ export default function CatalogPage() {
     useEffect(() => {
         fetchStats();
     }, []);
+
+    const getAdminToken = () => {
+        if (typeof window === "undefined") {
+            return "";
+        }
+
+        return localStorage.getItem("aiHubApiSecret") || "";
+    };
+
+    const fetchWithAdminAuth = async (url, options = {}) => {
+        const makeRequest = (token = "") => {
+            const headers = new Headers(options.headers || {});
+            if (token) {
+                headers.set("Authorization", `Bearer ${token}`);
+            }
+
+            return fetch(url, {
+                ...options,
+                headers
+            });
+        };
+
+        let token = getAdminToken();
+        let response = await makeRequest(token);
+
+        if (response.status !== 401 || typeof window === "undefined") {
+            return response;
+        }
+
+        const promptedToken = window.prompt("Введите API_SECRET_KEY для доступа к управлению каталогом:", token);
+        if (!promptedToken) {
+            return response;
+        }
+
+        localStorage.setItem("aiHubApiSecret", promptedToken);
+        return makeRequest(promptedToken);
+    };
+
+    const readSseStream = async (response, onData) => {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+                break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+            const events = buffer.split("\n\n");
+            buffer = events.pop() || "";
+
+            for (const event of events) {
+                const payload = event
+                    .split("\n")
+                    .filter((line) => line.startsWith("data: "))
+                    .map((line) => line.slice(6))
+                    .join("");
+
+                if (!payload) {
+                    continue;
+                }
+
+                await onData(JSON.parse(payload));
+            }
+        }
+
+        const finalPayload = buffer
+            .split("\n")
+            .filter((line) => line.startsWith("data: "))
+            .map((line) => line.slice(6))
+            .join("");
+
+        if (finalPayload) {
+            await onData(JSON.parse(finalPayload));
+        }
+    };
 
     // === API Calls ===
     const fetchStats = async () => {
@@ -71,7 +148,7 @@ export default function CatalogPage() {
         formData.append("replace", replaceData ? "true" : "false");
 
         try {
-            const res = await fetch("/api/catalog/upload", {
+            const res = await fetchWithAdminAuth("/api/catalog/upload", {
                 method: "POST",
                 body: formData,
                 signal: abortControllerRef.current.signal
@@ -82,36 +159,24 @@ export default function CatalogPage() {
                 throw new Error(data.error || "Upload failed");
             }
 
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value, { stream: true });
-                const events = chunk.split("\n\n").filter(Boolean);
-
-                for (const event of events) {
-                    if (event.startsWith("data: ")) {
-                        try {
-                            const data = JSON.parse(event.slice(6));
-                            if (data.error) throw new Error(data.error);
-                            if (data.done) {
-                                await fetchStats(); // Re-fetch stats
-                                setFile(null);
-                            } else {
-                                setUploadProgress({ 
-                                    percent: data.percent || 0, 
-                                    processed: data.processed || 0, 
-                                    total: data.total || 0,
-                                    error: ""
-                                });
-                            }
-                        } catch (e) { console.error("Event parse error", e); }
-                    }
+            await readSseStream(res, async (data) => {
+                if (data.error) {
+                    throw new Error(data.error);
                 }
-            }
+
+                if (data.done) {
+                    await fetchStats();
+                    setFile(null);
+                    return;
+                }
+
+                setUploadProgress({
+                    percent: data.percent || 0,
+                    processed: data.processed || 0,
+                    total: data.total || 0,
+                    error: ""
+                });
+            });
         } catch (err) {
             setUploadProgress(prev => ({ ...prev, error: err.message }));
         } finally {
@@ -137,7 +202,7 @@ export default function CatalogPage() {
         abortControllerVectorizeRef.current = new AbortController();
 
         try {
-            const res = await fetch("/api/catalog/vectorize", {
+            const res = await fetchWithAdminAuth("/api/catalog/vectorize", {
                 method: "POST",
                 signal: abortControllerVectorizeRef.current.signal
             });
@@ -147,36 +212,30 @@ export default function CatalogPage() {
                 throw new Error(data.error || "Ошибка старта векторизации");
             }
 
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value, { stream: true });
-                const events = chunk.split("\n\n").filter(Boolean);
-
-                for (const event of events) {
-                    if (event.startsWith("data: ")) {
-                        try {
-                            const data = JSON.parse(event.slice(6));
-                            if (data.error) {
-                                setVectorizeProgress(prev => ({ ...prev, error: data.error }));
-                            } else if (data.done) {
-                                await fetchStats();
-                            } else {
-                                setVectorizeProgress({
-                                    percent: data.percent || 0,
-                                    processed: data.processed || 0,
-                                    total: data.total || 0,
-                                    error: ""
-                                });
-                            }
-                        } catch (e) {}
-                    }
+            await readSseStream(res, async (data) => {
+                if (data.error) {
+                    setVectorizeProgress(prev => ({ ...prev, error: data.error }));
+                    return;
                 }
-            }
+
+                if (data.done) {
+                    await fetchStats();
+                    setVectorizeProgress(prev => ({
+                        ...prev,
+                        percent: 100,
+                        processed: data.processed ?? prev.processed,
+                        total: data.total ?? prev.total
+                    }));
+                    return;
+                }
+
+                setVectorizeProgress({
+                    percent: data.percent || 0,
+                    processed: data.processed || 0,
+                    total: data.total || 0,
+                    error: data.failed ? `Пропущено товаров: ${data.failed}` : ""
+                });
+            });
         } catch (err) {
             if (err.name !== 'AbortError') {
                 setVectorizeProgress(prev => ({ ...prev, error: err.message }));
@@ -230,6 +289,67 @@ export default function CatalogPage() {
                 )}
             </div>
 
+            {view === "chat" && (
+                <div className={styles.uploadCard}>
+                    <div style={{ display: 'grid', gap: '1rem' }}>
+                        <div style={{ padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.18)', background: 'rgba(16, 185, 129, 0.05)' }}>
+                            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.65rem', fontSize: '1.1rem' }}>
+                                <Database size={20} color="#10b981" /> Каталог подключен
+                            </h3>
+                            <p style={{ margin: '0.75rem 0 0', color: '#a1a1aa', lineHeight: 1.6 }}>
+                                База товаров загружена и доступна для поиска. Для вопросов по каталогу используйте переключатель базы в `Чат ИИ`.
+                            </p>
+                            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+                                <Link href="/dashboard/chat" className={styles.btnUpload} style={{ textDecoration: 'none', justifyContent: 'center' }}>
+                                    <MessageSquare size={18} /> Открыть Чат ИИ
+                                </Link>
+                                <button className={styles.btnUpdate} onClick={() => setView("upload")}> 
+                                    <RotateCw size={16} /> Обновить базу
+                                </button>
+                                <button className={styles.btnUpdate} onClick={() => fetchStats()}>
+                                    Обновить статистику
+                                </button>
+                            </div>
+                        </div>
+
+                        {stats.total > stats.vectorized && (
+                            <div style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                                <h3 style={{ color: '#10b981', marginBottom: '0.5rem', fontSize: '1.1rem' }}>Требуется векторизация</h3>
+                                <p style={{ color: '#a1a1aa', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                                    В базе есть {stats.total - stats.vectorized} товаров без векторов. Они не будут доступны для поиска ИИ, пока вы их не векторизуете.
+                                </p>
+                                <button className={styles.btnUpload} onClick={handleVectorize} disabled={isVectorizing || isUploading}>
+                                    {isVectorizing ? <><RefreshCw size={18} className={styles.spin} /> Идет векторизация...</> : <><Send size={18} /> Векторизовать ИИ</>}
+                                </button>
+
+                                {isVectorizing && vectorizeProgress.total > 0 && (
+                                    <div className={styles.progressContainer} style={{ marginTop: '1rem' }}>
+                                        <div className={styles.progressHeader}>
+                                            <span>Генерация векторов (Polza.ai)...</span>
+                                            <span>{vectorizeProgress.processed.toLocaleString("ru-RU")} / {vectorizeProgress.total.toLocaleString("ru-RU")}</span>
+                                        </div>
+                                        <div className={styles.progressBarTrack}>
+                                            <div className={styles.progressBarFill} style={{ width: `${Math.min(vectorizeProgress.percent, 100)}%` }}></div>
+                                        </div>
+                                        {vectorizeProgress.error && (
+                                            <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 'bold' }}>
+                                                {vectorizeProgress.error}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {isVectorizing && (
+                                    <button className={styles.btnStop} onClick={handleStopVectorize} style={{ marginTop: '1rem', width: '100%' }}>
+                                        Остановить векторизацию
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* View: UPLOAD */}
             {view === "upload" && (
                 <div className={styles.uploadCard}>
@@ -277,7 +397,7 @@ export default function CatalogPage() {
                     {/* Vectorization Block */}
                     {stats.hasData && stats.total > stats.vectorized && !isUploading && (
                         <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                            <h3 style={{ color: '#10b981', marginBottom: '0.5rem', fontSize: '1.1rem' }}>🤖 Требуется векторизация</h3>
+                            <h3 style={{ color: '#10b981', marginBottom: '0.5rem', fontSize: '1.1rem' }}>Требуется векторизация</h3>
                             <p style={{ color: '#a1a1aa', fontSize: '0.9rem', marginBottom: '1rem' }}>
                                 В базе есть {stats.total - stats.vectorized} товаров без векторов. Они не будут доступны для поиска ИИ, пока вы их не векторизуете.
                             </p>

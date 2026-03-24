@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { 
     Send, 
     Plus, 
@@ -62,6 +62,26 @@ export default function AIHubChatPage() {
     const chatEndRef = useRef(null);
     const textareaRef = useRef(null);
 
+    const clearImage = useCallback(() => {
+        setImageFile(null);
+        setImagePreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    }, []);
+
+    const createNewChat = useCallback(() => {
+        const newChat = {
+            id: Date.now().toString(),
+            title: "Новый чат",
+            messages: [],
+            createdAt: new Date().toISOString()
+        };
+        setChats(prev => [newChat, ...prev]);
+        setActiveChatId(newChat.id);
+        setError("");
+        setPrompt("");
+        clearImage();
+    }, [clearImage]);
+
     // --- Persistence ---
     useEffect(() => {
         try {
@@ -84,7 +104,7 @@ export default function AIHubChatPage() {
             console.error("Failed to load chat data", e);
             createNewChat();
         }
-    }, []);
+    }, [createNewChat]);
 
     useEffect(() => {
         if (chats.length > 0) {
@@ -107,19 +127,16 @@ export default function AIHubChatPage() {
         }
     }, [availableVisionModels, selectedVisionProcessor]);
 
-    // --- Chat Management ---
-    const createNewChat = () => {
-        const newChat = {
-            id: Date.now().toString(),
-            title: "Новый чат",
-            messages: [],
-            createdAt: new Date().toISOString()
-        };
-        setChats(prev => [newChat, ...prev]);
-        setActiveChatId(newChat.id);
-        setError("");
-        setPrompt("");
-        clearImage();
+    const handleFileChange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (!file.type.startsWith("image/")) { setError("Пожалуйста, выберите изображение."); return; }
+            setError("");
+            setImageFile(file);
+            const reader = new FileReader();
+            reader.onload = (ev) => setImagePreview(ev.target.result);
+            reader.readAsDataURL(file);
+        }
     };
 
     const deleteChat = (e, id) => {
@@ -134,8 +151,8 @@ export default function AIHubChatPage() {
         }
     };
 
-    const activeChat = chats.find(c => c.id === activeChatId) || chats[0] || null;
-    const messages = activeChat?.messages || [];
+    const activeChat = useMemo(() => chats.find(c => c.id === activeChatId) || chats[0] || null, [chats, activeChatId]);
+    const messages = useMemo(() => activeChat?.messages || [], [activeChat]);
 
     const updateActiveChatMessages = (newMessages) => {
         setChats(prev => prev.map(c => 
@@ -172,24 +189,6 @@ export default function AIHubChatPage() {
             textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
         }
     }, [prompt]);
-
-    const handleFileChange = (e) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            if (!file.type.startsWith("image/")) { setError("Пожалуйста, выберите изображение."); return; }
-            setError("");
-            setImageFile(file);
-            const reader = new FileReader();
-            reader.onload = (ev) => setImagePreview(ev.target.result);
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const clearImage = () => {
-        setImageFile(null);
-        setImagePreview(null);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-    };
 
     const isMultimodal = (model) => {
         const name = (model.name || "").toLowerCase();
