@@ -72,7 +72,8 @@ export async function POST(req) {
 
             const { data: products, error: rpcError } = await supabase.rpc('match_products', {
                 query_embedding: queryEmbedding,
-                match_count: 20
+                match_count: 20,
+                match_offset: 0
             });
 
             if (rpcError) {
@@ -116,7 +117,7 @@ ${productsContext}`;
         const aiRes = await fetch("https://polza.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${polzaKey}`,
+                "Authorization": `Bearer ${apiKey}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({

@@ -318,8 +318,8 @@ export default function AIHubChatPage() {
                             query: recentUserText, 
                             limit: 100,
                             offset: catalogOffset,
-                            embeddingModel: selectedEmbeddingModel?.id || "text-embedding-3-small",
-                            embeddingProvider: selectedEmbeddingModel?.provider || "polza"
+                            embeddingModel: "text-embedding-3-small",
+                            embeddingProvider: "polza"
                         })
                     });
                     if (searchRes.ok) {

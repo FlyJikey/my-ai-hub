@@ -64,8 +64,8 @@ export async function POST(req) {
 
         if (!embedRes.ok) {
             const err = await embedRes.text();
-            console.error("[CATALOG SEARCH] Ошибка создания embedding:", err);
-            return NextResponse.json({ error: "Ошибка создания эмбеддинга запроса" }, { status: 500, headers: corsHeaders });
+            console.error(`[CATALOG SEARCH] Ошибка создания embedding (${embeddingProvider}/${embeddingModel}, status ${embedRes.status}):`, err);
+            return NextResponse.json({ error: `Ошибка создания эмбеддинга запроса (${embeddingProvider}: ${embedRes.status})` }, { status: 500, headers: corsHeaders });
         }
 
         const embedData = await embedRes.json();
@@ -77,7 +77,8 @@ export async function POST(req) {
         // Пока offset не поддерживается SQL функцией, просто получаем limit товаров
         const { data: products, error: rpcError } = await supabase.rpc('match_products', {
             query_embedding: queryEmbedding,
-            match_count: limit
+            match_count: limit,
+            match_offset: offset
         });
 
         if (rpcError) {

@@ -72,7 +72,8 @@ async function testSearch(query) {
     console.log("2. Calling Supabase RPC 'match_products'...");
     const { data: products, error: rpcError } = await supabase.rpc('match_products', {
         query_embedding: queryEmbedding,
-        match_count: 10
+        match_count: 10,
+        match_offset: 0
     });
 
     if (rpcError) {
