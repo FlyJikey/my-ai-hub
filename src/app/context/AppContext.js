@@ -1,9 +1,33 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useSyncExternalStore } from "react";
 import { AI_MODELS } from "../../config/models";
 
 const AppContext = createContext();
+
+function subscribeToHistory(onStoreChange) {
+    window.addEventListener("storage", onStoreChange);
+    window.addEventListener("aihub-history-change", onStoreChange);
+
+    return () => {
+        window.removeEventListener("storage", onStoreChange);
+        window.removeEventListener("aihub-history-change", onStoreChange);
+    };
+}
+
+function getHistorySnapshot() {
+    try {
+        const savedHistory = localStorage.getItem("aiHubHistory");
+        return savedHistory ? JSON.parse(savedHistory) : [];
+    } catch (e) {
+        console.error("Failed to load history", e);
+        return [];
+    }
+}
+
+function getHistoryServerSnapshot() {
+    return [];
+}
 
 export function AppProvider({ children }) {
     // Global State
@@ -37,19 +61,11 @@ export function AppProvider({ children }) {
     }, []);
 
     // History State
-    const [history, setHistory] = useState(() => {
-        if (typeof window === "undefined") {
-            return [];
-        }
-
-        try {
-            const savedHistory = localStorage.getItem("aiHubHistory");
-            return savedHistory ? JSON.parse(savedHistory) : [];
-        } catch (e) {
-            console.error("Failed to load history", e);
-            return [];
-        }
-    });
+    const history = useSyncExternalStore(
+        subscribeToHistory,
+        getHistorySnapshot,
+        getHistoryServerSnapshot
+    );
     const [analysisLogs, setAnalysisLogs] = useState([]);
 
     // Save specific generation to history
@@ -60,11 +76,9 @@ export function AppProvider({ children }) {
             timestamp: new Date().toISOString()
         };
 
-        setHistory(prev => {
-            const updated = [newItem, ...prev].slice(0, 100); // Keep last 100 items
-            localStorage.setItem("aiHubHistory", JSON.stringify(updated));
-            return updated;
-        });
+        const updated = [newItem, ...history].slice(0, 100); // Keep last 100 items
+        localStorage.setItem("aiHubHistory", JSON.stringify(updated));
+        window.dispatchEvent(new Event("aihub-history-change"));
     };
 
     // Stats Derived from History
