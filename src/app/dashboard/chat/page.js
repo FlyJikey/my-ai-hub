@@ -299,7 +299,7 @@ export default function AIHubChatPage() {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ 
                             query: recentUserText, 
-                            limit: 10,
+                            limit: 50,
                             embeddingModel: selectedEmbeddingModel?.id || "text-embedding-3-small",
                             embeddingProvider: selectedEmbeddingModel?.provider || "polza"
                         })
