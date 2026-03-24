@@ -21,25 +21,43 @@ export async function POST(req) {
         const message = body.message || "";
         const history = body.history || [];
         const model = body.model || "deepseek/deepseek-chat";
+        const embeddingModel = body.embeddingModel || "text-embedding-3-small";
+        const embeddingProvider = body.embeddingProvider || "polza";
 
         if (!message.trim()) {
             return NextResponse.json({ error: "Пустое сообщение" }, { status: 400, headers: corsHeaders });
         }
 
-        const polzaKey = (process.env.POLZA_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
-        if (!polzaKey) {
-            return NextResponse.json({ error: "Ключ POLZA_API_KEY не установлен" }, { status: 500, headers: corsHeaders });
+        console.log(`[CATALOG CHAT] Запрос: "${message}", модель embedding: ${embeddingModel} (${embeddingProvider})`);
+
+        // Получаем API ключ в зависимости от провайдера
+        let apiKey, apiUrl;
+        
+        if (embeddingProvider === "polza") {
+            apiKey = (process.env.POLZA_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
+            apiUrl = "https://polza.ai/api/v1/embeddings";
+            if (!apiKey) {
+                return NextResponse.json({ error: "Ключ POLZA_API_KEY не установлен" }, { status: 500, headers: corsHeaders });
+            }
+        } else if (embeddingProvider === "openrouter") {
+            apiKey = (process.env.OPENROUTER_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
+            apiUrl = "https://openrouter.ai/api/v1/embeddings";
+            if (!apiKey) {
+                return NextResponse.json({ error: "Ключ OPENROUTER_API_KEY не установлен" }, { status: 500, headers: corsHeaders });
+            }
+        } else {
+            return NextResponse.json({ error: `Неподдерживаемый провайдер: ${embeddingProvider}` }, { status: 400, headers: corsHeaders });
         }
 
         // 1. Внутренний поиск топ-20 товаров (генерация эмбеддинга для вопроса)
-        const embedRes = await fetch("https://polza.ai/api/v1/embeddings", {
+        const embedRes = await fetch(apiUrl, {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${polzaKey}`,
+                "Authorization": `Bearer ${apiKey}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "text-embedding-3-small",
+                model: embeddingModel,
                 input: [message]
             })
         });
@@ -50,12 +68,18 @@ export async function POST(req) {
             const embedData = await embedRes.json();
             const queryEmbedding = embedData.data[0].embedding;
 
-            const { data: products } = await supabase.rpc('match_products', {
+            console.log(`[CATALOG CHAT] Embedding создан, размерность: ${queryEmbedding.length}`);
+
+            const { data: products, error: rpcError } = await supabase.rpc('match_products', {
                 query_embedding: queryEmbedding,
                 match_count: 20
             });
 
-            if (products && products.length > 0) {
+            if (rpcError) {
+                console.error('[CATALOG CHAT] Ошибка RPC match_products:', rpcError);
+                productsContext = "Ошибка поиска товаров в базе данных.";
+            } else if (products && products.length > 0) {
+                console.log(`[CATALOG CHAT] Найдено товаров: ${products.length}`);
                 productsContext = products.map((p, i) => {
                     let attrStr = "";
                     if (p.attributes) {
@@ -65,6 +89,8 @@ export async function POST(req) {
                     }
                     return `${i + 1}. [Арт: ${p.sku || 'N/A'}] ${p.name || 'Без названия'} | Категория: ${p.category || 'N/A'} | Цена: ${p.price || 0}₽` + (attrStr ? ` | ${attrStr}` : '');
                 }).join("\n");
+            } else {
+                console.log('[CATALOG CHAT] Товары не найдены');
             }
         } else {
             console.error("Search embedding in chat failed", await embedRes.text());

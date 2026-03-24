@@ -33,6 +33,7 @@ export default function AIHubChatPage() {
         selectedTextModel, setSelectedTextModel,
         availableTextModels,
         availableVisionModels,
+        selectedEmbeddingModel,
         addToHistory
     } = useAppContext();
 
@@ -296,7 +297,12 @@ export default function AIHubChatPage() {
                     const searchRes = await fetch("/api/catalog/search", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ query: recentUserText, limit: 10 })
+                        body: JSON.stringify({ 
+                            query: recentUserText, 
+                            limit: 10,
+                            embeddingModel: selectedEmbeddingModel?.id || "text-embedding-3-small",
+                            embeddingProvider: selectedEmbeddingModel?.provider || "polza"
+                        })
                     });
                     if (searchRes.ok) {
                         const searchData = await searchRes.json();

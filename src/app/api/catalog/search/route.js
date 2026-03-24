@@ -20,37 +20,57 @@ export async function POST(req) {
         const body = await req.json();
         const query = body.query || "";
         const limit = body.limit || 20;
+        const embeddingModel = body.embeddingModel || "text-embedding-3-small";
+        const embeddingProvider = body.embeddingProvider || "polza";
 
         if (!query.trim()) {
             return NextResponse.json({ error: "Пустой запрос" }, { status: 400, headers: corsHeaders });
         }
 
-        const polzaKey = (process.env.POLZA_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
-        if (!polzaKey) {
-            return NextResponse.json({ error: "Ключ POLZA_API_KEY не установлен" }, { status: 500, headers: corsHeaders });
+        console.log(`[CATALOG SEARCH] Запрос: "${query}", модель: ${embeddingModel} (${embeddingProvider})`);
+
+        // Получаем API ключ в зависимости от провайдера
+        let apiKey, apiUrl;
+        
+        if (embeddingProvider === "polza") {
+            apiKey = (process.env.POLZA_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
+            apiUrl = "https://polza.ai/api/v1/embeddings";
+            if (!apiKey) {
+                return NextResponse.json({ error: "Ключ POLZA_API_KEY не установлен" }, { status: 500, headers: corsHeaders });
+            }
+        } else if (embeddingProvider === "openrouter") {
+            apiKey = (process.env.OPENROUTER_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
+            apiUrl = "https://openrouter.ai/api/v1/embeddings";
+            if (!apiKey) {
+                return NextResponse.json({ error: "Ключ OPENROUTER_API_KEY не установлен" }, { status: 500, headers: corsHeaders });
+            }
+        } else {
+            return NextResponse.json({ error: `Неподдерживаемый провайдер: ${embeddingProvider}` }, { status: 400, headers: corsHeaders });
         }
 
         // 1. Создание эмбеддинга для запроса
-        const embedRes = await fetch("https://polza.ai/api/v1/embeddings", {
+        const embedRes = await fetch(apiUrl, {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${polzaKey}`,
+                "Authorization": `Bearer ${apiKey}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "text-embedding-3-small",
+                model: embeddingModel,
                 input: [query]
             })
         });
 
         if (!embedRes.ok) {
             const err = await embedRes.text();
-            console.error("Search embedding error:", err);
+            console.error("[CATALOG SEARCH] Ошибка создания embedding:", err);
             return NextResponse.json({ error: "Ошибка создания эмбеддинга запроса" }, { status: 500, headers: corsHeaders });
         }
 
         const embedData = await embedRes.json();
         const queryEmbedding = embedData.data[0].embedding;
+        
+        console.log(`[CATALOG SEARCH] Embedding создан, размерность: ${queryEmbedding.length}`);
 
         // 2. Векторный поиск через Supabase RPC
         const { data: products, error: rpcError } = await supabase.rpc('match_products', {
@@ -59,9 +79,11 @@ export async function POST(req) {
         });
 
         if (rpcError) {
-            console.error("Supabase RPC error:", rpcError);
-            return NextResponse.json({ error: "Ошибка поиска в базе данных" }, { status: 500, headers: corsHeaders });
+            console.error("[CATALOG SEARCH] Ошибка RPC match_products:", rpcError);
+            return NextResponse.json({ error: "Ошибка поиска в базе данных: " + rpcError.message }, { status: 500, headers: corsHeaders });
         }
+
+        console.log(`[CATALOG SEARCH] Найдено товаров: ${(products || []).length}`);
 
         return NextResponse.json({
             results: products || [],
@@ -70,7 +92,7 @@ export async function POST(req) {
         }, { headers: corsHeaders });
 
     } catch (error) {
-        console.error("Search API error:", error);
-        return NextResponse.json({ error: "Внутренняя ошибка поиска" }, { status: 500, headers: corsHeaders });
+        console.error("[CATALOG SEARCH] Внутренняя ошибка:", error);
+        return NextResponse.json({ error: "Внутренняя ошибка поиска: " + error.message }, { status: 500, headers: corsHeaders });
     }
 }
