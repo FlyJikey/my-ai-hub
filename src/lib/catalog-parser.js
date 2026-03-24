@@ -48,6 +48,7 @@ export function parseCatalog(buffer, type) {
     const categoryKeys = ["Категория", "Category", "Раздел", "Тип"];
     const descriptionKeys = ["Описание", "Description", "Описание товара"];
     const priceKeys = ["Цена", "Price", "Стоимость", "Цена, руб"];
+    const brandKeys = ["Бренд", "Brand", "Марка", "Производитель", "Manufacturer", "Vendor"];
 
     const findKey = (row, possibleKeys) => {
         const rowKeys = Object.keys(row);
@@ -66,11 +67,13 @@ export function parseCatalog(buffer, type) {
         let catKey = findKey(row, categoryKeys);
         let descKey = findKey(row, descriptionKeys);
         let priceKey = findKey(row, priceKeys);
+        let brandKey = findKey(row, brandKeys);
 
         const sku = skuKey ? String(row[skuKey] || '') : '';
         const name = nameKey ? String(row[nameKey] || '') : '';
         const category = catKey ? String(row[catKey] || '') : '';
         const description = descKey ? String(row[descKey] || '') : '';
+        const brand = brandKey ? String(row[brandKey] || '') : '';
         const priceStr = priceKey ? String(row[priceKey] || '').replace(/[^\d.,]/g, '').replace(',', '.') : '';
         const price = parseFloat(priceStr) || 0;
 
@@ -89,6 +92,7 @@ export function parseCatalog(buffer, type) {
         const textParts = [];
         if (sku) textParts.push(`Артикул: ${sku}`);
         if (name) textParts.push(`Название: ${name}`);
+        if (brand) textParts.push(`Бренд: ${brand}`);
         if (category) textParts.push(`Категория: ${category}`);
         if (price > 0) textParts.push(`Цена: ${price}`);
         if (description) textParts.push(`Описание: ${description}`);

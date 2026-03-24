@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from '@/lib/supabase';
+import { getGlobalAiSettingsData, setCatalogEmbeddingConfig } from '@/lib/catalog-settings';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -58,6 +59,26 @@ export async function POST(req) {
             .is('embedding', null);
 
         if (countError) throw new Error("Ошибка БД при подсчете: " + countError.message);
+
+        const { count: alreadyVectorized, error: vectorizedCountError } = await supabase
+            .from('products')
+            .select('*', { count: 'exact', head: true })
+            .not('embedding', 'is', null);
+
+        if (vectorizedCountError) throw new Error("Ошибка БД при подсчете векторизованных товаров: " + vectorizedCountError.message);
+
+        const settings = await getGlobalAiSettingsData();
+        const storedCatalogEmbedding = settings.catalogEmbedding;
+
+        if (
+            alreadyVectorized > 0 &&
+            storedCatalogEmbedding &&
+            (storedCatalogEmbedding.model !== modelId || storedCatalogEmbedding.provider !== provider)
+        ) {
+            return NextResponse.json({
+                error: `Каталог уже содержит ${alreadyVectorized} векторизованных товаров моделью ${storedCatalogEmbedding.model} (${storedCatalogEmbedding.provider}). Чтобы сменить модель, замените базу и перевекторизуйте каталог полностью.`
+            }, { status: 400, headers: corsHeaders });
+        }
 
         if (totalToVectorize === 0) {
             return NextResponse.json({ message: "Нет товаров для векторизации", total: 0 }, { headers: corsHeaders });
@@ -180,8 +201,9 @@ export async function POST(req) {
                     await sendEvent({ processed, total: totalToVectorize, percent, failed });
                 }
 
+                await setCatalogEmbeddingConfig({ model: modelId, provider });
                 console.log(`[VECTORIZE] Завершено успешно: ${processed} товаров, пропущено: ${failed}`);
-                await sendEvent({ done: true, total: totalToVectorize, processed, failed });
+                await sendEvent({ done: true, total: totalToVectorize, processed, failed, embedding: { model: modelId, provider } });
 
             } catch (err) {
                 console.error("Vectorize process error:", err);

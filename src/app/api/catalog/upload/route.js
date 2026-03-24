@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabase } from '@/lib/supabase';
 import { parseCatalog } from '@/lib/catalog-parser';
 import { requireAuth } from '@/lib/auth';
+import { clearCatalogEmbeddingConfig, getGlobalAiSettingsData, setCatalogEmbeddingConfig } from '@/lib/catalog-settings';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -171,13 +172,16 @@ export async function POST(req) {
         // Запускаем фоновую обработку
         (async () => {
             let backupProducts = [];
+            let previousCatalogEmbedding = null;
             try {
                 console.log('[UPLOAD] Начало фоновой обработки');
                 // Проверяем флаг замены (поддерживаем разные форматы)
                 const shouldReplace = replace === 'true' || replace === true || replace === '1';
-                
+                 
                 if (shouldReplace) {
                     console.log('[UPLOAD] Режим замены активирован');
+                    const settings = await getGlobalAiSettingsData();
+                    previousCatalogEmbedding = settings.catalogEmbedding || null;
                     // Создаём резервную копию перед удалением
                     backupProducts = await readAllProductsForBackup();
                     console.log(`[UPLOAD] Создана резервная копия: ${backupProducts.length} товаров`);
@@ -196,6 +200,7 @@ export async function POST(req) {
                     
                     console.log(`[UPLOAD] Удалено записей: ${backupProducts.length}`);
                     await sendEvent({ status: `Удалено записей: ${backupProducts.length}` });
+                    await clearCatalogEmbeddingConfig();
                 }
 
                 const BATCH_SIZE = 1000;
@@ -277,6 +282,9 @@ export async function POST(req) {
                         console.log('[UPLOAD] Восстановление резервной копии...');
                         await supabase.from('products').delete().gte('id', 0);
                         await restoreProducts(backupProducts);
+                        if (previousCatalogEmbedding) {
+                            await setCatalogEmbeddingConfig(previousCatalogEmbedding);
+                        }
                         console.log('[UPLOAD] Резервная копия восстановлена');
                         await sendEvent({ error: `${err.message}. Предыдущий каталог восстановлен.` });
                     } catch (restoreError) {
