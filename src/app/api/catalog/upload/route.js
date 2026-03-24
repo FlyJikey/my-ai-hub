@@ -4,7 +4,7 @@ import { parseCatalog } from '@/lib/catalog-parser';
 import { requireAuth } from '@/lib/auth';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+export const maxDuration = 300; // 5 минут для больших файлов
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -110,6 +110,7 @@ export async function POST(req) {
     }
 
     try {
+        console.log('[UPLOAD] Начало загрузки каталога');
         const formData = await req.formData();
         const file = formData.get('file');
         const replace = formData.get('replace');
@@ -117,6 +118,8 @@ export async function POST(req) {
         if (!file) {
             return NextResponse.json({ error: "Файл не найден" }, { status: 400, headers: corsHeaders });
         }
+
+        console.log(`[UPLOAD] Файл: ${file.name}, размер: ${(file.size / 1024 / 1024).toFixed(2)}MB, режим замены: ${replace}`);
 
         // Check file size (max 50MB for catalog files)
         const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -139,8 +142,11 @@ export async function POST(req) {
         // Парсинг файла
         let products = [];
         try {
+            console.log('[UPLOAD] Начало парсинга файла...');
             products = parseCatalog(buffer, type);
+            console.log(`[UPLOAD] Распарсено товаров: ${products.length}`);
         } catch (e) {
+            console.error('[UPLOAD] Ошибка парсинга:', e);
             return NextResponse.json({ error: "Ошибка парсинга файла: " + e.message }, { status: 400, headers: corsHeaders });
         }
 
@@ -166,22 +172,41 @@ export async function POST(req) {
         (async () => {
             let backupProducts = [];
             try {
-                if (replace === 'true') {
+                console.log('[UPLOAD] Начало фоновой обработки');
+                // Проверяем флаг замены (поддерживаем разные форматы)
+                const shouldReplace = replace === 'true' || replace === true || replace === '1';
+                
+                if (shouldReplace) {
+                    console.log('[UPLOAD] Режим замены активирован');
+                    // Создаём резервную копию перед удалением
                     backupProducts = await readAllProductsForBackup();
+                    console.log(`[UPLOAD] Создана резервная копия: ${backupProducts.length} товаров`);
+                    
+                    await sendEvent({ status: 'Удаление старых данных...' });
 
-                    const { error: deleteError } = await supabase.from('products').delete().neq('id', 0);
+                    // Удаляем ВСЕ записи из таблицы products
+                    const { error: deleteError, count } = await supabase
+                        .from('products')
+                        .delete()
+                        .gte('id', 0); // Удаляем все записи где id >= 0 (т.е. все)
+                    
                     if (deleteError) {
                         throw new Error(`Не удалось очистить старый каталог: ${deleteError.message}`);
                     }
+                    
+                    console.log(`[UPLOAD] Удалено записей: ${backupProducts.length}`);
+                    await sendEvent({ status: `Удалено записей: ${backupProducts.length}` });
                 }
 
-                const BATCH_SIZE = 500;
-                const CONCURRENCY = 5; 
+                const BATCH_SIZE = 1000;
+                const CONCURRENCY = 10; 
                 let processedCount = 0;
                 let insertedCount = 0;
                 const total = dbProducts.length;
                 const sourceTotal = products.length;
                 let fatalError = null;
+
+                console.log(`[UPLOAD] Начало загрузки: ${total} товаров в ${Math.ceil(total / BATCH_SIZE)} батчах`);
 
                 // Разбиваем массив на батчи
                 const batches = [];
@@ -218,6 +243,7 @@ export async function POST(req) {
                     }
 
                     const group = batches.slice(i, i + CONCURRENCY);
+                    console.log(`[UPLOAD] Обработка группы батчей ${i / CONCURRENCY + 1}/${Math.ceil(batches.length / CONCURRENCY)}`);
                     await Promise.all(group.map(batch => processBatch(batch)));
 
                     if (fatalError) {
@@ -226,6 +252,7 @@ export async function POST(req) {
                     
                     // Отправляем прогресс чаще (после каждой группы батчей)
                     const percent = Math.min(Math.round((processedCount / total) * 100), 99);
+                    console.log(`[UPLOAD] Прогресс: ${processedCount}/${total} (${percent}%)`);
                     await sendEvent({ processed: processedCount, total, percent });
                 }
 
@@ -237,15 +264,20 @@ export async function POST(req) {
                     throw new Error(`В базу записано ${insertedCount} из ${total} подготовленных товаров`);
                 }
 
+                console.log(`[UPLOAD] Успешно загружено: ${insertedCount} товаров`);
                 await sendEvent({ done: true, total, sourceTotal, duplicatesMerged });
 
             } catch (err) {
                 console.error("Upload process error:", err);
 
-                if (replace === 'true') {
+                const shouldReplace = replace === 'true' || replace === true || replace === '1';
+                
+                if (shouldReplace) {
                     try {
-                        await supabase.from('products').delete().neq('id', 0);
+                        console.log('[UPLOAD] Восстановление резервной копии...');
+                        await supabase.from('products').delete().gte('id', 0);
                         await restoreProducts(backupProducts);
+                        console.log('[UPLOAD] Резервная копия восстановлена');
                         await sendEvent({ error: `${err.message}. Предыдущий каталог восстановлен.` });
                     } catch (restoreError) {
                         console.error("Catalog restore error:", restoreError);

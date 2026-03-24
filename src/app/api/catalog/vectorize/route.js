@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabase } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60; // Максимальное время для Vercel Pro
+export const maxDuration = 300; // 5 минут для векторизации
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -52,7 +52,7 @@ export async function POST(req) {
         (async () => {
             let processed = 0;
             let failed = 0;
-            const BATCH_SIZE = 100;
+            const BATCH_SIZE = 200;
             const failedIds = new Set();
 
             try {

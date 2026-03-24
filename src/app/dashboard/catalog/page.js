@@ -216,17 +216,18 @@ export default function CatalogPage() {
             await readSseStream(res, async (data) => {
                 if (data.error) {
                     setVectorizeProgress(prev => ({ ...prev, error: data.error }));
+                    await fetchStats();
                     return;
                 }
 
                 if (data.done) {
                     await fetchStats();
-                    setVectorizeProgress(prev => ({
-                        ...prev,
+                    setVectorizeProgress({
                         percent: 100,
-                        processed: data.processed ?? prev.processed,
-                        total: data.total ?? prev.total
-                    }));
+                        processed: data.processed ?? 0,
+                        total: data.total ?? 0,
+                        error: data.failed > 0 ? `Завершено! Пропущено товаров: ${data.failed}` : ""
+                    });
                     return;
                 }
 
@@ -234,7 +235,7 @@ export default function CatalogPage() {
                     percent: data.percent || 0,
                     processed: data.processed || 0,
                     total: data.total || 0,
-                    error: data.failed ? `Пропущено товаров: ${data.failed}` : ""
+                    error: data.failed > 0 ? `Пропущено товаров: ${data.failed}` : ""
                 });
             });
         } catch (err) {
@@ -333,7 +334,7 @@ export default function CatalogPage() {
                                     {isVectorizing ? <><RefreshCw size={18} className={styles.spin} /> Идет векторизация...</> : <><Send size={18} /> Векторизовать ИИ</>}
                                 </button>
 
-                                {isVectorizing && vectorizeProgress.total > 0 && (
+                                 {isVectorizing && vectorizeProgress.total > 0 && (
                                     <div className={styles.progressContainer} style={{ marginTop: '1rem' }}>
                                         <div className={styles.progressHeader}>
                                             <span>Генерация векторов (Polza.ai)...</span>
@@ -343,8 +344,13 @@ export default function CatalogPage() {
                                             <div className={styles.progressBarFill} style={{ width: `${Math.min(vectorizeProgress.percent, 100)}%` }}></div>
                                         </div>
                                         {vectorizeProgress.error && (
-                                            <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 'bold' }}>
+                                            <div style={{ color: vectorizeProgress.percent === 100 ? '#10b981' : '#f59e0b', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 'bold' }}>
                                                 {vectorizeProgress.error}
+                                            </div>
+                                        )}
+                                        {vectorizeProgress.percent === 100 && !vectorizeProgress.error && (
+                                            <div style={{ color: '#10b981', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                <CheckCircle size={14} /> Векторизация завершена успешно!
                                             </div>
                                         )}
                                     </div>
@@ -430,8 +436,13 @@ export default function CatalogPage() {
                                         <div className={styles.progressBarFill} style={{ width: `${Math.min(vectorizeProgress.percent, 100)}%` }}></div>
                                     </div>
                                     {vectorizeProgress.error && (
-                                        <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 'bold' }}>
+                                        <div style={{ color: vectorizeProgress.percent === 100 ? '#10b981' : '#f59e0b', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 'bold' }}>
                                             {vectorizeProgress.error}
+                                        </div>
+                                    )}
+                                    {vectorizeProgress.percent === 100 && !vectorizeProgress.error && (
+                                        <div style={{ color: '#10b981', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <CheckCircle size={14} /> Векторизация завершена успешно!
                                         </div>
                                     )}
                                 </div>
