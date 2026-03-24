@@ -32,15 +32,23 @@ export async function GET() {
 
         if (vectorizedError) throw vectorizedError;
 
-        // 2. Categories count (fetching all categories and deduplicating)
+        // 2. Categories count (optimized: count distinct in SQL)
         let categories = 0;
         const { data: catData, error: catError } = await supabase
-            .from('products')
-            .select('category');
+            .rpc('count_distinct_categories');
             
-        if (!catError && catData) {
-            const uniqueCategories = new Set(catData.map(item => item.category).filter(Boolean));
-            categories = uniqueCategories.size;
+        if (!catError && catData !== null) {
+            categories = catData;
+        } else if (catError) {
+            // Fallback to old method if RPC doesn't exist
+            console.warn('RPC count_distinct_categories not found, using fallback');
+            const { data: allCats } = await supabase
+                .from('products')
+                .select('category');
+            if (allCats) {
+                const uniqueCategories = new Set(allCats.map(item => item.category).filter(Boolean));
+                categories = uniqueCategories.size;
+            }
         }
 
         // 3. Last updated

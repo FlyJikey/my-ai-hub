@@ -13,7 +13,7 @@ export default function SettingsPage() {
     const [editingModel, setEditingModel] = useState(null);
     const [editingBehavior, setEditingBehavior] = useState(null);
 
-    const [activeTab, setActiveTab] = useState('models'); // 'models' or 'limits' or 'logs' or 'polza'
+    const [activeTab, setActiveTab] = useState('models'); // 'models' or 'limits' or 'logs' or 'polza' or 'omniroute'
     const [limitsData, setLimitsData] = useState(null);
     const [isLoadingLimits, setIsLoadingLimits] = useState(false);
     const [logsData, setLogsData] = useState([]);
@@ -24,6 +24,11 @@ export default function SettingsPage() {
     const [isLoadingPolza, setIsLoadingPolza] = useState(false);
     const [polzaSearch, setPolzaSearch] = useState("");
     const [selectedProvider, setSelectedProvider] = useState("all");
+
+    const [omnirouteModels, setOmnirouteModels] = useState([]);
+    const [isLoadingOmniroute, setIsLoadingOmniroute] = useState(false);
+    const [omnirouteSearch, setOmnirouteSearch] = useState("");
+    const [selectedOmnirouteProvider, setSelectedOmnirouteProvider] = useState("all");
 
     useEffect(() => {
         fetchSettings();
@@ -114,6 +119,22 @@ export default function SettingsPage() {
         }
     };
 
+    const fetchOmnirouteData = async () => {
+        setIsLoadingOmniroute(true);
+        try {
+            const mRes = await fetch('/api/omniroute/models');
+            
+            if (mRes.ok) {
+                const mData = await mRes.json();
+                setOmnirouteModels(mData.data || []);
+            }
+        } catch (err) {
+            console.error("Error fetching OmniRoute data:", err);
+        } finally {
+            setIsLoadingOmniroute(false);
+        }
+    };
+
     useEffect(() => {
         if (activeTab === 'limits' && !limitsData) {
             fetchLimits();
@@ -123,6 +144,9 @@ export default function SettingsPage() {
         }
         if (activeTab === 'polza' && polzaModels.length === 0) {
             fetchPolzaData();
+        }
+        if (activeTab === 'omniroute' && omnirouteModels.length === 0) {
+            fetchOmnirouteData();
         }
     }, [activeTab]);
 
@@ -369,6 +393,12 @@ export default function SettingsPage() {
                     onClick={() => setActiveTab('polza')}
                 >
                     🚀 Polza.ai
+                </button>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'omniroute' ? styles.tabBtnActive : ''}`}
+                    onClick={() => setActiveTab('omniroute')}
+                >
+                    🌐 OmniRoute
                 </button>
             </div>
 
@@ -658,6 +688,22 @@ export default function SettingsPage() {
                                     {limitsData.groq?.status === 'active'
                                         ? 'Groq обеспечивает самую быструю генерацию текста (Llama 3/Qwen) бесплатно.'
                                         : 'Ключ Groq не настроен.'}
+                                </p>
+                            </div>
+
+                            {/* OmniRoute Limits */}
+                            <div className={`${styles.card} ${styles.limitCard}`}>
+                                <h3 className={styles.cardTitle}>OmniRoute (AI Gateway)</h3>
+                                <div className={styles.limitStatusWrapper}>
+                                    <div className={styles.limitStatusLabel}>Статус:</div>
+                                    <div className={`${styles.limitStatusValue} ${limitsData.omniroute?.status === 'active' ? styles.statusActive : styles.statusError}`}>
+                                        {limitsData.omniroute?.status === 'active' ? limitsData.omniroute?.balance : 'Не настроен'}
+                                    </div>
+                                </div>
+                                <p className={styles.limitHint}>
+                                    {limitsData.omniroute?.status === 'active'
+                                        ? 'OmniRoute предоставляет доступ к множеству AI моделей через единый API.'
+                                        : 'Ключ OmniRoute не настроен.'}
                                 </p>
                             </div>
                         </div>
@@ -1142,6 +1188,131 @@ export default function SettingsPage() {
                             </button>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* TAB: OMNIROUTE */}
+            {activeTab === 'omniroute' && (
+                <div className={styles.polzaTab}>
+                    <div className={styles.polzaStats}>
+                        <div className={styles.polzaInfoCard} style={{ gridColumn: '1 / -1' }}>
+                            <h3>OmniRoute - AI Gateway</h3>
+                            <p>OmniRoute предоставляет доступ к множеству AI моделей через единый API. Здесь вы можете просмотреть доступные модели и добавить их в свои настройки.</p>
+                            <a href="http://89.208.14.46:20128/dashboard" target="_blank" rel="noopener noreferrer" className={styles.externalLink}>
+                                Перейти в дашборд OmniRoute
+                            </a>
+                        </div>
+                    </div>
+
+                    <div className={styles.catalogHeader}>
+                        <h2 className={styles.cardTitle}>Каталог моделей OmniRoute</h2>
+                        <div className={styles.catalogFilters}>
+                            <select 
+                                className={styles.filterSelect}
+                                value={selectedOmnirouteProvider}
+                                onChange={(e) => setSelectedOmnirouteProvider(e.target.value)}
+                            >
+                                <option value="all">Все провайдеры</option>
+                                {Array.from(new Set(omnirouteModels.map(m => m.owned_by)))
+                                    .sort()
+                                    .map(p => (
+                                        <option key={p} value={p}>{p}</option>
+                                    ))
+                                }
+                            </select>
+                            <div className={styles.searchWrapper}>
+                                <input 
+                                    type="text" 
+                                    placeholder="Поиск по названию или ID..." 
+                                    className={styles.searchInput}
+                                    value={omnirouteSearch}
+                                    onChange={(e) => setOmnirouteSearch(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {isLoadingOmniroute && omnirouteModels.length === 0 ? (
+                        <div className={styles.loadingState} style={{ minHeight: '300px' }}><RefreshCw className={styles.spin} /> Загрузка каталога...</div>
+                    ) : (
+                        <div className={styles.modelGrid}>
+                            {omnirouteModels
+                                .filter(m => {
+                                    const matchesSearch = !omnirouteSearch || 
+                                        m.id.toLowerCase().includes(omnirouteSearch.toLowerCase()) || 
+                                        m.root?.toLowerCase().includes(omnirouteSearch.toLowerCase());
+                                    const matchesProvider = selectedOmnirouteProvider === "all" || m.owned_by === selectedOmnirouteProvider;
+                                    return matchesSearch && matchesProvider;
+                                })
+                                .slice(0, 100)
+                                .map(model => {
+                                    const isVisionModel = model.type === 'vision' || model.id.includes('vision');
+                                    const isAudioModel = model.type === 'audio';
+                                    const isVideoModel = model.type === 'video';
+                                    const isMusicModel = model.type === 'music';
+                                    
+                                    return (
+                                        <div key={model.id} className={styles.modelCard}>
+                                            <div className={styles.modelCardHeader}>
+                                                <div className={styles.modelName}>{model.root || model.id}</div>
+                                                <div className={styles.modelId}>{model.id}</div>
+                                            </div>
+                                            <div className={styles.modelCapabilities}>
+                                                <span className={styles.capBadge}>{model.owned_by}</span>
+                                                {isVisionModel && <span className={styles.capBadge}>vision</span>}
+                                                {isAudioModel && <span className={styles.capBadge}>audio</span>}
+                                                {isVideoModel && <span className={styles.capBadge}>video</span>}
+                                                {isMusicModel && <span className={styles.capBadge}>music</span>}
+                                                {model.subtype && <span className={styles.capBadge}>{model.subtype}</span>}
+                                            </div>
+                                            <div className={styles.modelActions}>
+                                                <button 
+                                                    className={styles.addToSettingsBtn}
+                                                    onClick={() => {
+                                                        const targetKey = isVisionModel ? 'visionModels' : 'textModels';
+                                                        const exists = settings[targetKey].some(m => m.id === model.id);
+                                                        
+                                                        if (exists) {
+                                                            setMessage({ text: `Модель ${model.id} уже есть в настройках!`, type: "success" });
+                                                            setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+                                                            return;
+                                                        }
+
+                                                        if (isAudioModel || isVideoModel || isMusicModel) {
+                                                            setMessage({ text: `Модели типа ${model.type} пока не поддерживаются в настройках`, type: "error" });
+                                                            setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+                                                            return;
+                                                        }
+
+                                                        const newModel = {
+                                                            id: model.id,
+                                                            name: model.root || model.id,
+                                                            description: `OmniRoute: ${model.id} (${model.owned_by})`,
+                                                            provider: "omniroute",
+                                                            tier: "premium",
+                                                            modelType: isVisionModel ? "vision" : "text",
+                                                            enabled: true,
+                                                            isCustom: true
+                                                        };
+
+                                                        setSettings(prev => ({
+                                                            ...prev,
+                                                            [targetKey]: [...prev[targetKey], newModel]
+                                                        }));
+                                                        
+                                                        setMessage({ text: `Модель ${model.root || model.id} добавлена! Нажмите "Сохранить" вверху страницы.`, type: "success" });
+                                                        setTimeout(() => setMessage({ text: "", type: "" }), 5000);
+                                                    }}
+                                                    disabled={isAudioModel || isVideoModel || isMusicModel}
+                                                >
+                                                    <Plus size={14} /> Добавить в настройки
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

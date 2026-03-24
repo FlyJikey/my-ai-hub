@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabase } from '@/lib/supabase';
 import { parseCatalog } from '@/lib/catalog-parser';
+import { requireAuth } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -17,6 +18,12 @@ export async function OPTIONS() {
 }
 
 export async function POST(req) {
+    // Проверка авторизации для загрузки каталога
+    const authResult = requireAuth(req);
+    if (!authResult.authorized) {
+        return NextResponse.json({ error: authResult.error }, { status: 401, headers: corsHeaders });
+    }
+
     try {
         const formData = await req.formData();
         const file = formData.get('file');
@@ -24,6 +31,14 @@ export async function POST(req) {
 
         if (!file) {
             return NextResponse.json({ error: "Файл не найден" }, { status: 400, headers: corsHeaders });
+        }
+
+        // Check file size (max 50MB for catalog files)
+        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+        if (file.size > MAX_FILE_SIZE) {
+            return NextResponse.json({ 
+                error: `Файл слишком большой. Максимальный размер: ${MAX_FILE_SIZE / 1024 / 1024}MB` 
+            }, { status: 400, headers: corsHeaders });
         }
 
         const fileName = file.name || "";

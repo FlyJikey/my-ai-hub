@@ -31,6 +31,14 @@ export async function POST(req) {
             return NextResponse.json({ error: "Изображение обязательно" }, { status: 400 });
         }
 
+        // Check file size (max 10MB for images)
+        const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+        if (imageFile.size > MAX_IMAGE_SIZE) {
+            return NextResponse.json({ 
+                error: `Изображение слишком большое. Максимальный размер: ${MAX_IMAGE_SIZE / 1024 / 1024}MB` 
+            }, { status: 400 });
+        }
+
         const polzaKey = process.env.POLZA_API_KEY;
         if (!polzaKey && provider === "polza") {
             return NextResponse.json({ error: "API ключ POLZA_API_KEY не настроен (.env.local)" }, { status: 500 });

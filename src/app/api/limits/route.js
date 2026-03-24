@@ -40,7 +40,8 @@ export async function GET(req) {
             polza: { status: 'unused', balance: null, raw: null },
             openrouter: { status: 'unused', balance: null, raw: null },
             groq: { status: 'unused', balance: 'Не тарифицируется', raw: null },
-            gemini: { status: 'unused', balance: 'Свободный доступ/Limit', raw: null }
+            gemini: { status: 'unused', balance: 'Свободный доступ/Limit', raw: null },
+            omniroute: { status: 'unused', balance: null, raw: null }
         };
 
         // 2. Fetch from Polza.ai if enabled
@@ -121,6 +122,34 @@ export async function GET(req) {
                 status: groqKey ? 'active' : 'missing_key',
                 balance: groqKey ? 'Активен (Смотрите лимиты в консоли Groq)' : 'Ключ не настроен'
             };
+        }
+
+        // 5. OmniRoute
+        if (enabledProviders.has('omniroute')) {
+            const omnirouteKey = process.env.OMNIROUTE_API_KEY;
+            if (omnirouteKey) {
+                try {
+                    // OmniRoute использует OpenAI-совместимый API, проверяем доступность моделей
+                    const orRes = await fetch("http://89.208.14.46:20128/v1/models", {
+                        headers: { "Authorization": `Bearer ${omnirouteKey.trim()}` }
+                    });
+
+                    if (orRes.ok) {
+                        const orData = await orRes.json();
+                        limitsData.omniroute = {
+                            status: 'active',
+                            balance: `Доступно моделей: ${orData.data?.length || 0}`,
+                            raw: orData
+                        };
+                    } else {
+                        limitsData.omniroute = { status: 'error', balance: 'Ошибка доступа', raw: null };
+                    }
+                } catch (e) {
+                    limitsData.omniroute = { status: 'error', balance: 'Ошибка проверки', error: e.message };
+                }
+            } else {
+                limitsData.omniroute = { status: 'missing_key', balance: 'Ключ не настроен' };
+            }
         }
 
         return NextResponse.json({

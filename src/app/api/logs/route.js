@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { requireAuth } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
@@ -32,7 +33,13 @@ export async function GET() {
     }
 }
 
-export async function DELETE() {
+export async function DELETE(req) {
+    // Проверка авторизации для удаления логов
+    const authResult = requireAuth(req);
+    if (!authResult.authorized) {
+        return NextResponse.json({ error: authResult.error }, { status: 401, headers: corsHeaders });
+    }
+
     try {
         const { error } = await supabase
             .from('ai_settings')

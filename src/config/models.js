@@ -72,6 +72,35 @@ export const AI_MODELS = {
             name: "DeepSeek V3",
             description: "Отличная китайская модель. Polza.ai (Платно)",
             tier: "economy"
+        },
+        // === OMNIROUTE ===
+        {
+            id: "kr/claude-sonnet-4.5",
+            provider: "omniroute",
+            name: "Claude Sonnet 4.5",
+            description: "Мощная модель Claude через OmniRoute (Платно)",
+            tier: "premium"
+        },
+        {
+            id: "kr/claude-haiku-4.5",
+            provider: "omniroute",
+            name: "Claude Haiku 4.5",
+            description: "Быстрая модель Claude через OmniRoute (Платно)",
+            tier: "premium"
+        },
+        {
+            id: "cx/gpt-5.4",
+            provider: "omniroute",
+            name: "GPT-5.4",
+            description: "Новейшая модель GPT через OmniRoute (Платно)",
+            tier: "premium"
+        },
+        {
+            id: "qw/qwen3-coder-plus",
+            provider: "omniroute",
+            name: "Qwen 3 Coder Plus",
+            description: "Модель для кода через OmniRoute (Платно)",
+            tier: "premium"
         }
     ],
     vision: [
@@ -111,6 +140,14 @@ export const AI_MODELS = {
             provider: "polza",
             name: "GPT-4o Vision",
             description: "Максимально точная модель. Polza.ai (Платно)",
+            tier: "premium"
+        },
+        // === OMNIROUTE ===
+        {
+            id: "qw/vision-model",
+            provider: "omniroute",
+            name: "Qwen Vision",
+            description: "Vision модель через OmniRoute (Платно)",
             tier: "premium"
         }
     ]
