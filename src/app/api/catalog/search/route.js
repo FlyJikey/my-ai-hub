@@ -74,13 +74,10 @@ export async function POST(req) {
         console.log(`[CATALOG SEARCH] Embedding создан, размерность: ${queryEmbedding.length}`);
 
         // 2. Векторный поиск через Supabase RPC
-        // Получаем больше товаров для поддержки offset на уровне JS
-        // Максимум 200 товаров за раз (100 лимит + 100 offset)
-        const matchCount = Math.min(limit + offset, 200);
-        
-        const { data: allProducts, error: rpcError } = await supabase.rpc('match_products', {
+        // Пока offset не поддерживается SQL функцией, просто получаем limit товаров
+        const { data: products, error: rpcError } = await supabase.rpc('match_products', {
             query_embedding: queryEmbedding,
-            match_count: matchCount
+            match_count: limit
         });
 
         if (rpcError) {
@@ -88,10 +85,7 @@ export async function POST(req) {
             return NextResponse.json({ error: "Ошибка поиска в базе данных: " + rpcError.message }, { status: 500, headers: corsHeaders });
         }
 
-        // Применить offset на уровне JS
-        const products = allProducts ? allProducts.slice(offset, offset + limit) : [];
-
-        console.log(`[CATALOG SEARCH] Найдено товаров: ${(products || []).length} (offset: ${offset}, limit: ${limit})`);
+        console.log(`[CATALOG SEARCH] Найдено товаров: ${(products || []).length}`);
 
         return NextResponse.json({
             results: products || [],
