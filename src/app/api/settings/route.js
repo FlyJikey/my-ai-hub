@@ -178,6 +178,7 @@ export async function GET(req) {
             return NextResponse.json({
                 textModels: AI_MODELS.text.map(m => ({ ...m, enabled: true })),
                 visionModels: AI_MODELS.vision.map(m => ({ ...m, enabled: true })),
+                embeddingModels: AI_MODELS.embedding.map(m => ({ ...m, enabled: true })),
                 scenarios: DEFAULT_SCENARIOS,
                 behaviors: DEFAULT_BEHAVIORS
             }, { headers: corsHeaders });
@@ -208,12 +209,14 @@ export async function GET(req) {
 
             const textModels = mergeKeepingOrder(dbSettings.textModels, AI_MODELS.text);
             const visionModels = mergeKeepingOrder(dbSettings.visionModels, AI_MODELS.vision);
+            const embeddingModels = mergeKeepingOrder(dbSettings.embeddingModels, AI_MODELS.embedding);
             const scenarios = mergeKeepingOrder(dbSettings.scenarios, DEFAULT_SCENARIOS);
             const behaviors = mergeKeepingOrder(dbSettings.behaviors, DEFAULT_BEHAVIORS);
 
             return NextResponse.json({
                 textModels,
                 visionModels,
+                embeddingModels,
                 scenarios,
                 behaviors
             }, { headers: corsHeaders });
@@ -223,6 +226,7 @@ export async function GET(req) {
         const defaultSettings = {
             textModels: AI_MODELS.text.map(m => ({ ...m, enabled: true })),
             visionModels: AI_MODELS.vision.map(m => ({ ...m, enabled: true })),
+            embeddingModels: AI_MODELS.embedding.map(m => ({ ...m, enabled: true })),
             scenarios: DEFAULT_SCENARIOS,
             behaviors: DEFAULT_BEHAVIORS
         };

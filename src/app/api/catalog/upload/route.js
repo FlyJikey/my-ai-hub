@@ -4,7 +4,7 @@ import { parseCatalog } from '@/lib/catalog-parser';
 import { requireAuth } from '@/lib/auth';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300; // 5 минут для больших файлов
+export const maxDuration = 60;
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',

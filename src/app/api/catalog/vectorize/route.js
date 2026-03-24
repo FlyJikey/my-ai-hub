@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabase } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300; // 5 минут для векторизации
+export const maxDuration = 60;
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -25,9 +25,30 @@ function buildFailedIdsFilter(failedIds) {
 
 export async function POST(req) {
     try {
-        const polzaKey = (process.env.POLZA_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
-        if (!polzaKey) {
-            return NextResponse.json({ error: "Ключ POLZA_API_KEY не установлен на сервере" }, { status: 500, headers: corsHeaders });
+        // Получаем параметры из тела запроса
+        const body = await req.json().catch(() => ({}));
+        const modelId = body.model || "text-embedding-3-small";
+        const provider = body.provider || "polza";
+        
+        console.log(`[VECTORIZE] Начало векторизации с моделью: ${modelId} (${provider})`);
+        
+        // Получаем API ключи в зависимости от провайдера
+        let apiKey, apiUrl;
+        
+        if (provider === "polza") {
+            apiKey = (process.env.POLZA_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
+            apiUrl = "https://polza.ai/api/v1/embeddings";
+            if (!apiKey) {
+                return NextResponse.json({ error: "Ключ POLZA_API_KEY не установлен на сервере" }, { status: 500, headers: corsHeaders });
+            }
+        } else if (provider === "openrouter") {
+            apiKey = (process.env.OPENROUTER_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
+            apiUrl = "https://openrouter.ai/api/v1/embeddings";
+            if (!apiKey) {
+                return NextResponse.json({ error: "Ключ OPENROUTER_API_KEY не установлен на сервере" }, { status: 500, headers: corsHeaders });
+            }
+        } else {
+            return NextResponse.json({ error: `Неподдерживаемый провайдер: ${provider}` }, { status: 400, headers: corsHeaders });
         }
 
         // Подсчитываем, сколько всего элементов нужно векторизовать
@@ -41,6 +62,8 @@ export async function POST(req) {
         if (totalToVectorize === 0) {
             return NextResponse.json({ message: "Нет товаров для векторизации", total: 0 }, { headers: corsHeaders });
         }
+        
+        console.log(`[VECTORIZE] Найдено товаров для векторизации: ${totalToVectorize}`);
 
         const { readable, writable } = new TransformStream();
         const writer = writable.getWriter();
@@ -93,26 +116,30 @@ export async function POST(req) {
 
                     const inputs = validItems.map(p => p.raw_text);
 
-                    // Стучимся в Polza.ai
-                    const res = await fetch("https://polza.ai/api/v1/embeddings", {
+                    // Вызываем API для векторизации
+                    console.log(`[VECTORIZE] Отправка батча из ${validItems.length} товаров в ${provider}`);
+                    const res = await fetch(apiUrl, {
                         method: "POST",
                         headers: {
-                            "Authorization": `Bearer ${polzaKey}`,
+                            "Authorization": `Bearer ${apiKey}`,
                             "Content-Type": "application/json"
                         },
                         body: JSON.stringify({
-                            model: "text-embedding-3-small",
+                            model: modelId,
                             input: inputs
                         })
                     });
 
                     if (!res.ok) {
                         const errText = await res.text();
-                        throw new Error("Polza API Error: " + errText);
+                        console.error(`[VECTORIZE] Ошибка API ${provider}:`, errText);
+                        throw new Error(`${provider} API Error: ` + errText);
                     }
 
                     const json = await res.json();
                     const embeddings = json.data;
+                    
+                    console.log(`[VECTORIZE] Получено ${embeddings.length} векторов`);
 
                     // Обновляем товары в базе
                     const updates = await Promise.all(validItems.map(async (item, index) => {
@@ -141,6 +168,8 @@ export async function POST(req) {
 
                     const successfulUpdates = updates.filter(Boolean).length;
                     processed += successfulUpdates;
+                    
+                    console.log(`[VECTORIZE] Обновлено в БД: ${successfulUpdates} товаров. Всего обработано: ${processed}/${totalToVectorize}`);
 
                     if (successfulUpdates === 0) {
                         throw new Error('Векторизация остановлена: текущая пачка не записалась в базу данных');
@@ -151,6 +180,7 @@ export async function POST(req) {
                     await sendEvent({ processed, total: totalToVectorize, percent, failed });
                 }
 
+                console.log(`[VECTORIZE] Завершено успешно: ${processed} товаров, пропущено: ${failed}`);
                 await sendEvent({ done: true, total: totalToVectorize, processed, failed });
 
             } catch (err) {

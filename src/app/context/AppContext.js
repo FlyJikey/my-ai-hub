@@ -13,10 +13,12 @@ export function AppProvider({ children }) {
     // Store the full model objects
     const [availableTextModels, setAvailableTextModels] = useState([]);
     const [availableVisionModels, setAvailableVisionModels] = useState([]);
+    const [availableEmbeddingModels, setAvailableEmbeddingModels] = useState([]);
     const [availableScenarios, setAvailableScenarios] = useState([]);
 
     const [selectedTextModel, setSelectedTextModel] = useState(AI_MODELS.text[0]);
     const [selectedVisionModel, setSelectedVisionModel] = useState(AI_MODELS.vision[0]);
+    const [selectedEmbeddingModel, setSelectedEmbeddingModel] = useState(AI_MODELS.embedding[0]);
 
     useEffect(() => {
         fetch('/api/settings')
@@ -25,12 +27,15 @@ export function AppProvider({ children }) {
                 if (data && !data.error) {
                     const txt = (data.textModels || []).filter(m => m.enabled !== false);
                     const vis = (data.visionModels || []).filter(m => m.enabled !== false);
+                    const emb = (data.embeddingModels || []).filter(m => m.enabled !== false);
                     const sc = (data.scenarios || []).filter(s => s.enabled !== false);
                     setAvailableTextModels(txt);
                     setAvailableVisionModels(vis);
+                    setAvailableEmbeddingModels(emb);
                     setAvailableScenarios(sc);
                     if (txt.length > 0) setSelectedTextModel(txt[0]);
                     if (vis.length > 0) setSelectedVisionModel(vis[0]);
+                    if (emb.length > 0) setSelectedEmbeddingModel(emb[0]);
                 }
             })
             .catch(err => console.error('Failed to load global settings', err));
@@ -105,8 +110,11 @@ export function AppProvider({ children }) {
             setSelectedTextModel,
             selectedVisionModel,
             setSelectedVisionModel,
+            selectedEmbeddingModel,
+            setSelectedEmbeddingModel,
             availableTextModels,
             availableVisionModels,
+            availableEmbeddingModels,
             availableScenarios,
             history,
             addToHistory,
