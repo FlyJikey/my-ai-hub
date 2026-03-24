@@ -22,6 +22,7 @@ export default function CatalogPage() {
     const [isVectorizing, setIsVectorizing] = useState(false);
     const [vectorizeProgress, setVectorizeProgress] = useState({ percent: 0, processed: 0, total: 0, error: "" });
     const abortControllerVectorizeRef = useRef(null);
+    const isFullyReady = stats.hasData && stats.total > 0 && stats.vectorized === stats.total;
 
     // === On Mount ===
     useEffect(() => {
@@ -281,6 +282,16 @@ export default function CatalogPage() {
                             ? `Векторизовано: ${stats.vectorized?.toLocaleString("ru-RU") || 0} / ${stats.total.toLocaleString("ru-RU")} | Обновлена: ${new Date(stats.lastUpdated).toLocaleDateString("ru-RU", { day: 'numeric', month: 'long', year: 'numeric'})}` 
                             : 'Загрузите данные для RAG (векторный поиск и общение с ИИ на базе вашего каталога)'}
                     </p>
+                    {stats.hasData && isFullyReady && (
+                        <div style={{ marginTop: '0.6rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.35)', borderRadius: '999px', padding: '0.25rem 0.7rem', fontSize: '0.85rem', fontWeight: 600 }}>
+                            <CheckCircle size={14} /> База полностью готова к анализу
+                        </div>
+                    )}
+                    {stats.hasData && !isFullyReady && (
+                        <div style={{ marginTop: '0.6rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.35)', borderRadius: '999px', padding: '0.25rem 0.7rem', fontSize: '0.85rem', fontWeight: 600 }}>
+                            <AlertTriangle size={14} /> База не довекторизована, поиск будет неполным
+                        </div>
+                    )}
                 </div>
                 {stats.hasData && view === "chat" && (
                     <button className={styles.btnUpdate} onClick={() => setView("upload")}>

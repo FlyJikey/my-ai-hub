@@ -17,6 +17,42 @@ export async function OPTIONS() {
     return NextResponse.json({}, { headers: corsHeaders });
 }
 
+function normalizeProductsForDb(products) {
+    const normalized = [];
+    const skuIndex = new Map();
+    const runSeed = Date.now();
+    let duplicatesMerged = 0;
+
+    for (let i = 0; i < products.length; i += 1) {
+        const p = products[i] || {};
+        const rawSku = String(p.sku || '').trim();
+        const sku = rawSku || `no-sku-${runSeed}-${i}`;
+
+        const record = {
+            sku,
+            name: String(p.name || '').trim(),
+            category: String(p.category || '').trim(),
+            description: String(p.description || '').trim(),
+            price: Number(p.price || 0),
+            attributes: p.attributes && typeof p.attributes === 'object' ? p.attributes : {},
+            raw_text: String(p.raw_text || '').trim(),
+            embedding: null
+        };
+
+        if (skuIndex.has(sku)) {
+            const existingIndex = skuIndex.get(sku);
+            normalized[existingIndex] = record;
+            duplicatesMerged += 1;
+            continue;
+        }
+
+        skuIndex.set(sku, normalized.length);
+        normalized.push(record);
+    }
+
+    return { normalized, duplicatesMerged };
+}
+
 async function readAllProductsForBackup() {
     const allProducts = [];
     const pageSize = 1000;
@@ -112,6 +148,12 @@ export async function POST(req) {
             return NextResponse.json({ error: "Файл пуст или не содержит корректных данных" }, { status: 400, headers: corsHeaders });
         }
 
+        const { normalized: dbProducts, duplicatesMerged } = normalizeProductsForDb(products);
+
+        if (dbProducts.length === 0) {
+            return NextResponse.json({ error: "После нормализации не осталось валидных записей" }, { status: 400, headers: corsHeaders });
+        }
+
         // Используем TransformStream для отправки SSE прогресса
         const { readable, writable } = new TransformStream();
         const writer = writable.getWriter();
@@ -137,38 +179,27 @@ export async function POST(req) {
                 const CONCURRENCY = 5; 
                 let processedCount = 0;
                 let insertedCount = 0;
-                const total = products.length;
+                const total = dbProducts.length;
+                const sourceTotal = products.length;
                 let fatalError = null;
 
                 // Разбиваем массив на батчи
                 const batches = [];
                 for (let i = 0; i < total; i += BATCH_SIZE) {
-                    batches.push(products.slice(i, i + BATCH_SIZE));
+                    batches.push(dbProducts.slice(i, i + BATCH_SIZE));
                 }
 
                 // Функция для обработки одного батча
                 const processBatch = async (batch) => {
                     try {
-                        const recordsToInsert = batch.map(p => ({
-                            sku: p.sku,
-                            name: p.name,
-                            category: p.category,
-                            description: p.description,
-                            price: p.price,
-                            attributes: p.attributes,
-                            raw_text: p.raw_text,
-                            embedding: null // Векторизация будет происходить позже отдельным запросом
-                        }));
-
-                        // Сохраняем в Supabase обычным insert (убрали upsert по просьбе пользователя)
-                        if (recordsToInsert.length > 0) {
-                            const { error: dbError } = await supabase.from('products').insert(recordsToInsert);
+                        if (batch.length > 0) {
+                            const { error: dbError } = await supabase.from('products').insert(batch);
 
                             if (dbError) {
                                 throw new Error("Supabase DB Error: " + (dbError.message || JSON.stringify(dbError)));
                             }
 
-                            insertedCount += recordsToInsert.length;
+                            insertedCount += batch.length;
                         }
 
                         processedCount += batch.length;
@@ -203,10 +234,10 @@ export async function POST(req) {
                 }
 
                 if (insertedCount !== total) {
-                    throw new Error(`В базу записано ${insertedCount} из ${total} товаров`);
+                    throw new Error(`В базу записано ${insertedCount} из ${total} подготовленных товаров`);
                 }
 
-                await sendEvent({ done: true, total });
+                await sendEvent({ done: true, total, sourceTotal, duplicatesMerged });
 
             } catch (err) {
                 console.error("Upload process error:", err);

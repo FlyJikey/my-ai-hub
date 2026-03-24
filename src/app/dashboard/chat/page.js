@@ -14,6 +14,7 @@ import {
     Copy, 
     Check, 
     AlertCircle,
+    AlertTriangle,
     Settings as SettingsIcon,
     Zap,
     Layers,
@@ -58,6 +59,7 @@ export default function AIHubChatPage() {
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [useCatalog, setUseCatalog] = useState(false);
+    const [catalogStats, setCatalogStats] = useState(null);
     const fileInputRef = useRef(null);
     const chatEndRef = useRef(null);
     const textareaRef = useRef(null);
@@ -119,6 +121,36 @@ export default function AIHubChatPage() {
             localStorage.setItem('aiHub_chats_v3', JSON.stringify(chatsToSave));
         }
     }, [chats]);
+
+    useEffect(() => {
+        if (!useCatalog) {
+            return;
+        }
+
+        let cancelled = false;
+        const fetchCatalogStats = async () => {
+            try {
+                const res = await fetch('/api/catalog/stats');
+                if (!res.ok) {
+                    return;
+                }
+                const data = await res.json();
+                if (!cancelled) {
+                    setCatalogStats(data);
+                }
+            } catch (_e) {
+                // ignore stats poll errors in chat UI
+            }
+        };
+
+        fetchCatalogStats();
+        const timer = window.setInterval(fetchCatalogStats, 15000);
+
+        return () => {
+            cancelled = true;
+            window.clearInterval(timer);
+        };
+    }, [useCatalog]);
 
     // Cleanup models
     useEffect(() => {
@@ -584,6 +616,25 @@ export default function AIHubChatPage() {
                                     {useCatalog ? 'База: ВКЛЮЧЕНА' : 'База товаров'}
                                 </button>
                             </div>
+
+                            {useCatalog && catalogStats?.hasData && catalogStats.vectorized < catalogStats.total && (
+                                <div style={{
+                                    marginBottom: '10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    border: '1px solid rgba(245, 158, 11, 0.35)',
+                                    background: 'rgba(245, 158, 11, 0.1)',
+                                    color: '#f59e0b',
+                                    borderRadius: '10px',
+                                    padding: '8px 10px',
+                                    fontSize: '0.82rem'
+                                }}>
+                                    <AlertTriangle size={14} />
+                                    База не довекторизована ({catalogStats.vectorized.toLocaleString('ru-RU')} / {catalogStats.total.toLocaleString('ru-RU')}).
+                                    Для точного поиска сначала завершите векторизацию в разделе База товаров.
+                                </div>
+                            )}
 
                             <div className={styles.mainInputRow}>
                                 <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} accept="image/*" />
