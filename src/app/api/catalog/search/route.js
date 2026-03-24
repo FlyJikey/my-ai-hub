@@ -75,9 +75,12 @@ export async function POST(req) {
 
         // 2. Векторный поиск через Supabase RPC
         // Получаем больше товаров для поддержки offset на уровне JS
+        // Максимум 200 товаров за раз (100 лимит + 100 offset)
+        const matchCount = Math.min(limit + offset, 200);
+        
         const { data: allProducts, error: rpcError } = await supabase.rpc('match_products', {
             query_embedding: queryEmbedding,
-            match_count: limit + offset
+            match_count: matchCount
         });
 
         if (rpcError) {
