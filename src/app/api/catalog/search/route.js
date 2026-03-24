@@ -20,6 +20,7 @@ export async function POST(req) {
         const body = await req.json();
         const query = body.query || "";
         const limit = body.limit || 20;
+        const offset = body.offset || 0;
         const embeddingModel = body.embeddingModel || "text-embedding-3-small";
         const embeddingProvider = body.embeddingProvider || "polza";
 
@@ -27,7 +28,7 @@ export async function POST(req) {
             return NextResponse.json({ error: "Пустой запрос" }, { status: 400, headers: corsHeaders });
         }
 
-        console.log(`[CATALOG SEARCH] Запрос: "${query}", модель: ${embeddingModel} (${embeddingProvider})`);
+        console.log(`[CATALOG SEARCH] Запрос: "${query}", модель: ${embeddingModel} (${embeddingProvider}), limit: ${limit}, offset: ${offset}`);
 
         // Получаем API ключ в зависимости от провайдера
         let apiKey, apiUrl;
@@ -73,9 +74,10 @@ export async function POST(req) {
         console.log(`[CATALOG SEARCH] Embedding создан, размерность: ${queryEmbedding.length}`);
 
         // 2. Векторный поиск через Supabase RPC
-        const { data: products, error: rpcError } = await supabase.rpc('match_products', {
+        // Получаем больше товаров для поддержки offset на уровне JS
+        const { data: allProducts, error: rpcError } = await supabase.rpc('match_products', {
             query_embedding: queryEmbedding,
-            match_count: limit
+            match_count: limit + offset
         });
 
         if (rpcError) {
@@ -83,7 +85,10 @@ export async function POST(req) {
             return NextResponse.json({ error: "Ошибка поиска в базе данных: " + rpcError.message }, { status: 500, headers: corsHeaders });
         }
 
-        console.log(`[CATALOG SEARCH] Найдено товаров: ${(products || []).length}`);
+        // Применить offset на уровне JS
+        const products = allProducts ? allProducts.slice(offset, offset + limit) : [];
+
+        console.log(`[CATALOG SEARCH] Найдено товаров: ${(products || []).length} (offset: ${offset}, limit: ${limit})`);
 
         return NextResponse.json({
             results: products || [],

@@ -56,12 +56,13 @@ export default function AIHubChatPage() {
     const [selectedVisionProcessor, setSelectedVisionProcessor] = useState(null);
     const [currentStyle, setCurrentStyle] = useState("normal"); // normal, concise, formal, creative, code
 
-    // Image handling
-    const [imageFile, setImageFile] = useState(null);
-    const [imagePreview, setImagePreview] = useState(null);
-    const [useCatalog, setUseCatalog] = useState(false);
-    const [catalogStats, setCatalogStats] = useState(null);
-    const fileInputRef = useRef(null);
+     // Image handling
+     const [imageFile, setImageFile] = useState(null);
+     const [imagePreview, setImagePreview] = useState(null);
+     const [useCatalog, setUseCatalog] = useState(false);
+     const [catalogStats, setCatalogStats] = useState(null);
+     const [catalogOffset, setCatalogOffset] = useState(0);
+     const fileInputRef = useRef(null);
     const chatEndRef = useRef(null);
     const textareaRef = useRef(null);
 
@@ -287,6 +288,10 @@ export default function AIHubChatPage() {
             // Catalog RAG Pass
             if (useCatalog) {
                 try {
+                    // Получить статистику базы
+                    const statsRes = await fetch("/api/catalog/stats");
+                    const catalogStats = await statsRes.json();
+                    
                     // Собираем последние 3 сообщения пользователя для сохранения контекста поиска
                     const recentUserText = currentMessages
                         .filter(m => m.role === 'user')
@@ -294,12 +299,25 @@ export default function AIHubChatPage() {
                         .map(m => m.text)
                         .join(" ");
 
+                    // Проверить, просит ли пользователь показать ещё товары
+                    const isShowMore = recentUserText.toLowerCase().includes("показать ещё") || 
+                                       recentUserText.toLowerCase().includes("покажи ещё") ||
+                                       recentUserText.toLowerCase().includes("показать еще") ||
+                                       recentUserText.toLowerCase().includes("покажи еще");
+
+                    if (isShowMore) {
+                        setCatalogOffset(prev => prev + 100);
+                    } else {
+                        setCatalogOffset(0);
+                    }
+
                     const searchRes = await fetch("/api/catalog/search", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ 
                             query: recentUserText, 
-                            limit: 50,
+                            limit: 100,
+                            offset: catalogOffset,
                             embeddingModel: selectedEmbeddingModel?.id || "text-embedding-3-small",
                             embeddingProvider: selectedEmbeddingModel?.provider || "polza"
                         })
@@ -310,7 +328,20 @@ export default function AIHubChatPage() {
                             const context = searchData.results.map((p, i) => 
                                 `${i+1}. [Арт: ${p.sku}] ${p.name} | Кат: ${p.category} | Цена: ${p.price} руб. | ${JSON.stringify(p.attributes)}`
                             ).join("\n");
-                            finalPrompt = `ДАННЫЕ ИЗ БАЗЫ ТОВАРОВ (используй их для ответа):\n${context}\n\nВОПРОС ПОЛЬЗОВАТЕЛЯ:\n${finalPrompt}`;
+                            
+                            finalPrompt = `ИНФОРМАЦИЯ О БАЗЕ: В базе данных всего ${catalogStats.total} товаров. Показаны топ-${searchData.results.length} наиболее релевантных товаров${catalogOffset > 0 ? ` (начиная с позиции ${catalogOffset})` : ''}.
+
+НАЙДЕННЫЕ ТОВАРЫ:
+${context}
+
+ИНСТРУКЦИЯ ДЛЯ ИИ: 
+- Отвечай естественно, без жёстких шаблонов
+- Если пользователь хочет увидеть больше товаров, предложи ему написать "покажи ещё"
+- Если показаны не все релевантные товары, упомяни об этом
+- Используй данные из списка товаров для ответа
+
+ВОПРОС ПОЛЬЗОВАТЕЛЯ:
+${finalPrompt}`;
                         } else {
                             finalPrompt = `[Системное примечание: Пользователь попытался найти данные в базе товаров, но поиск по векторам ничего не дал. Скажи пользователю, что по его запросу в базе ничего не найдено.]\n\nВОПРОС ПОЛЬЗОВАТЕЛЯ:\n${finalPrompt}`;
                         }
