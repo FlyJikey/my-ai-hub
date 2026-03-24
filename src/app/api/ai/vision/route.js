@@ -201,6 +201,53 @@ export async function POST(req) {
                 throw new Error("OpenRouter вернул пустой ответ (choices).");
             }
             textResponse = data.choices[0].message.content;
+        } else if (provider === "omniroute") {
+            const omnirouteKey = process.env.OMNIROUTE_API_KEY;
+            const omnirouteBaseUrl = process.env.OMNIROUTE_BASE_URL || "http://89.208.14.46:20128/v1";
+            if (!omnirouteKey) {
+                return NextResponse.json({ error: "API ключ OMNIROUTE_API_KEY не настроен (.env.local)" }, { status: 500, headers: corsHeaders });
+            }
+
+            const res = await fetch(`${omnirouteBaseUrl}/chat/completions`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${omnirouteKey}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: promptText },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        url: imageUrl
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    temperature: 0.1
+                })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                console.error("OmniRoute Vision Error", errorData);
+                const errMsg = errorData.error?.message || "Ошибка Vision API OmniRoute";
+                await logApiError('vision', provider, modelId, errMsg, errorData);
+                throw new Error(errMsg);
+            }
+
+            const data = await res.json();
+            if (!data || !data.choices || data.choices.length === 0) {
+                console.error("OmniRoute Vision empty choices:", data);
+                throw new Error("OmniRoute вернул пустой ответ (choices).");
+            }
+            textResponse = data.choices[0].message.content;
         } else if (provider === "gemini") {
             const geminiKey = process.env.GEMINI_API_KEY;
             if (!geminiKey) {

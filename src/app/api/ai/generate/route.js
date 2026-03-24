@@ -153,6 +153,30 @@ async function handlePost(req) {
                             temperature: 0.1
                         })
                     });
+                } else if (visionProvider === "omniroute") {
+                    const omnirouteKey = (process.env.OMNIROUTE_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
+                    const omnirouteBaseUrl = process.env.OMNIROUTE_BASE_URL || "http://89.208.14.46:20128/v1";
+                    if (!omnirouteKey) return NextResponse.json({ error: "Не настроен OMNIROUTE_API_KEY в AI Hub" }, { status: 500 });
+
+                    console.log(`[Vision] Using OmniRoute. Model: ${visionModelId}. Key length: ${omnirouteKey.length}, Starts with: ${omnirouteKey.substring(0, 4)}***`);
+
+                    vRes = await fetch(`${omnirouteBaseUrl}/chat/completions`, {
+                        method: "POST",
+                        headers: { "Authorization": `Bearer ${omnirouteKey}`, "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            model: visionModelId,
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: [
+                                        { type: "text", text: visionPromptText },
+                                        { type: "image_url", image_url: { url: imageUrl } }
+                                    ]
+                                }
+                            ],
+                            temperature: 0.1
+                        })
+                    });
                 } else {
                     // Default to OpenRouter
                     const orKey = (process.env.OPENROUTER_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
@@ -281,6 +305,35 @@ ${scenarioPrompt}
             if (!tRes.ok) {
                 const errText = await tRes.text();
                 return NextResponse.json({ error: "Ошибка Groq API: " + errText }, { status: 500 });
+            }
+            textData = await tRes.json();
+            finalText = textData.choices[0].message.content.trim();
+
+        } else if (textProvider === "omniroute") {
+            const omnirouteKey = (process.env.OMNIROUTE_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
+            const omnirouteBaseUrl = process.env.OMNIROUTE_BASE_URL || "http://89.208.14.46:20128/v1";
+            if (!omnirouteKey) return NextResponse.json({ error: "Не настроен OMNIROUTE_API_KEY в AI Hub" }, { status: 500 });
+
+            console.log(`[Text] Using OmniRoute. Model: ${textModelId}. Key length: ${omnirouteKey.length}, Starts with: ${omnirouteKey.substring(0, 4)}***`);
+
+            tRes = await fetch(`${omnirouteBaseUrl}/chat/completions`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${omnirouteKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: textModelId,
+                    messages: [
+                        { role: "system", content: activeBehavior.systemPrompt },
+                        { role: "user", content: fullContextPrompt }
+                    ],
+                    temperature: activeBehavior.temperature != null ? Number(activeBehavior.temperature) : 0.5,
+                    top_p: activeBehavior.top_p != null ? Number(activeBehavior.top_p) : 0.9,
+                    max_tokens: activeBehavior.max_tokens != null ? Number(activeBehavior.max_tokens) : 2000
+                })
+            });
+
+            if (!tRes.ok) {
+                const errText = await tRes.text();
+                return NextResponse.json({ error: "Ошибка OmniRoute API: " + errText }, { status: 500 });
             }
             textData = await tRes.json();
             finalText = textData.choices[0].message.content.trim();

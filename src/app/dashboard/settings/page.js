@@ -1018,6 +1018,7 @@ export default function SettingsPage() {
                                         <option value="polza">Polza.ai</option>
                                         <option value="openrouter">OpenRouter</option>
                                         <option value="groq">Groq</option>
+                                        <option value="omniroute">OmniRoute</option>
                                     </select>
                                 </div>
                                 <div className={styles.inputGroup} style={{ flex: 1 }}>

@@ -172,6 +172,38 @@ export async function POST(req) {
                     await logApiError('text', provider, modelId, errorMsg, err);
                 }
             } catch (e) { errorMsg = e.message; }
+        } else if (provider === "omniroute") {
+            const omnirouteKey = process.env.OMNIROUTE_API_KEY;
+            const omnirouteBaseUrl = process.env.OMNIROUTE_BASE_URL || "http://89.208.14.46:20128/v1";
+            if (!omnirouteKey) {
+                return NextResponse.json({ error: "Ключ OMNIROUTE_API_KEY не задан в .env.local" }, { status: 400 });
+            }
+            try {
+                const res = await fetch(`${omnirouteBaseUrl}/chat/completions`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${omnirouteKey}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: modelId,
+                        messages: chatHistory || [
+                            { role: "system", content: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts. Keep foreign brand names, models, and original text in their original language." },
+                            { role: "user", content: prompt }
+                        ],
+                        temperature: 0.7,
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    resultText = data.choices[0].message.content;
+                } else {
+                    const err = await res.json();
+                    errorMsg = err.error?.message || err.message || "Ошибка API OmniRoute";
+                    await logApiError('text', provider, modelId, errorMsg, err);
+                }
+            } catch (e) { errorMsg = e.message; }
         } else {
             return NextResponse.json({ error: `Провайдер ${provider} временно не поддерживается.` }, { status: 400 });
         }

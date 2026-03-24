@@ -88,6 +88,21 @@ async function handlePost(req) {
                     max_tokens: max_tokens
                 })
             });
+        } else if (provider === 'omniroute') {
+            const omnirouteKey = (process.env.OMNIROUTE_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
+            const omnirouteBaseUrl = process.env.OMNIROUTE_BASE_URL || "http://89.208.14.46:20128/v1";
+            if (!omnirouteKey) return NextResponse.json({ error: "Не настроен OMNIROUTE_API_KEY" }, { status: 500 });
+
+            apiRes = await fetch(`${omnirouteBaseUrl}/chat/completions`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${omnirouteKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: selectedModel,
+                    messages: messages,
+                    temperature: temperature,
+                    max_tokens: max_tokens
+                })
+            });
         } else {
             const orKey = (process.env.OPENROUTER_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
             if (!orKey) return NextResponse.json({ error: "Не настроен OPENROUTER_API_KEY" }, { status: 500 });
