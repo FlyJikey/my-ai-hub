@@ -1,45 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useSyncExternalStore } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { AI_MODELS } from "../../config/models";
 
 const AppContext = createContext();
-
-let cachedHistoryRaw = null;
-let cachedHistoryValue = [];
-
-function subscribeToHistory(onStoreChange) {
-    window.addEventListener("storage", onStoreChange);
-    window.addEventListener("aihub-history-change", onStoreChange);
-
-    return () => {
-        window.removeEventListener("storage", onStoreChange);
-        window.removeEventListener("aihub-history-change", onStoreChange);
-    };
-}
-
-function getHistorySnapshot() {
-    try {
-        const savedHistory = localStorage.getItem("aiHubHistory");
-
-        if (savedHistory === cachedHistoryRaw) {
-            return cachedHistoryValue;
-        }
-
-        cachedHistoryRaw = savedHistory;
-        cachedHistoryValue = savedHistory ? JSON.parse(savedHistory) : [];
-        return cachedHistoryValue;
-    } catch (e) {
-        console.error("Failed to load history", e);
-        cachedHistoryRaw = null;
-        cachedHistoryValue = [];
-        return cachedHistoryValue;
-    }
-}
-
-function getHistoryServerSnapshot() {
-    return [];
-}
 
 export function AppProvider({ children }) {
     // Global State
@@ -73,12 +37,37 @@ export function AppProvider({ children }) {
     }, []);
 
     // History State
-    const history = useSyncExternalStore(
-        subscribeToHistory,
-        getHistorySnapshot,
-        getHistoryServerSnapshot
-    );
+    const [history, setHistory] = useState([]);
     const [analysisLogs, setAnalysisLogs] = useState([]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadHistory = () => {
+            if (cancelled) {
+                return;
+            }
+
+            try {
+                const savedHistory = localStorage.getItem("aiHubHistory");
+                if (savedHistory) {
+                    const parsed = JSON.parse(savedHistory);
+                    if (!cancelled) {
+                        setHistory(Array.isArray(parsed) ? parsed : []);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to load history", e);
+            }
+        };
+
+        const timerId = window.setTimeout(loadHistory, 0);
+
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timerId);
+        };
+    }, []);
 
     // Save specific generation to history
     const addToHistory = (item) => {
@@ -88,9 +77,11 @@ export function AppProvider({ children }) {
             timestamp: new Date().toISOString()
         };
 
-        const updated = [newItem, ...history].slice(0, 100); // Keep last 100 items
-        localStorage.setItem("aiHubHistory", JSON.stringify(updated));
-        window.dispatchEvent(new Event("aihub-history-change"));
+        setHistory(prev => {
+            const updated = [newItem, ...prev].slice(0, 100);
+            localStorage.setItem("aiHubHistory", JSON.stringify(updated));
+            return updated;
+        });
     };
 
     // Stats Derived from History
