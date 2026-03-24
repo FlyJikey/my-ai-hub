@@ -5,6 +5,9 @@ import { AI_MODELS } from "../../config/models";
 
 const AppContext = createContext();
 
+let cachedHistoryRaw = null;
+let cachedHistoryValue = [];
+
 function subscribeToHistory(onStoreChange) {
     window.addEventListener("storage", onStoreChange);
     window.addEventListener("aihub-history-change", onStoreChange);
@@ -18,10 +21,19 @@ function subscribeToHistory(onStoreChange) {
 function getHistorySnapshot() {
     try {
         const savedHistory = localStorage.getItem("aiHubHistory");
-        return savedHistory ? JSON.parse(savedHistory) : [];
+
+        if (savedHistory === cachedHistoryRaw) {
+            return cachedHistoryValue;
+        }
+
+        cachedHistoryRaw = savedHistory;
+        cachedHistoryValue = savedHistory ? JSON.parse(savedHistory) : [];
+        return cachedHistoryValue;
     } catch (e) {
         console.error("Failed to load history", e);
-        return [];
+        cachedHistoryRaw = null;
+        cachedHistoryValue = [];
+        return cachedHistoryValue;
     }
 }
 
