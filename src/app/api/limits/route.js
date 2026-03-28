@@ -41,7 +41,8 @@ export async function GET(req) {
             openrouter: { status: 'unused', balance: null, raw: null },
             groq: { status: 'unused', balance: 'Не тарифицируется', raw: null },
             gemini: { status: 'unused', balance: 'Свободный доступ/Limit', raw: null },
-            omniroute: { status: 'unused', balance: null, raw: null }
+            omniroute: { status: 'unused', balance: null, raw: null },
+            huggingface: { status: 'unused', balance: null, raw: null }
         };
 
         // 2. Fetch from Polza.ai if enabled
@@ -149,6 +150,19 @@ export async function GET(req) {
                 }
             } else {
                 limitsData.omniroute = { status: 'missing_key', balance: 'Ключ не настроен' };
+            }
+        }
+
+        // 6. HuggingFace
+        if (enabledProviders.has('huggingface')) {
+            const hfKey = process.env.HUGGINGFACE_API_KEY;
+            if (hfKey) {
+                limitsData.huggingface = {
+                    status: 'active',
+                    balance: 'Бесплатный Inference API (с лимитами)'
+                };
+            } else {
+                limitsData.huggingface = { status: 'missing_key', balance: 'Ключ не настроен' };
             }
         }
 

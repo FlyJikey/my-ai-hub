@@ -204,6 +204,38 @@ export async function POST(req) {
                     await logApiError('text', provider, modelId, errorMsg, err);
                 }
             } catch (e) { errorMsg = e.message; }
+        } else if (provider === "huggingface") {
+            const hfKey = process.env.HUGGINGFACE_API_KEY;
+            if (!hfKey) {
+                return NextResponse.json({ error: "Ключ HUGGINGFACE_API_KEY не задан в .env.local" }, { status: 400 });
+            }
+            try {
+                const res = await fetch(`https://router.huggingface.co/hf-inference/models/${modelId}/v1/chat/completions`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${hfKey}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: modelId,
+                        messages: chatHistory || [
+                            { role: "system", content: "You are a professional SEO copywriter for an e-commerce store. Write detailed, engaging, and rich selling texts in Russian based on the provided facts. Keep foreign brand names, models, and original text in their original language." },
+                            { role: "user", content: prompt }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 2000
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    resultText = data.choices[0].message.content;
+                } else {
+                    const err = await res.json().catch(() => ({ error: { message: res.statusText } }));
+                    errorMsg = err.error?.message || err.message || "Ошибка API HuggingFace";
+                    await logApiError('text', provider, modelId, errorMsg, err);
+                }
+            } catch (e) { errorMsg = e.message; }
         } else {
             return NextResponse.json({ error: `Провайдер ${provider} временно не поддерживается.` }, { status: 400 });
         }

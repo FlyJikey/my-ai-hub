@@ -49,12 +49,14 @@ async function handlePost(req) {
         if (!provider) {
             // Угадываем провайдера по модели, если его нет в списке
             const isGroqModel = selectedModel.startsWith('llama') || selectedModel.startsWith('mixtral') || selectedModel.startsWith('gemma');
-            if (selectedModel.includes('/')) {
-                provider = 'polza'; // или 'openrouter', но Polza поддерживает форматы с / чаще в кастомных
+            if (selectedModel.includes('/') && !selectedModel.includes(':free')) {
+                provider = 'polza';
+            } else if (selectedModel.includes(':free')) {
+                provider = 'openrouter';
             } else if (isGroqModel) {
                 provider = 'groq';
             } else {
-                provider = 'polza'; // По умолчанию для кастомных/неизвестных
+                provider = 'polza';
             }
         }
 
@@ -96,6 +98,20 @@ async function handlePost(req) {
             apiRes = await fetch(`${omnirouteBaseUrl}/chat/completions`, {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${omnirouteKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: selectedModel,
+                    messages: messages,
+                    temperature: temperature,
+                    max_tokens: max_tokens
+                })
+            });
+        } else if (provider === 'huggingface') {
+            const hfKey = (process.env.HUGGINGFACE_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
+            if (!hfKey) return NextResponse.json({ error: "Не настроен HUGGINGFACE_API_KEY" }, { status: 500 });
+
+            apiRes = await fetch(`https://router.huggingface.co/hf-inference/models/${selectedModel}/v1/chat/completions`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${hfKey}`, "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: selectedModel,
                     messages: messages,

@@ -30,6 +30,15 @@ export default function SettingsPage() {
     const [omnirouteSearch, setOmnirouteSearch] = useState("");
     const [selectedOmnirouteProvider, setSelectedOmnirouteProvider] = useState("all");
 
+    const [openrouterModels, setOpenrouterModels] = useState([]);
+    const [isLoadingOpenrouter, setIsLoadingOpenrouter] = useState(false);
+    const [openrouterSearch, setOpenrouterSearch] = useState("");
+
+    const [huggingfaceModels, setHuggingfaceModels] = useState([]);
+    const [isLoadingHuggingface, setIsLoadingHuggingface] = useState(false);
+    const [huggingfaceSearch, setHuggingfaceSearch] = useState("");
+    const [huggingfaceTypeFilter, setHuggingfaceTypeFilter] = useState("all");
+
     useEffect(() => {
         fetchSettings();
     }, []);
@@ -123,7 +132,7 @@ export default function SettingsPage() {
         setIsLoadingOmniroute(true);
         try {
             const mRes = await fetch('/api/omniroute/models');
-            
+
             if (mRes.ok) {
                 const mData = await mRes.json();
                 setOmnirouteModels(mData.data || []);
@@ -132,6 +141,42 @@ export default function SettingsPage() {
             console.error("Error fetching OmniRoute data:", err);
         } finally {
             setIsLoadingOmniroute(false);
+        }
+    };
+
+    const fetchOpenrouterData = async () => {
+        setIsLoadingOpenrouter(true);
+        try {
+            const res = await fetch('/api/openrouter/models');
+            if (res.ok) {
+                const data = await res.json();
+                setOpenrouterModels(data.data || []);
+            } else {
+                const err = await res.json();
+                setMessage({ text: "Ошибка загрузки моделей OpenRouter: " + (err.error || ""), type: "error" });
+            }
+        } catch (err) {
+            console.error("Error fetching OpenRouter data:", err);
+        } finally {
+            setIsLoadingOpenrouter(false);
+        }
+    };
+
+    const fetchHuggingfaceData = async () => {
+        setIsLoadingHuggingface(true);
+        try {
+            const res = await fetch('/api/huggingface/models');
+            if (res.ok) {
+                const data = await res.json();
+                setHuggingfaceModels(data.data || []);
+            } else {
+                const err = await res.json();
+                setMessage({ text: "Ошибка загрузки моделей HuggingFace: " + (err.error || ""), type: "error" });
+            }
+        } catch (err) {
+            console.error("Error fetching HuggingFace data:", err);
+        } finally {
+            setIsLoadingHuggingface(false);
         }
     };
 
@@ -147,6 +192,12 @@ export default function SettingsPage() {
         }
         if (activeTab === 'omniroute' && omnirouteModels.length === 0) {
             fetchOmnirouteData();
+        }
+        if (activeTab === 'openrouter' && openrouterModels.length === 0) {
+            fetchOpenrouterData();
+        }
+        if (activeTab === 'huggingface' && huggingfaceModels.length === 0) {
+            fetchHuggingfaceData();
         }
     }, [activeTab]);
 
@@ -399,6 +450,18 @@ export default function SettingsPage() {
                     onClick={() => setActiveTab('omniroute')}
                 >
                     🌐 OmniRoute
+                </button>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'openrouter' ? styles.tabBtnActive : ''}`}
+                    onClick={() => setActiveTab('openrouter')}
+                >
+                    🔀 OpenRouter
+                </button>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'huggingface' ? styles.tabBtnActive : ''}`}
+                    onClick={() => setActiveTab('huggingface')}
+                >
+                    🤗 HuggingFace
                 </button>
             </div>
 
@@ -704,6 +767,22 @@ export default function SettingsPage() {
                                     {limitsData.omniroute?.status === 'active'
                                         ? 'OmniRoute предоставляет доступ к множеству AI моделей через единый API.'
                                         : 'Ключ OmniRoute не настроен.'}
+                                </p>
+                            </div>
+
+                            {/* HuggingFace Limits */}
+                            <div className={`${styles.card} ${styles.limitCard}`}>
+                                <h3 className={styles.cardTitle}>HuggingFace (Inference API)</h3>
+                                <div className={styles.limitStatusWrapper}>
+                                    <div className={styles.limitStatusLabel}>Статус:</div>
+                                    <div className={`${styles.limitStatusValue} ${limitsData.huggingface?.status === 'active' ? styles.statusActive : styles.statusError}`}>
+                                        {limitsData.huggingface?.status === 'active' ? 'Работает' : 'Не настроен'}
+                                    </div>
+                                </div>
+                                <p className={styles.limitHint}>
+                                    {limitsData.huggingface?.status === 'active'
+                                        ? 'HuggingFace предоставляет бесплатный Inference API с лимитами на запросы.'
+                                        : 'Ключ HUGGINGFACE_API_KEY не настроен.'}
                                 </p>
                             </div>
                         </div>
@@ -1019,6 +1098,7 @@ export default function SettingsPage() {
                                         <option value="openrouter">OpenRouter</option>
                                         <option value="groq">Groq</option>
                                         <option value="omniroute">OmniRoute</option>
+                                        <option value="huggingface">HuggingFace</option>
                                     </select>
                                 </div>
                                 <div className={styles.inputGroup} style={{ flex: 1 }}>
@@ -1307,6 +1387,227 @@ export default function SettingsPage() {
                                                     disabled={isAudioModel || isVideoModel || isMusicModel}
                                                 >
                                                     <Plus size={14} /> Добавить в настройки
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* TAB: OPENROUTER */}
+            {activeTab === 'openrouter' && (
+                <div className={styles.polzaTab}>
+                    <div className={styles.polzaStats}>
+                        <div className={styles.polzaInfoCard} style={{ gridColumn: '1 / -1' }}>
+                            <h3>OpenRouter - Бесплатные модели</h3>
+                            <p>Здесь отображаются только бесплатные модели OpenRouter. Список обновляется автоматически с сервера OpenRouter - модели могут меняться.</p>
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center' }}>
+                                <button className={styles.polzaRefreshBtn} onClick={fetchOpenrouterData} disabled={isLoadingOpenrouter}>
+                                    <RefreshCw size={14} className={isLoadingOpenrouter ? styles.spin : ''} /> Обновить список моделей
+                                </button>
+                                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>
+                                    {openrouterModels.length > 0 ? `Найдено бесплатных моделей: ${openrouterModels.length}` : ''}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className={styles.catalogHeader}>
+                        <h2 className={styles.cardTitle}>Бесплатные модели OpenRouter</h2>
+                        <div className={styles.catalogFilters}>
+                            <div className={styles.searchWrapper}>
+                                <input
+                                    type="text"
+                                    placeholder="Поиск по названию или ID..."
+                                    className={styles.searchInput}
+                                    value={openrouterSearch}
+                                    onChange={(e) => setOpenrouterSearch(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {isLoadingOpenrouter && openrouterModels.length === 0 ? (
+                        <div className={styles.loadingState} style={{ minHeight: '300px' }}><RefreshCw className={styles.spin} /> Загрузка бесплатных моделей...</div>
+                    ) : (
+                        <div className={styles.modelGrid}>
+                            {openrouterModels
+                                .filter(m => {
+                                    if (!openrouterSearch) return true;
+                                    const q = openrouterSearch.toLowerCase();
+                                    return m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
+                                })
+                                .slice(0, 100)
+                                .map(model => {
+                                    const hasVision = model.architecture?.input_modalities?.includes('image') ||
+                                                      model.architecture?.modality?.includes('vision');
+                                    const contextLen = model.context_length ? `${Math.round(model.context_length / 1024)}K` : '?';
+
+                                    return (
+                                        <div key={model.id} className={styles.modelCard}>
+                                            <div className={styles.modelCardHeader}>
+                                                <div className={styles.modelName}>{model.name}</div>
+                                                <div className={styles.modelId}>{model.id}</div>
+                                            </div>
+                                            <div className={styles.modelCapabilities}>
+                                                <span className={styles.capBadge} style={{ background: 'rgba(16,185,129,0.15)', color: '#34d399' }}>БЕСПЛАТНО</span>
+                                                <span className={styles.capBadge}>ctx: {contextLen}</span>
+                                                {hasVision && <span className={styles.capBadge}>vision</span>}
+                                                {model.architecture?.input_modalities?.map(cap => (
+                                                    <span key={cap} className={styles.capBadge}>{cap}</span>
+                                                ))}
+                                            </div>
+                                            <div className={styles.modelActions}>
+                                                <button
+                                                    className={styles.addToSettingsBtn}
+                                                    onClick={() => {
+                                                        const targetKey = hasVision ? 'visionModels' : 'textModels';
+                                                        const exists = settings[targetKey].some(m => m.id === model.id);
+
+                                                        if (exists) {
+                                                            setMessage({ text: `Модель ${model.id} уже есть в настройках!`, type: "success" });
+                                                            setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+                                                            return;
+                                                        }
+
+                                                        const newModel = {
+                                                            id: model.id,
+                                                            name: model.name,
+                                                            description: `OpenRouter (бесплатно). Контекст: ${contextLen}`,
+                                                            provider: "openrouter",
+                                                            tier: "free",
+                                                            modelType: hasVision ? "vision" : "text",
+                                                            enabled: true,
+                                                            isCustom: true
+                                                        };
+
+                                                        setSettings(prev => ({
+                                                            ...prev,
+                                                            [targetKey]: [...prev[targetKey], newModel]
+                                                        }));
+
+                                                        setMessage({ text: `Модель ${model.name} добавлена! Нажмите "Сохранить" вверху страницы.`, type: "success" });
+                                                        setTimeout(() => setMessage({ text: "", type: "" }), 5000);
+                                                    }}
+                                                >
+                                                    <Plus size={14} /> Добавить {hasVision ? '(Vision)' : '(Текст)'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* TAB: HUGGINGFACE */}
+            {activeTab === 'huggingface' && (
+                <div className={styles.polzaTab}>
+                    <div className={styles.polzaStats}>
+                        <div className={styles.polzaInfoCard} style={{ gridColumn: '1 / -1' }}>
+                            <h3>HuggingFace - Бесплатный Inference API</h3>
+                            <p>Бесплатные модели через HuggingFace Serverless Inference API. Доступны текстовые и vision модели. Список обновляется с HuggingFace Hub.</p>
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center' }}>
+                                <button className={styles.polzaRefreshBtn} onClick={fetchHuggingfaceData} disabled={isLoadingHuggingface}>
+                                    <RefreshCw size={14} className={isLoadingHuggingface ? styles.spin : ''} /> Обновить список моделей
+                                </button>
+                                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>
+                                    {huggingfaceModels.length > 0 ? `Найдено моделей: ${huggingfaceModels.length}` : ''}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className={styles.catalogHeader}>
+                        <h2 className={styles.cardTitle}>Каталог моделей HuggingFace</h2>
+                        <div className={styles.catalogFilters}>
+                            <select
+                                className={styles.filterSelect}
+                                value={huggingfaceTypeFilter}
+                                onChange={(e) => setHuggingfaceTypeFilter(e.target.value)}
+                            >
+                                <option value="all">Все типы</option>
+                                <option value="text">Текстовые</option>
+                                <option value="vision">Vision</option>
+                            </select>
+                            <div className={styles.searchWrapper}>
+                                <input
+                                    type="text"
+                                    placeholder="Поиск по названию..."
+                                    className={styles.searchInput}
+                                    value={huggingfaceSearch}
+                                    onChange={(e) => setHuggingfaceSearch(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {isLoadingHuggingface && huggingfaceModels.length === 0 ? (
+                        <div className={styles.loadingState} style={{ minHeight: '300px' }}><RefreshCw className={styles.spin} /> Загрузка моделей HuggingFace...</div>
+                    ) : (
+                        <div className={styles.modelGrid}>
+                            {huggingfaceModels
+                                .filter(m => {
+                                    const matchesSearch = !huggingfaceSearch ||
+                                        m.id.toLowerCase().includes(huggingfaceSearch.toLowerCase()) ||
+                                        m.name.toLowerCase().includes(huggingfaceSearch.toLowerCase());
+                                    const matchesType = huggingfaceTypeFilter === "all" || m.type === huggingfaceTypeFilter;
+                                    return matchesSearch && matchesType;
+                                })
+                                .slice(0, 100)
+                                .map(model => {
+                                    const isVision = model.type === 'vision';
+
+                                    return (
+                                        <div key={model.id} className={styles.modelCard}>
+                                            <div className={styles.modelCardHeader}>
+                                                <div className={styles.modelName}>{model.name}</div>
+                                                <div className={styles.modelId}>{model.id}</div>
+                                            </div>
+                                            <div className={styles.modelCapabilities}>
+                                                <span className={styles.capBadge} style={{ background: 'rgba(16,185,129,0.15)', color: '#34d399' }}>БЕСПЛАТНО</span>
+                                                <span className={styles.capBadge}>{isVision ? 'vision' : 'text'}</span>
+                                                {model.likes > 0 && <span className={styles.capBadge}>❤ {model.likes}</span>}
+                                                {model.downloads > 0 && <span className={styles.capBadge}>↓ {(model.downloads / 1000).toFixed(0)}K</span>}
+                                            </div>
+                                            <div className={styles.modelActions}>
+                                                <button
+                                                    className={styles.addToSettingsBtn}
+                                                    onClick={() => {
+                                                        const targetKey = isVision ? 'visionModels' : 'textModels';
+                                                        const exists = settings[targetKey].some(m => m.id === model.id);
+
+                                                        if (exists) {
+                                                            setMessage({ text: `Модель ${model.id} уже есть в настройках!`, type: "success" });
+                                                            setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+                                                            return;
+                                                        }
+
+                                                        const newModel = {
+                                                            id: model.id,
+                                                            name: model.name,
+                                                            description: `HuggingFace (бесплатно). ${model.fullName}`,
+                                                            provider: "huggingface",
+                                                            tier: "free",
+                                                            modelType: isVision ? "vision" : "text",
+                                                            enabled: true,
+                                                            isCustom: true
+                                                        };
+
+                                                        setSettings(prev => ({
+                                                            ...prev,
+                                                            [targetKey]: [...prev[targetKey], newModel]
+                                                        }));
+
+                                                        setMessage({ text: `Модель ${model.name} добавлена! Нажмите "Сохранить" вверху страницы.`, type: "success" });
+                                                        setTimeout(() => setMessage({ text: "", type: "" }), 5000);
+                                                    }}
+                                                >
+                                                    <Plus size={14} /> Добавить {isVision ? '(Vision)' : '(Текст)'}
                                                 </button>
                                             </div>
                                         </div>

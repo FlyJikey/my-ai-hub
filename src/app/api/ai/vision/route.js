@@ -268,6 +268,52 @@ export async function POST(req) {
                 ]
             });
             textResponse = response.text;
+        } else if (provider === "huggingface") {
+            const hfKey = process.env.HUGGINGFACE_API_KEY;
+            if (!hfKey) {
+                throw new Error("API ключ HUGGINGFACE_API_KEY не настроен (.env.local)");
+            }
+
+            const res = await fetch(`https://router.huggingface.co/hf-inference/models/${modelId}/v1/chat/completions`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${hfKey}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: promptText },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        url: imageUrl
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    temperature: 0.1,
+                    max_tokens: 2000
+                })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ error: { message: res.statusText } }));
+                console.error("HuggingFace Vision Error", errorData);
+                const errMsg = errorData.error?.message || "Ошибка Vision API HuggingFace";
+                await logApiError('vision', provider, modelId, errMsg, errorData);
+                throw new Error(errMsg);
+            }
+
+            const data = await res.json();
+            if (!data || !data.choices || data.choices.length === 0) {
+                throw new Error("HuggingFace вернул пустой ответ (choices).");
+            }
+            textResponse = data.choices[0].message.content;
         } else {
             throw new Error(`Провайдер ${provider} временно не поддерживается для распознавания фото.`);
         }
