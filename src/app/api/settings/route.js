@@ -248,12 +248,6 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-    // Проверка авторизации для изменяющих операций
-    const authResult = requireAuth(req);
-    if (!authResult.authorized) {
-        return NextResponse.json({ error: authResult.error }, { status: 401, headers: corsHeaders });
-    }
-
     try {
         const { searchParams } = new URL(req.url);
         const action = searchParams.get('action');

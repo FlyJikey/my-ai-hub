@@ -926,3 +926,235 @@ input:checked+.slider:before {
     background: #18181b;
     color: #fff;
 }
+
+/* ===== LIGHT THEME ===== */
+@media (prefers-color-scheme: light) {
+    .title {
+        color: #18181b;
+    }
+
+    .subtitle {
+        color: #71717a;
+    }
+
+    .card {
+        background: #ffffff;
+        border-color: #e4e4e7;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .cardTitle {
+        color: #18181b;
+    }
+
+    .addBtn {
+        background: #f4f4f5;
+        border-color: #d4d4d8;
+        color: #27272a;
+    }
+
+    .addBtn:hover {
+        background: #e4e4e7;
+        border-color: #a1a1aa;
+    }
+
+    .listItem,
+    .scenarioItem {
+        background: #f4f4f5;
+        border-color: #e4e4e7;
+    }
+
+    .listItem:hover,
+    .scenarioItem:hover {
+        border-color: #d4d4d8;
+    }
+
+    .itemName {
+        color: #18181b;
+    }
+
+    .itemDesc {
+        color: #71717a;
+    }
+
+    .iconBtn {
+        color: #71717a;
+    }
+
+    .iconBtn:hover {
+        background: #e4e4e7;
+        color: #18181b;
+    }
+
+    .tabsContainer {
+        border-bottom-color: #e4e4e7;
+    }
+
+    .tabBtn {
+        color: #71717a;
+    }
+
+    .tabBtn:hover {
+        color: #27272a;
+    }
+
+    .modal {
+        background: #ffffff;
+        border-color: #d4d4d8;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    }
+
+    .modalTitle {
+        border-bottom-color: #e4e4e7;
+        color: #18181b;
+    }
+
+    .modalFooter {
+        border-top-color: #e4e4e7;
+    }
+
+    .inputGroup label {
+        color: #52525b;
+    }
+
+    .inputGroup input,
+    .inputGroup textarea {
+        background: #f4f4f5;
+        border-color: #d4d4d8;
+        color: #18181b;
+    }
+
+    .inputGroup input::placeholder,
+    .inputGroup textarea::placeholder {
+        color: #a1a1aa;
+    }
+
+    .cancelBtn {
+        border-color: #d4d4d8;
+        color: #52525b;
+    }
+
+    .cancelBtn:hover {
+        background: #f4f4f5;
+        color: #18181b;
+    }
+
+    .emptyState {
+        background: #f4f4f5;
+        border-color: #d4d4d8;
+    }
+
+    .limitStatusWrapper {
+        background: rgba(0, 0, 0, 0.02);
+        border-color: #e4e4e7;
+    }
+
+    .polzaInfoCard {
+        background: #f4f4f5;
+        border-color: #e4e4e7;
+    }
+
+    .polzaInfoCard h3 {
+        color: #18181b;
+    }
+
+    .polzaInfoCard p {
+        color: #71717a;
+    }
+
+    .polzaRefreshBtn {
+        background: rgba(0, 0, 0, 0.05);
+        border-color: rgba(0, 0, 0, 0.1);
+        color: #27272a;
+    }
+
+    .polzaRefreshBtn:hover {
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    .searchInput {
+        background: #f4f4f5;
+        border-color: #e4e4e7;
+        color: #18181b;
+    }
+
+    .filterSelect {
+        background: #f4f4f5;
+        border-color: #e4e4e7;
+        color: #18181b;
+    }
+
+    .filterSelect option {
+        background: #ffffff;
+        color: #18181b;
+    }
+
+    .modelCard {
+        background: #ffffff;
+        border-color: #e4e4e7;
+    }
+
+    .modelCard:hover {
+        border-color: #d4d4d8;
+        box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
+    }
+
+    .modelName {
+        color: #18181b;
+    }
+
+    .modelPrices {
+        background: rgba(0, 0, 0, 0.03);
+    }
+
+    .priceValue {
+        color: #27272a;
+    }
+
+    .addToSettingsBtn {
+        background: #f4f4f5;
+        border-color: #d4d4d8;
+        color: #27272a;
+    }
+
+    .addToSettingsBtn:hover {
+        background: #6366f1;
+        border-color: #6366f1;
+        color: #fff;
+    }
+
+    .slider {
+        background-color: #d4d4d8;
+    }
+
+    .selectInput {
+        background: #f4f4f5;
+        border-color: #d4d4d8;
+        color: #18181b;
+    }
+
+    .modalOverlay {
+        background: rgba(0, 0, 0, 0.4);
+    }
+
+    .badgeFree {
+        background: rgba(59, 130, 246, 0.1);
+        color: #2563eb;
+    }
+
+    .badgePremium {
+        background: rgba(168, 85, 247, 0.1);
+        color: #7c3aed;
+    }
+
+    .badgeCustom {
+        background: rgba(16, 185, 129, 0.1);
+        color: #059669;
+    }
+
+    .textareaInput {
+        background: #f4f4f5;
+        border-color: #d4d4d8;
+        color: #18181b;
+    }
+}
