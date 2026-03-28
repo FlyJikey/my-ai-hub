@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Settings, Shapes, Menu, History, ChevronLeft, ChevronRight, Eye, Scan, MessageSquare, Package } from "lucide-react";
+import { LayoutDashboard, Settings, Shapes, Menu, History, ChevronLeft, ChevronRight, Eye, Scan, MessageSquare, Package, Workflow } from "lucide-react";
 import styles from "./layout.module.css";
 
 export default function DashboardLayout({ children }) {
@@ -58,6 +58,10 @@ export default function DashboardLayout({ children }) {
                         <Scan className={pathname === "/dashboard/ocr" ? styles.linkActiveIcon : styles.linkIcon} />
                         {!collapsed && <span>Распознавание (OCR)</span>}
                     </Link>
+                    <Link href="/dashboard/flows" className={isActive("/dashboard/flows")} title="Цепочки ИИ">
+                        <Workflow className={pathname === "/dashboard/flows" ? styles.linkActiveIcon : styles.linkIcon} />
+                        {!collapsed && <span>Цепочки ИИ</span>}
+                    </Link>
                     <Link href="/dashboard/history" className={isActive("/dashboard/history")} title="История">
                         <History className={pathname === "/dashboard/history" ? styles.linkActiveIcon : styles.linkIcon} />
                         {!collapsed && <span>История</span>}
@@ -83,8 +87,8 @@ export default function DashboardLayout({ children }) {
                 </header>
 
                 {/* Page Content */}
-                <main className={`${styles.content} ${pathname === '/dashboard/chat' ? styles.contentNoPadding : ''}`}>
-                    <div className={`${styles.contentInner} ${pathname === '/dashboard/chat' ? styles.contentInnerFull : ''}`}>
+                <main className={`${styles.content} ${(pathname === '/dashboard/chat' || pathname === '/dashboard/flows') ? styles.contentNoPadding : ''}`}>
+                    <div className={`${styles.contentInner} ${(pathname === '/dashboard/chat' || pathname === '/dashboard/flows') ? styles.contentInnerFull : ''}`}>
                         {children}
                     </div>
                 </main>

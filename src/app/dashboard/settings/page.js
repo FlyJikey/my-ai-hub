@@ -39,6 +39,16 @@ export default function SettingsPage() {
     const [huggingfaceSearch, setHuggingfaceSearch] = useState("");
     const [huggingfaceTypeFilter, setHuggingfaceTypeFilter] = useState("all");
 
+    // Integrations state
+    const [integrations, setIntegrations] = useState({
+        telegram_token: "", huggingface_api_key: "",
+        supabase_url: "", supabase_key: "",
+        extra_db_url: "", extra_db_user: "", extra_db_password: "",
+    });
+    const [isLoadingIntegrations, setIsLoadingIntegrations] = useState(false);
+    const [isSavingIntegrations, setIsSavingIntegrations] = useState(false);
+    const [showSecrets, setShowSecrets] = useState({});
+
     useEffect(() => {
         fetchSettings();
     }, []);
@@ -102,6 +112,38 @@ export default function SettingsPage() {
             setMessage({ text: "Логи успешно очищены.", type: "success" });
             setTimeout(() => setMessage({ text: "", type: "" }), 3000);
         } catch (e) { }
+    };
+
+    const fetchIntegrations = async () => {
+        setIsLoadingIntegrations(true);
+        try {
+            const res = await fetch('/api/integrations');
+            if (res.ok) {
+                const d = await res.json();
+                setIntegrations({ ...d, _loaded: true });
+            }
+        } catch (e) { }
+        finally { setIsLoadingIntegrations(false); }
+    };
+
+    const saveIntegrations = async () => {
+        setIsSavingIntegrations(true);
+        try {
+            const { _loaded, ...data } = integrations;
+            const res = await fetch('/api/integrations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            if (res.ok) {
+                setMessage({ text: "Интеграции сохранены!", type: "success" });
+                setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+            } else {
+                setMessage({ text: "Ошибка сохранения интеграций", type: "error" });
+            }
+        } catch (e) {
+            setMessage({ text: "Ошибка сохранения", type: "error" });
+        } finally { setIsSavingIntegrations(false); }
     };
 
     const fetchPolzaData = async () => {
@@ -195,6 +237,9 @@ export default function SettingsPage() {
         }
         if (activeTab === 'openrouter' && openrouterModels.length === 0) {
             fetchOpenrouterData();
+        }
+        if (activeTab === 'integrations' && !integrations._loaded) {
+            fetchIntegrations();
         }
         if (activeTab === 'huggingface' && huggingfaceModels.length === 0) {
             fetchHuggingfaceData();
@@ -462,6 +507,12 @@ export default function SettingsPage() {
                     onClick={() => setActiveTab('huggingface')}
                 >
                     🤗 HuggingFace
+                </button>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'integrations' ? styles.tabBtnActive : ''}`}
+                    onClick={() => setActiveTab('integrations')}
+                >
+                    🔌 Интеграции
                 </button>
             </div>
 
@@ -1617,6 +1668,172 @@ export default function SettingsPage() {
                     )}
                 </div>
             )}
+            {/* TAB: INTEGRATIONS */}
+            {activeTab === 'integrations' && (
+                <div className={styles.grid}>
+                    <div className={styles.card} style={{ gridColumn: '1 / -1' }}>
+                        <div className={styles.cardHeader}>
+                            <h2 className={styles.cardTitle}>Интеграции и Базы данных</h2>
+                            <button
+                                className={styles.saveBtn}
+                                onClick={saveIntegrations}
+                                disabled={isSavingIntegrations}
+                                style={{ fontSize: 13, padding: '7px 16px' }}
+                            >
+                                {isSavingIntegrations ? <RefreshCw size={14} className={styles.spin} /> : <Save size={14} />}
+                                Сохранить интеграции
+                            </button>
+                        </div>
+                        <p style={{ color: '#a1a1aa', fontSize: 13, margin: '0 0 20px 0' }}>
+                            Данные хранятся в Supabase (зашифрованы на сервере). Узлы на холсте «Цепочки ИИ» используют эти настройки автоматически.
+                        </p>
+
+                        {isLoadingIntegrations ? (
+                            <div style={{ textAlign: 'center', color: '#a1a1aa', padding: 20 }}>
+                                <RefreshCw size={18} className={styles.spin} /> Загрузка...
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+
+                                {/* Бесплатные API */}
+                                <div>
+                                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f4f4f5', marginBottom: 14, borderBottom: '1px solid #27272a', paddingBottom: 8 }}>
+                                        🆓 Бесплатные API
+                                    </h3>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>
+                                                Telegram Bot Token
+                                            </label>
+                                            <div style={{ display: 'flex', gap: 6 }}>
+                                                <input
+                                                    type={showSecrets.telegram ? 'text' : 'password'}
+                                                    value={integrations.telegram_token || ''}
+                                                    onChange={e => setIntegrations(p => ({ ...p, telegram_token: e.target.value }))}
+                                                    placeholder="1234567890:ABCdef..."
+                                                    className={styles.input}
+                                                    style={{ flex: 1, fontSize: 12, padding: '7px 10px' }}
+                                                />
+                                                <button className={styles.iconBtn} onClick={() => setShowSecrets(p => ({ ...p, telegram: !p.telegram }))}>
+                                                    {showSecrets.telegram ? '🙈' : '👁️'}
+                                                </button>
+                                            </div>
+                                            <p style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>Получить через @BotFather в Telegram</p>
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>
+                                                Hugging Face API Key
+                                            </label>
+                                            <div style={{ display: 'flex', gap: 6 }}>
+                                                <input
+                                                    type={showSecrets.hf ? 'text' : 'password'}
+                                                    value={integrations.huggingface_api_key || ''}
+                                                    onChange={e => setIntegrations(p => ({ ...p, huggingface_api_key: e.target.value }))}
+                                                    placeholder="hf_..."
+                                                    className={styles.input}
+                                                    style={{ flex: 1, fontSize: 12, padding: '7px 10px' }}
+                                                />
+                                                <button className={styles.iconBtn} onClick={() => setShowSecrets(p => ({ ...p, hf: !p.hf }))}>
+                                                    {showSecrets.hf ? '🙈' : '👁️'}
+                                                </button>
+                                            </div>
+                                            <p style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>huggingface.co/settings/tokens</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Supabase */}
+                                <div>
+                                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f4f4f5', marginBottom: 14, borderBottom: '1px solid #27272a', paddingBottom: 8 }}>
+                                        🗄️ Supabase (бесплатная БД)
+                                    </h3>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Project URL</label>
+                                            <input
+                                                type="text"
+                                                value={integrations.supabase_url || ''}
+                                                onChange={e => setIntegrations(p => ({ ...p, supabase_url: e.target.value }))}
+                                                placeholder="https://xxx.supabase.co"
+                                                className={styles.input}
+                                                style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Service Role Key</label>
+                                            <div style={{ display: 'flex', gap: 6 }}>
+                                                <input
+                                                    type={showSecrets.sb ? 'text' : 'password'}
+                                                    value={integrations.supabase_key || ''}
+                                                    onChange={e => setIntegrations(p => ({ ...p, supabase_key: e.target.value }))}
+                                                    placeholder="eyJh..."
+                                                    className={styles.input}
+                                                    style={{ flex: 1, fontSize: 12, padding: '7px 10px' }}
+                                                />
+                                                <button className={styles.iconBtn} onClick={() => setShowSecrets(p => ({ ...p, sb: !p.sb }))}>
+                                                    {showSecrets.sb ? '🙈' : '👁️'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
+                                        ℹ️ Уже настроено через .env.local? Можете оставить пустым — будут использованы переменные окружения.
+                                    </p>
+                                </div>
+
+                                {/* External DB */}
+                                <div>
+                                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f4f4f5', marginBottom: 14, borderBottom: '1px solid #27272a', paddingBottom: 8 }}>
+                                        🐘 Внешняя БД (PostgreSQL / MySQL)
+                                    </h3>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16 }}>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Connection URL</label>
+                                            <input
+                                                type="text"
+                                                value={integrations.extra_db_url || ''}
+                                                onChange={e => setIntegrations(p => ({ ...p, extra_db_url: e.target.value }))}
+                                                placeholder="postgresql://host:5432/dbname"
+                                                className={styles.input}
+                                                style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Пользователь</label>
+                                            <input
+                                                type="text"
+                                                value={integrations.extra_db_user || ''}
+                                                onChange={e => setIntegrations(p => ({ ...p, extra_db_user: e.target.value }))}
+                                                placeholder="postgres"
+                                                className={styles.input}
+                                                style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Пароль</label>
+                                            <div style={{ display: 'flex', gap: 6 }}>
+                                                <input
+                                                    type={showSecrets.dbpwd ? 'text' : 'password'}
+                                                    value={integrations.extra_db_password || ''}
+                                                    onChange={e => setIntegrations(p => ({ ...p, extra_db_password: e.target.value }))}
+                                                    placeholder="••••••••"
+                                                    className={styles.input}
+                                                    style={{ flex: 1, fontSize: 12, padding: '7px 10px' }}
+                                                />
+                                                <button className={styles.iconBtn} onClick={() => setShowSecrets(p => ({ ...p, dbpwd: !p.dbpwd }))}>
+                                                    {showSecrets.dbpwd ? '🙈' : '👁️'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

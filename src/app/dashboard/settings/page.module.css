@@ -1158,3 +1158,26 @@ input:checked+.slider:before {
         color: #18181b;
     }
 }
+
+/* ─── Shared input for integrations tab ───────────────────── */
+.input {
+    background: #27272a;
+    border: 1px solid #3f3f46;
+    border-radius: 8px;
+    color: #f4f4f5;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+}
+
+.input:focus {
+    border-color: #6366f1;
+}
+
+@media (prefers-color-scheme: light) {
+    .input {
+        background: #f4f4f5;
+        border-color: #d4d4d8;
+        color: #18181b;
+    }
+}
