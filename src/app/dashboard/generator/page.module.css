@@ -801,3 +801,13 @@
     background: rgba(239, 68, 68, 0.15);
     color: #ef4444;
 }
+
+/* ===== Light Theme Overrides ===== */
+@media (prefers-color-scheme: light) {
+    .debugContent strong {
+        color: var(--text-primary);
+    }
+    .debugPrompt {
+        background: rgba(0, 0, 0, 0.04);
+    }
+}

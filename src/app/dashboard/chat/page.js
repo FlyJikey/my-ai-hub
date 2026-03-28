@@ -38,7 +38,7 @@ export default function AIHubChatPage() {
     // --- State: Multiple Chats ---
     const [chats, setChats] = useState([]);
     const [activeChatId, setActiveChatId] = useState(null);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     
     // UI States
     const [prompt, setPrompt] = useState("");
