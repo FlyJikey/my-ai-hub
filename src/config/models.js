@@ -150,5 +150,42 @@ export const AI_MODELS = {
             description: "Vision модель через OmniRoute (Платно)",
             tier: "premium"
         }
+    ],
+    embedding: [
+        // === БЕСПЛАТНЫЕ ===
+        {
+            id: "nomic-ai/nomic-embed-text-v1.5:free",
+            provider: "openrouter",
+            name: "Nomic Embed 1.5",
+            description: "Бесплатная модель для векторизации. OpenRouter",
+            tier: "free",
+            dimensions: 768
+        },
+        // === ПЛАТНЫЕ (Polza.ai) ===
+        {
+            id: "text-embedding-3-small",
+            provider: "polza",
+            name: "OpenAI Embedding Small",
+            description: "Быстрая и качественная модель OpenAI. Polza.ai (Платно)",
+            recommended: true,
+            tier: "economy",
+            dimensions: 1536
+        },
+        {
+            id: "text-embedding-3-large",
+            provider: "polza",
+            name: "OpenAI Embedding Large",
+            description: "Максимальная точность от OpenAI. Polza.ai (Платно)",
+            tier: "premium",
+            dimensions: 3072
+        },
+        {
+            id: "text-embedding-ada-002",
+            provider: "polza",
+            name: "OpenAI Ada 002",
+            description: "Проверенная модель OpenAI. Polza.ai (Платно)",
+            tier: "economy",
+            dimensions: 1536
+        }
     ]
 };

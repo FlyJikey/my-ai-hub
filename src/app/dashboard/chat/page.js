@@ -17,7 +17,6 @@ import {
     AlertTriangle,
     Settings as SettingsIcon,
     Zap,
-    Layers,
     Sparkles,
     Globe,
     PanelLeft,
@@ -55,12 +54,12 @@ export default function AIHubChatPage() {
     const [selectedVisionProcessor, setSelectedVisionProcessor] = useState(null);
     const [currentStyle, setCurrentStyle] = useState("normal"); // normal, concise, formal, creative, code
 
-    // Image handling
-    const [imageFile, setImageFile] = useState(null);
-    const [imagePreview, setImagePreview] = useState(null);
-    const [useCatalog, setUseCatalog] = useState(false);
-    const [catalogStats, setCatalogStats] = useState(null);
-    const fileInputRef = useRef(null);
+     // Image handling
+     const [imageFile, setImageFile] = useState(null);
+     const [imagePreview, setImagePreview] = useState(null);
+     const [useCatalog, setUseCatalog] = useState(false);
+     const [catalogStats, setCatalogStats] = useState(null);
+     const fileInputRef = useRef(null);
     const chatEndRef = useRef(null);
     const textareaRef = useRef(null);
 
@@ -255,8 +254,6 @@ export default function AIHubChatPage() {
         
         const currentPrompt = textToSend;
         const currentImageFile = imageFile;
-        const currentImagePreview = imagePreview;
-        
         setPrompt("");
         clearImage();
 
@@ -283,41 +280,6 @@ export default function AIHubChatPage() {
                 }
             }
 
-            // Catalog RAG Pass
-            if (useCatalog) {
-                try {
-                    // Собираем последние 3 сообщения пользователя для сохранения контекста поиска
-                    const recentUserText = currentMessages
-                        .filter(m => m.role === 'user')
-                        .slice(-3)
-                        .map(m => m.text)
-                        .join(" ");
-
-                    const searchRes = await fetch("/api/catalog/search", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ query: recentUserText, limit: 10 })
-                    });
-                    if (searchRes.ok) {
-                        const searchData = await searchRes.json();
-                        if (searchData.results && searchData.results.length > 0) {
-                            const context = searchData.results.map((p, i) => 
-                                `${i+1}. [Арт: ${p.sku}] ${p.name} | Кат: ${p.category} | Цена: ${p.price} руб. | ${JSON.stringify(p.attributes)}`
-                            ).join("\n");
-                            finalPrompt = `ДАННЫЕ ИЗ БАЗЫ ТОВАРОВ (используй их для ответа):\n${context}\n\nВОПРОС ПОЛЬЗОВАТЕЛЯ:\n${finalPrompt}`;
-                        } else {
-                            finalPrompt = `[Системное примечание: Пользователь попытался найти данные в базе товаров, но поиск по векторам ничего не дал. Скажи пользователю, что по его запросу в базе ничего не найдено.]\n\nВОПРОС ПОЛЬЗОВАТЕЛЯ:\n${finalPrompt}`;
-                        }
-                    } else {
-                        throw new Error("Search API not OK");
-                    }
-                } catch (e) {
-                    console.error("Catalog search failed", e);
-                    finalPrompt = `[Системное примечание: Произошла техническая ошибка при поиске в базе товаров. Скажи пользователю, что не смог подключиться к базе.]\n\nВОПРОС ПОЛЬЗОВАТЕЛЯ:\n${finalPrompt}`;
-                }
-            }
-
-            // System Styles
             const stylePrompts = {
                 concise: "Отвечай максимально кратко и по делу. Без вступлений.",
                 formal: "Используй официально-деловой стиль общения. Будь вежлив и структурирован.",
@@ -325,6 +287,34 @@ export default function AIHubChatPage() {
                 code: "Сфокусируйся на коде. Пиши чистый, документированный код с пояснениями.",
                 normal: "Ты профессиональный ИИ-ассистент. Отвечай на русском языке."
             };
+
+            // Catalog agent pass
+            if (useCatalog) {
+                try {
+                    const catalogRes = await fetch("/api/catalog/ask", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ 
+                            message: currentPrompt,
+                            contextMessage: finalPrompt !== currentPrompt ? finalPrompt : "",
+                            history: currentMessages.slice(-8).map((m) => ({ role: m.role, text: m.text })),
+                            provider: selectedTextModel.provider,
+                            modelId: selectedTextModel.id,
+                            style: currentStyle
+                        })
+                    });
+                    const catalogData = await catalogRes.json();
+                    if (!catalogRes.ok) throw new Error(catalogData.error || "Ошибка каталога");
+
+                    const aiMsg = { role: "ai", text: catalogData.result, timestamp: new Date().toISOString() };
+                    updateActiveChatMessages([...currentMessages, aiMsg]);
+                    addToHistory({ type: "chat", prompt: currentPrompt, data: catalogData.result, model: `${selectedTextModel.name} + Catalog Agent` });
+                    return;
+                } catch (e) {
+                    console.error("Catalog ask failed", e);
+                    throw e;
+                }
+            }
 
             const systemMsg = stylePrompts[currentStyle] || stylePrompts.normal;
 

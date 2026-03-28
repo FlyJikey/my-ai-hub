@@ -2,10 +2,13 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { UploadCloud, CheckCircle, Package, Send, RotateCw, RefreshCw, AlertTriangle, FileText, Database, MessageSquare } from "lucide-react";
+import { UploadCloud, CheckCircle, Package, Send, RotateCw, RefreshCw, AlertTriangle, FileText, Database, MessageSquare, Zap, ChevronDown } from "lucide-react";
 import styles from "./page.module.css";
+import { useAppContext } from "@/app/context/AppContext";
 
 export default function CatalogPage() {
+    const { selectedEmbeddingModel, setSelectedEmbeddingModel, availableEmbeddingModels } = useAppContext();
+    
     // === States ===
     const [stats, setStats] = useState({ total: 0, vectorized: 0, categories: 0, lastUpdated: null, hasData: false });
     const [view, setView] = useState("loading"); // "loading" | "upload" | "chat"
@@ -22,6 +25,7 @@ export default function CatalogPage() {
     const [isVectorizing, setIsVectorizing] = useState(false);
     const [vectorizeProgress, setVectorizeProgress] = useState({ percent: 0, processed: 0, total: 0, error: "" });
     const abortControllerVectorizeRef = useRef(null);
+    const [isEmbeddingMenuOpen, setIsEmbeddingMenuOpen] = useState(false);
     const isFullyReady = stats.hasData && stats.total > 0 && stats.vectorized === stats.total;
 
     // === On Mount ===
@@ -198,6 +202,11 @@ export default function CatalogPage() {
 
     // === Vectorize Handlers ===
     const handleVectorize = async () => {
+        if (!selectedEmbeddingModel) {
+            alert("Выберите модель для векторизации");
+            return;
+        }
+        
         setIsVectorizing(true);
         setVectorizeProgress({ percent: 0, processed: 0, total: 0, error: "" });
         abortControllerVectorizeRef.current = new AbortController();
@@ -205,6 +214,13 @@ export default function CatalogPage() {
         try {
             const res = await fetchWithAdminAuth("/api/catalog/vectorize", {
                 method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: selectedEmbeddingModel.id,
+                    provider: selectedEmbeddingModel.provider
+                }),
                 signal: abortControllerVectorizeRef.current.signal
             });
 
@@ -216,17 +232,18 @@ export default function CatalogPage() {
             await readSseStream(res, async (data) => {
                 if (data.error) {
                     setVectorizeProgress(prev => ({ ...prev, error: data.error }));
+                    await fetchStats();
                     return;
                 }
 
                 if (data.done) {
                     await fetchStats();
-                    setVectorizeProgress(prev => ({
-                        ...prev,
+                    setVectorizeProgress({
                         percent: 100,
-                        processed: data.processed ?? prev.processed,
-                        total: data.total ?? prev.total
-                    }));
+                        processed: data.processed ?? 0,
+                        total: data.total ?? 0,
+                        error: data.failed > 0 ? `Завершено! Пропущено товаров: ${data.failed}` : ""
+                    });
                     return;
                 }
 
@@ -234,7 +251,7 @@ export default function CatalogPage() {
                     percent: data.percent || 0,
                     processed: data.processed || 0,
                     total: data.total || 0,
-                    error: data.failed ? `Пропущено товаров: ${data.failed}` : ""
+                    error: data.failed > 0 ? `Пропущено товаров: ${data.failed}` : ""
                 });
             });
         } catch (err) {
@@ -329,22 +346,64 @@ export default function CatalogPage() {
                                 <p style={{ color: '#a1a1aa', fontSize: '0.9rem', marginBottom: '1rem' }}>
                                     В базе есть {stats.total - stats.vectorized} товаров без векторов. Они не будут доступны для поиска ИИ, пока вы их не векторизуете.
                                 </p>
+                                
+                                {/* Выбор модели для векторизации */}
+                                <div style={{ marginBottom: '1rem', position: 'relative' }}>
+                                    <button 
+                                        className={styles.modelDropdownButton}
+                                        onClick={() => setIsEmbeddingMenuOpen(!isEmbeddingMenuOpen)}
+                                        disabled={isVectorizing || isUploading}
+                                    >
+                                        <Zap size={14} style={{ color: '#fbbf24' }} />
+                                        Модель: {selectedEmbeddingModel?.name || 'Выбрать'}
+                                        <ChevronDown size={16} />
+                                    </button>
+                                    
+                                    {isEmbeddingMenuOpen && (
+                                        <div className={styles.modelDropdownMenu}>
+                                            {availableEmbeddingModels.map(model => (
+                                                <button
+                                                    key={model.id}
+                                                    className={`${styles.modelDropdownItem} ${selectedEmbeddingModel?.id === model.id ? styles.modelDropdownItemActive : ''}`}
+                                                    onClick={() => {
+                                                        setSelectedEmbeddingModel(model);
+                                                        setIsEmbeddingMenuOpen(false);
+                                                    }}
+                                                >
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <span style={{ fontWeight: 600 }}>{model.name}</span>
+                                                        {model.tier === 'free' && <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', background: '#10b981', color: 'white', borderRadius: '4px', fontWeight: 600 }}>БЕСПЛАТНО</span>}
+                                                        {model.tier === 'premium' && <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', background: '#8b5cf6', color: 'white', borderRadius: '4px', fontWeight: 600 }}>PRO</span>}
+                                                        {model.tier === 'economy' && <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', background: '#3b82f6', color: 'white', borderRadius: '4px', fontWeight: 600 }}>ЭКОНОМ</span>}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#a1a1aa', marginTop: '0.25rem' }}>{model.description}</div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                
                                 <button className={styles.btnUpload} onClick={handleVectorize} disabled={isVectorizing || isUploading}>
                                     {isVectorizing ? <><RefreshCw size={18} className={styles.spin} /> Идет векторизация...</> : <><Send size={18} /> Векторизовать ИИ</>}
                                 </button>
 
-                                {isVectorizing && vectorizeProgress.total > 0 && (
+                                 {isVectorizing && vectorizeProgress.total > 0 && (
                                     <div className={styles.progressContainer} style={{ marginTop: '1rem' }}>
                                         <div className={styles.progressHeader}>
-                                            <span>Генерация векторов (Polza.ai)...</span>
+                                            <span>Генерация векторов ({selectedEmbeddingModel?.name})...</span>
                                             <span>{vectorizeProgress.processed.toLocaleString("ru-RU")} / {vectorizeProgress.total.toLocaleString("ru-RU")}</span>
                                         </div>
                                         <div className={styles.progressBarTrack}>
                                             <div className={styles.progressBarFill} style={{ width: `${Math.min(vectorizeProgress.percent, 100)}%` }}></div>
                                         </div>
                                         {vectorizeProgress.error && (
-                                            <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 'bold' }}>
+                                            <div style={{ color: vectorizeProgress.percent === 100 ? '#10b981' : '#f59e0b', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 'bold' }}>
                                                 {vectorizeProgress.error}
+                                            </div>
+                                        )}
+                                        {vectorizeProgress.percent === 100 && !vectorizeProgress.error && (
+                                            <div style={{ color: '#10b981', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                <CheckCircle size={14} /> Векторизация завершена успешно!
                                             </div>
                                         )}
                                     </div>
@@ -412,6 +471,43 @@ export default function CatalogPage() {
                             <p style={{ color: '#a1a1aa', fontSize: '0.9rem', marginBottom: '1rem' }}>
                                 В базе есть {stats.total - stats.vectorized} товаров без векторов. Они не будут доступны для поиска ИИ, пока вы их не векторизуете.
                             </p>
+                            
+                            {/* Выбор модели для векторизации */}
+                            <div style={{ marginBottom: '1rem', position: 'relative' }}>
+                                <button 
+                                    className={styles.modelDropdownButton}
+                                    onClick={() => setIsEmbeddingMenuOpen(!isEmbeddingMenuOpen)}
+                                    disabled={isVectorizing || isUploading}
+                                >
+                                    <Zap size={14} style={{ color: '#fbbf24' }} />
+                                    Модель: {selectedEmbeddingModel?.name || 'Выбрать'}
+                                    <ChevronDown size={16} />
+                                </button>
+                                
+                                {isEmbeddingMenuOpen && (
+                                    <div className={styles.modelDropdownMenu}>
+                                        {availableEmbeddingModels.map(model => (
+                                            <button
+                                                key={model.id}
+                                                className={`${styles.modelDropdownItem} ${selectedEmbeddingModel?.id === model.id ? styles.modelDropdownItemActive : ''}`}
+                                                onClick={() => {
+                                                    setSelectedEmbeddingModel(model);
+                                                    setIsEmbeddingMenuOpen(false);
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <span style={{ fontWeight: 600 }}>{model.name}</span>
+                                                    {model.tier === 'free' && <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', background: '#10b981', color: 'white', borderRadius: '4px', fontWeight: 600 }}>БЕСПЛАТНО</span>}
+                                                    {model.tier === 'premium' && <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', background: '#8b5cf6', color: 'white', borderRadius: '4px', fontWeight: 600 }}>PRO</span>}
+                                                    {model.tier === 'economy' && <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', background: '#3b82f6', color: 'white', borderRadius: '4px', fontWeight: 600 }}>ЭКОНОМ</span>}
+                                                </div>
+                                                <div style={{ fontSize: '0.8rem', color: '#a1a1aa', marginTop: '0.25rem' }}>{model.description}</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            
                             <button 
                                 className={styles.btnUpload} 
                                 onClick={handleVectorize} 
@@ -423,15 +519,20 @@ export default function CatalogPage() {
                             {isVectorizing && vectorizeProgress.total > 0 && (
                                 <div className={styles.progressContainer} style={{ marginTop: '1rem' }}>
                                     <div className={styles.progressHeader}>
-                                        <span>Генерация векторов (Polza.ai)...</span>
+                                        <span>Генерация векторов ({selectedEmbeddingModel?.name})...</span>
                                         <span>{vectorizeProgress.processed.toLocaleString("ru-RU")} / {vectorizeProgress.total.toLocaleString("ru-RU")}</span>
                                     </div>
                                     <div className={styles.progressBarTrack}>
                                         <div className={styles.progressBarFill} style={{ width: `${Math.min(vectorizeProgress.percent, 100)}%` }}></div>
                                     </div>
                                     {vectorizeProgress.error && (
-                                        <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 'bold' }}>
+                                        <div style={{ color: vectorizeProgress.percent === 100 ? '#10b981' : '#f59e0b', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 'bold' }}>
                                             {vectorizeProgress.error}
+                                        </div>
+                                    )}
+                                    {vectorizeProgress.percent === 100 && !vectorizeProgress.error && (
+                                        <div style={{ color: '#10b981', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <CheckCircle size={14} /> Векторизация завершена успешно!
                                         </div>
                                     )}
                                 </div>
