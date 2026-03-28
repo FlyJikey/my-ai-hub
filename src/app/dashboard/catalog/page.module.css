@@ -349,3 +349,79 @@
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
+
+/* ===== Light Theme Overrides ===== */
+@media (prefers-color-scheme: light) {
+    .container {
+        color: var(--text-primary);
+    }
+    .header {
+        border-bottom: 1px solid var(--card-border);
+    }
+    .btnUpdate {
+        border: 1px solid var(--card-border);
+        color: var(--text-primary);
+    }
+    .btnUpdate:hover {
+        background: rgba(0, 0, 0, 0.03);
+        border-color: var(--text-muted);
+    }
+    .uploadCard {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    }
+    .dropzone {
+        border: 2px dashed var(--card-border);
+        background: rgba(0, 0, 0, 0.02);
+    }
+    .dropzone:hover {
+        background: rgba(16, 185, 129, 0.03);
+    }
+    .dropzoneIconWrapper {
+        background: var(--input-bg);
+    }
+    .progressBarTrack {
+        background: var(--input-bg);
+    }
+    .chatContainer {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+    }
+    .chatHistory::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+    }
+    .avatarUser {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+    .messageContent {
+        background: #dbeafe;
+        color: var(--text-primary);
+    }
+    .messageAi .messageContent {
+        background: transparent;
+        border: 1px solid var(--card-border);
+    }
+    .inputArea {
+        background: var(--input-bg);
+        border-top: 1px solid var(--card-border);
+    }
+    .inputWrapper {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+    }
+    .inputWrapper:focus-within {
+        border-color: var(--text-muted);
+    }
+    .textarea {
+        color: var(--text-primary);
+    }
+    .textarea::placeholder {
+        color: var(--text-muted);
+    }
+    .btnSend:disabled {
+        background: var(--card-border);
+        color: var(--text-muted);
+    }
+}

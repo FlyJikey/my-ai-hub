@@ -109,7 +109,7 @@ async function handlePost(req) {
             const hfKey = (process.env.HUGGINGFACE_API_KEY || "").trim().replace(/(^"|"$|^'|'$)/g, '');
             if (!hfKey) return NextResponse.json({ error: "Не настроен HUGGINGFACE_API_KEY" }, { status: 500 });
 
-            apiRes = await fetch(`https://router.huggingface.co/hf-inference/models/${selectedModel}/v1/chat/completions`, {
+            apiRes = await fetch(`https://api-inference.huggingface.co/models/${selectedModel}/v1/chat/completions`, {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${hfKey}`, "Content-Type": "application/json" },
                 body: JSON.stringify({

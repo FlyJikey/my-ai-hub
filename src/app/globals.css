@@ -1,22 +1,40 @@
 :root {
-  --background: #f8f9fa; /* Very light, clean background */
+  --background: #f8f9fa;
   --foreground: #111111;
-  --surface: rgba(255, 255, 255, 0.85); /* For glassmorphism */
+  --surface: rgba(255, 255, 255, 0.85);
   --surface-opaque: #ffffff;
   --border: rgba(0, 0, 0, 0.06);
   --border-glass: rgba(255, 255, 255, 0.6);
 
   /* Typography */
   --font-heading: var(--font-geist-sans), Inter, sans-serif;
-  
+
   /* Accents */
-  --accent-cta: #0a0a0a; /* Coal black */
+  --accent-cta: #0a0a0a;
   --accent-cta-hover: #222222;
   --cta-text: #ffffff;
 
   /* Card and Layout properties */
-  --radius-bento: 32px; /* Huge border radius for Bento Grid */
-  --radius-button: 9999px; /* Pill shape */
+  --radius-bento: 32px;
+  --radius-button: 9999px;
+
+  /* Dashboard colors */
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --card-hover: #f3f4f6;
+  --input-bg: #f4f4f5;
+  --text-primary: #111111;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --chat-bg: #ffffff;
+  --chat-sidebar: #f9fafb;
+  --chat-input-bg: #f4f4f5;
+  --chat-bubble-user: #e5e7eb;
+  --chat-bubble-ai: transparent;
+  --dropdown-bg: #ffffff;
+  --dropdown-border: #e5e7eb;
+  --dropdown-hover: rgba(0, 0, 0, 0.05);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.15);
 
   /* Special Effects */
   --glow-internal-blue: inset 0 0 60px rgba(0, 112, 243, 0.15), inset 0 0 20px rgba(0, 112, 243, 0.1);
@@ -36,6 +54,24 @@
     --accent-cta: #ffffff;
     --accent-cta-hover: #e4e4e7;
     --cta-text: #050505;
+
+    /* Dashboard colors */
+    --card-bg: #18181b;
+    --card-border: #27272a;
+    --card-hover: #27272a;
+    --input-bg: #27272a;
+    --text-primary: #fafafa;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --chat-bg: #212121;
+    --chat-sidebar: #171717;
+    --chat-input-bg: #2f2f2f;
+    --chat-bubble-user: #2f2f2f;
+    --chat-bubble-ai: transparent;
+    --dropdown-bg: #2f2f2f;
+    --dropdown-border: rgba(255, 255, 255, 0.05);
+    --dropdown-hover: rgba(255, 255, 255, 0.05);
+    --scrollbar-thumb: rgba(255, 255, 255, 0.1);
 
     --glow-internal-blue: inset 0 0 60px rgba(0, 112, 243, 0.2), inset 0 0 20px rgba(0, 112, 243, 0.2);
   }

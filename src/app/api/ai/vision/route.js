@@ -274,7 +274,7 @@ export async function POST(req) {
                 throw new Error("API ключ HUGGINGFACE_API_KEY не настроен (.env.local)");
             }
 
-            const res = await fetch(`https://router.huggingface.co/hf-inference/models/${modelId}/v1/chat/completions`, {
+            const res = await fetch(`https://api-inference.huggingface.co/models/${modelId}/v1/chat/completions`, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${hfKey}`,

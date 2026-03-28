@@ -808,3 +808,214 @@
         padding-top: 50px;
     }
 }
+
+/* ===== Light Theme Overrides ===== */
+@media (prefers-color-scheme: light) {
+    .wrapper {
+        background: var(--chat-bg);
+        color: var(--text-primary);
+    }
+    .sidebar {
+        background: var(--chat-sidebar);
+        border-right: 1px solid var(--card-border);
+    }
+    .btnNewChat {
+        color: var(--text-primary);
+    }
+    .btnNewChat:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    .sidebarScroll::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+    }
+    .chatListItem {
+        color: var(--text-primary);
+    }
+    .chatListItem:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    .chatListItemActive {
+        background: rgba(0, 0, 0, 0.08);
+    }
+    .btnDeleteChat {
+        color: var(--text-secondary);
+    }
+    .chatContainer {
+        background: var(--chat-bg);
+    }
+    .newChatBtn {
+        color: var(--text-primary);
+    }
+    .newChatBtn:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    .modelDropdownButton {
+        color: var(--text-primary);
+    }
+    .modelDropdownButton:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    .modelDropdownMenu {
+        background: var(--dropdown-bg);
+        border: 1px solid var(--dropdown-border);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+    .modelOption {
+        color: var(--text-primary);
+    }
+    .modelOption:hover {
+        background: var(--dropdown-hover);
+    }
+    .modelOptionActive {
+        background: rgba(0, 0, 0, 0.06);
+    }
+    .modelDesc {
+        color: var(--text-secondary);
+    }
+    .chatHistory {
+        scrollbar-color: var(--scrollbar-thumb) transparent;
+    }
+    .chatHistory::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+    }
+    .emptyState {
+        color: var(--text-primary);
+    }
+    .emptyState p {
+        color: var(--text-secondary);
+    }
+    .avatar {
+        border: 1px solid var(--card-border);
+    }
+    .avatarUser {
+        background: var(--chat-bubble-user);
+        color: var(--text-primary);
+    }
+    .messageContent {
+        color: var(--text-primary);
+    }
+    .messageUser .messageContent {
+        background: var(--chat-bubble-user);
+        color: var(--text-primary);
+    }
+    .attachedImage {
+        border: 1px solid var(--card-border);
+    }
+    .markdownContent strong {
+        color: var(--text-primary);
+        background: rgba(0, 0, 0, 0.05);
+    }
+    .markdownContent code {
+        background: rgba(0, 0, 0, 0.06);
+    }
+    .copyBtn {
+        color: var(--text-secondary);
+    }
+    .copyBtn:hover {
+        color: var(--text-primary);
+    }
+    .inputWrapper {
+        background: var(--chat-input-bg);
+        border: 1px solid var(--card-border);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+    .inputWrapper:focus-within {
+        background: #eaeaeb;
+    }
+    .textarea {
+        color: var(--text-primary);
+    }
+    .textarea::placeholder {
+        color: var(--text-muted);
+    }
+    .btnAttach {
+        color: var(--text-secondary);
+    }
+    .btnAttach:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    .btnSend {
+        background: var(--text-primary);
+        color: #ffffff;
+    }
+    .btnSend:disabled {
+        background: var(--card-border);
+        color: var(--text-muted);
+    }
+    .imagePreviewWrapper {
+        background: rgba(0, 0, 0, 0.03);
+    }
+    .settingsToggle {
+        color: var(--text-primary);
+    }
+    .settingsToggle:hover, .settingsToggleActive {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    .settingsPanel {
+        background: var(--dropdown-bg);
+        border: 1px solid var(--card-border);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+    }
+    .settingsPanel::before {
+        background: var(--dropdown-bg);
+        border-top: 1px solid var(--card-border);
+        border-left: 1px solid var(--card-border);
+    }
+    .settingsTitle {
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--card-border);
+    }
+    .settingsLabel {
+        color: var(--text-secondary);
+    }
+    .visionSelect {
+        background: var(--input-bg);
+        border: 1px solid var(--card-border);
+        color: var(--text-primary);
+    }
+    .visionSelect:focus, .visionSelect:hover {
+        background: #eaeaeb;
+        border-color: var(--text-muted);
+    }
+    .visionSelect option {
+        background: var(--dropdown-bg);
+        color: var(--text-primary);
+    }
+    .toggleContainer {
+        background: var(--input-bg);
+    }
+    .toggleContainer:hover {
+        background: #eaeaeb;
+    }
+    .toggleTitle {
+        color: var(--text-primary);
+    }
+    .toggleDesc {
+        color: var(--text-secondary);
+    }
+    .switch {
+        background: #d1d5db;
+    }
+    .toolsMenuContainer {
+        background: var(--dropdown-bg);
+        border: 1px solid var(--card-border);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+    .toolItem {
+        color: var(--text-primary);
+    }
+    .toolItem:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+    .toolIcon {
+        background: var(--input-bg);
+        color: var(--text-primary);
+    }
+    .toolSubLabel {
+        color: var(--text-secondary);
+    }
+    .styleBadge {
+        background: var(--input-bg);
+        color: var(--text-primary);
+    }
+}

@@ -210,7 +210,7 @@ export async function POST(req) {
                 return NextResponse.json({ error: "Ключ HUGGINGFACE_API_KEY не задан в .env.local" }, { status: 400 });
             }
             try {
-                const res = await fetch(`https://router.huggingface.co/hf-inference/models/${modelId}/v1/chat/completions`, {
+                const res = await fetch(`https://api-inference.huggingface.co/models/${modelId}/v1/chat/completions`, {
                     method: "POST",
                     headers: {
                         "Authorization": `Bearer ${hfKey}`,
