@@ -740,72 +740,74 @@ export default function FlowsPage() {
                     <div className={styles.nodePanelTitle}>Узлы</div>
 
                     {/* Search */}
-                    <div className={styles.panelSearch}>
-                        <Search size={11} className={styles.panelSearchIcon} />
-                        <input className={styles.panelSearchInput} placeholder="Поиск узлов…"
-                            value={panelSearch} onChange={e => setPanelSearch(e.target.value)} />
-                        {panelSearch && <button className={styles.panelSearchClear} onClick={() => setPanelSearch("")}><X size={10} /></button>}
-                    </div>
-
-                    {/* Filtered results */}
-                    {filteredDefs ? (
-                        <div className={styles.nodeCategoryList} style={{ paddingLeft: 0 }}>
-                            {filteredDefs.map(([type, d]) => {
-                                const IconComp = getIcon(d.icon);
-                                return (
-                                    <div key={type} className={styles.nodePanelItem} draggable
-                                        onDragStart={(e) => onDragStart(e, type)}
-                                        style={{ "--item-color": d.color }} title={d.description}>
-                                        <IconComp size={12} style={{ color: d.color, flexShrink: 0 }} />
-                                        <span>{d.label}</span>
-                                    </div>
-                                );
-                            })}
-                            {filteredDefs.length === 0 && <div className={styles.flowListEmpty}>Не найдено</div>}
+                    <div className={styles.nodePanelBody}>
+                        <div className={styles.panelSearch}>
+                            <Search size={11} className={styles.panelSearchIcon} />
+                            <input className={styles.panelSearchInput} placeholder="Поиск узлов…"
+                                value={panelSearch} onChange={e => setPanelSearch(e.target.value)} />
+                            {panelSearch && <button className={styles.panelSearchClear} onClick={() => setPanelSearch("")}><X size={10} /></button>}
                         </div>
-                    ) : (
-                        CATEGORIES.map((cat) => (
-                            <div key={cat.key} className={styles.nodeCategory}>
-                                <button className={styles.nodeCategoryHeader}
-                                    onClick={() => setOpenCategories((p) => ({ ...p, [cat.key]: !p[cat.key] }))}>
-                                    <span style={{ color: cat.color }}>{cat.label}</span>
-                                    {openCategories[cat.key] ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
-                                </button>
-                                {openCategories[cat.key] && (
-                                    <div className={styles.nodeCategoryList}>
-                                        {Object.entries(NODE_DEFS)
-                                            .filter(([, d]) => d.category === cat.key)
-                                            .map(([type, d]) => {
-                                                const IconComp = getIcon(d.icon);
-                                                return (
-                                                    <div key={type} className={styles.nodePanelItem} draggable
-                                                        onDragStart={(e) => onDragStart(e, type)}
-                                                        style={{ "--item-color": d.color }} title={d.description}>
-                                                        <IconComp size={12} style={{ color: d.color, flexShrink: 0 }} />
-                                                        <span>{d.label}</span>
-                                                    </div>
-                                                );
-                                            })}
-                                    </div>
-                                )}
-                            </div>
-                        ))
-                    )}
 
-                    {/* Test photo */}
-                    <div className={styles.testPhotoSection}>
-                        <div className={styles.nodePanelTitle} style={{ marginTop: 8 }}>Тест: фото</div>
-                        <label className={styles.photoUploadLabel}>
-                            <Upload size={12} />
-                            {uploadedPhoto ? uploadedPhoto.name : "Выбрать файл"}
-                            <input type="file" accept="image/*" className={styles.hiddenInput}
-                                onChange={(e) => setUploadedPhoto(e.target.files[0])} />
-                        </label>
-                        {uploadedPhoto && (
-                            <button className={styles.clearPhotoBtn} onClick={() => setUploadedPhoto(null)}>
-                                <X size={11} /> Убрать
-                            </button>
+                        {/* Filtered results */}
+                        {filteredDefs ? (
+                            <div className={styles.nodeCategoryList} style={{ paddingLeft: 0 }}>
+                                {filteredDefs.map(([type, d]) => {
+                                    const IconComp = getIcon(d.icon);
+                                    return (
+                                        <div key={type} className={styles.nodePanelItem} draggable
+                                            onDragStart={(e) => onDragStart(e, type)}
+                                            style={{ "--item-color": d.color }} title={d.description}>
+                                            <IconComp size={12} style={{ color: d.color, flexShrink: 0 }} />
+                                            <span>{d.label}</span>
+                                        </div>
+                                    );
+                                })}
+                                {filteredDefs.length === 0 && <div className={styles.flowListEmpty}>Не найдено</div>}
+                            </div>
+                        ) : (
+                            CATEGORIES.map((cat) => (
+                                <div key={cat.key} className={styles.nodeCategory}>
+                                    <button className={styles.nodeCategoryHeader}
+                                        onClick={() => setOpenCategories((p) => ({ ...p, [cat.key]: !p[cat.key] }))}>
+                                        <span style={{ color: cat.color }}>{cat.label}</span>
+                                        {openCategories[cat.key] ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+                                    </button>
+                                    {openCategories[cat.key] && (
+                                        <div className={styles.nodeCategoryList}>
+                                            {Object.entries(NODE_DEFS)
+                                                .filter(([, d]) => d.category === cat.key)
+                                                .map(([type, d]) => {
+                                                    const IconComp = getIcon(d.icon);
+                                                    return (
+                                                        <div key={type} className={styles.nodePanelItem} draggable
+                                                            onDragStart={(e) => onDragStart(e, type)}
+                                                            style={{ "--item-color": d.color }} title={d.description}>
+                                                            <IconComp size={12} style={{ color: d.color, flexShrink: 0 }} />
+                                                            <span>{d.label}</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                        </div>
+                                    )}
+                                </div>
+                            ))
                         )}
+
+                        {/* Test photo */}
+                        <div className={styles.testPhotoSection}>
+                            <div className={styles.nodePanelTitle} style={{ marginTop: 8 }}>Тест: фото</div>
+                            <label className={styles.photoUploadLabel}>
+                                <Upload size={12} />
+                                {uploadedPhoto ? uploadedPhoto.name : "Выбрать файл"}
+                                <input type="file" accept="image/*" className={styles.hiddenInput}
+                                    onChange={(e) => setUploadedPhoto(e.target.files[0])} />
+                            </label>
+                            {uploadedPhoto && (
+                                <button className={styles.clearPhotoBtn} onClick={() => setUploadedPhoto(null)}>
+                                    <X size={11} /> Убрать
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -838,74 +840,75 @@ export default function FlowsPage() {
                             <span className={styles.configPanelTitle}>Настройка</span>
                             <button className={styles.configCloseBtn} onClick={() => setSelectedNode(null)}><X size={14} /></button>
                         </div>
-                        <div className={styles.configNodeType} style={{ color: def.color }}>{def.label}</div>
-                        <p className={styles.configDesc}>{def.description}</p>
+                        <div className={styles.configPanelBody}>
+                            <div className={styles.configNodeType} style={{ color: def.color }}>{def.label}</div>
+                            <p className={styles.configDesc}>{def.description}</p>
 
-                        <div className={styles.configField}>
-                            <label className={styles.configLabel}>Название узла</label>
-                            <input className={styles.configInput} value={selectedNode.data.label || ""}
-                                onChange={(e) => updateNodeLabel(e.target.value)} />
+                            <div className={styles.configField}>
+                                <label className={styles.configLabel}>Название узла</label>
+                                <input className={styles.configInput} value={selectedNode.data.label || ""}
+                                    onChange={(e) => updateNodeLabel(e.target.value)} />
+                            </div>
+
+                            {(def.configFields || []).map((field) => {
+                                const nodeType = selectedNode.data.nodeType;
+                                const modelFieldModels = isModelField(field.key) ? getModelsForField(field.key, nodeType) : [];
+                                const showModelDropdown = isModelField(field.key) && modelFieldModels.length > 0;
+
+                                return (
+                                <div key={field.key} className={styles.configField}>
+                                    <label className={styles.configLabel}>{field.label}</label>
+                                    {showModelDropdown ? (
+                                        <select className={styles.configSelect}
+                                            value={selectedNode.data.config?.[field.key] || ""}
+                                            onChange={(e) => updateNodeConfig(field.key, e.target.value)}>
+                                            <option value="">— выбрать модель —</option>
+                                            {modelFieldModels.map((m) => (
+                                                <option key={m.id} value={m.id}>
+                                                    {m.name}{m.tier === "free" ? " (free)" : m.tier === "economy" ? " ($)" : " ($$)"}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : field.type === "textarea" ? (
+                                        <textarea className={styles.configTextarea} rows={4}
+                                            value={selectedNode.data.config?.[field.key] || ""}
+                                            onChange={(e) => updateNodeConfig(field.key, e.target.value)}
+                                            placeholder={field.placeholder} />
+                                    ) : field.type === "select" ? (
+                                        <select className={styles.configSelect}
+                                            value={selectedNode.data.config?.[field.key] || ""}
+                                            onChange={(e) => updateNodeConfig(field.key, e.target.value)}>
+                                            <option value="">— выбрать —</option>
+                                            {field.options.map((o) => {
+                                                const providerMeta = field.key === "provider" || field.key.endsWith("_provider")
+                                                    ? PROVIDERS.find(p => p.value === o) : null;
+                                                return <option key={o} value={o}>{providerMeta ? providerMeta.label : o}</option>;
+                                            })}
+                                        </select>
+                                    ) : (
+                                        <input className={styles.configInput} type={field.type || "text"}
+                                            value={selectedNode.data.config?.[field.key] || ""}
+                                            onChange={(e) => updateNodeConfig(field.key, e.target.value)}
+                                            placeholder={field.placeholder} />
+                                    )}
+                                    {isModelField(field.key) && modelFieldModels.length === 0 && selectedNode.data.config?.provider && (
+                                        <span className={styles.configHint}>Нет моделей для этого провайдера в Настройках</span>
+                                    )}
+                                </div>
+                                );
+                            })}
+
+                            {(def.inputs.length > 0 || def.outputs.length > 0) && (
+                                <div className={styles.configPortInfo}>
+                                    {def.inputs.length > 0 && <div><strong>Входы:</strong> {def.inputs.join(", ")}</div>}
+                                    {def.outputs.length > 0 && <div><strong>Выходы:</strong> {def.outputs.join(", ")}</div>}
+                                </div>
+                            )}
+
+                            <button className={styles.deleteNodeBtn} onClick={deleteSelectedNode}>
+                                <Trash2 size={13} /> Удалить узел
+                            </button>
                         </div>
-
-                        {(def.configFields || []).map((field) => {
-                            const nodeType = selectedNode.data.nodeType;
-                            const modelFieldModels = isModelField(field.key) ? getModelsForField(field.key, nodeType) : [];
-                            const showModelDropdown = isModelField(field.key) && modelFieldModels.length > 0;
-
-                            return (
-                            <div key={field.key} className={styles.configField}>
-                                <label className={styles.configLabel}>{field.label}</label>
-                                {showModelDropdown ? (
-                                    /* Dynamic model selector from settings */
-                                    <select className={styles.configSelect}
-                                        value={selectedNode.data.config?.[field.key] || ""}
-                                        onChange={(e) => updateNodeConfig(field.key, e.target.value)}>
-                                        <option value="">— выбрать модель —</option>
-                                        {modelFieldModels.map((m) => (
-                                            <option key={m.id} value={m.id}>
-                                                {m.name}{m.tier === "free" ? " (free)" : m.tier === "economy" ? " ($)" : " ($$)"}
-                                            </option>
-                                        ))}
-                                    </select>
-                                ) : field.type === "textarea" ? (
-                                    <textarea className={styles.configTextarea} rows={4}
-                                        value={selectedNode.data.config?.[field.key] || ""}
-                                        onChange={(e) => updateNodeConfig(field.key, e.target.value)}
-                                        placeholder={field.placeholder} />
-                                ) : field.type === "select" ? (
-                                    <select className={styles.configSelect}
-                                        value={selectedNode.data.config?.[field.key] || ""}
-                                        onChange={(e) => updateNodeConfig(field.key, e.target.value)}>
-                                        <option value="">— выбрать —</option>
-                                        {field.options.map((o) => {
-                                            const providerMeta = field.key === "provider" || field.key.endsWith("_provider")
-                                                ? PROVIDERS.find(p => p.value === o) : null;
-                                            return <option key={o} value={o}>{providerMeta ? providerMeta.label : o}</option>;
-                                        })}
-                                    </select>
-                                ) : (
-                                    <input className={styles.configInput} type={field.type || "text"}
-                                        value={selectedNode.data.config?.[field.key] || ""}
-                                        onChange={(e) => updateNodeConfig(field.key, e.target.value)}
-                                        placeholder={field.placeholder} />
-                                )}
-                                {isModelField(field.key) && modelFieldModels.length === 0 && selectedNode.data.config?.provider && (
-                                    <span className={styles.configHint}>Нет моделей для этого провайдера в Настройках</span>
-                                )}
-                            </div>
-                            );
-                        })}
-
-                        {(def.inputs.length > 0 || def.outputs.length > 0) && (
-                            <div className={styles.configPortInfo}>
-                                {def.inputs.length > 0 && <div><strong>Входы:</strong> {def.inputs.join(", ")}</div>}
-                                {def.outputs.length > 0 && <div><strong>Выходы:</strong> {def.outputs.join(", ")}</div>}
-                            </div>
-                        )}
-
-                        <button className={styles.deleteNodeBtn} onClick={deleteSelectedNode}>
-                            <Trash2 size={13} /> Удалить узел
-                        </button>
                     </div>
                 )}
 
@@ -916,29 +919,31 @@ export default function FlowsPage() {
                             <span className={styles.configPanelTitle}>Результат</span>
                             <button className={styles.configCloseBtn} onClick={() => setExecResult(null)}><X size={14} /></button>
                         </div>
-                        <div className={`${styles.execStatus} ${execResult.success ? styles.execSuccess : styles.execError}`}>
-                            {execResult.success ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
-                            {execResult.success ? "Успешно" : "Ошибка"}
-                        </div>
-                        {(execResult.steps || []).map((step, i) => (
-                            <div key={i} className={styles.execStep}>
-                                <div className={styles.execStepHeader}>
-                                    <span className={styles.execStepName}>{step.label}</span>
-                                    <span className={`${styles.execStepStatus} ${step.success ? styles.execStepOk : styles.execStepFail}`}>
-                                        {step.success ? "✓" : "✗"}
-                                    </span>
-                                </div>
-                                {step.output && (
-                                    <pre className={styles.execStepOutput}>
-                                        {typeof step.output === "string"
-                                            ? step.output.slice(0, 400)
-                                            : JSON.stringify(step.output, null, 2).slice(0, 400)}
-                                        {JSON.stringify(step.output || "").length > 400 ? "\n…" : ""}
-                                    </pre>
-                                )}
-                                {step.error && <div className={styles.execStepError}>{step.error}</div>}
+                        <div className={styles.configPanelBody}>
+                            <div className={`${styles.execStatus} ${execResult.success ? styles.execSuccess : styles.execError}`}>
+                                {execResult.success ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+                                {execResult.success ? "Успешно" : "Ошибка"}
                             </div>
-                        ))}
+                            {(execResult.steps || []).map((step, i) => (
+                                <div key={i} className={styles.execStep}>
+                                    <div className={styles.execStepHeader}>
+                                        <span className={styles.execStepName}>{step.label}</span>
+                                        <span className={`${styles.execStepStatus} ${step.success ? styles.execStepOk : styles.execStepFail}`}>
+                                            {step.success ? "✓" : "✗"}
+                                        </span>
+                                    </div>
+                                    {step.output && (
+                                        <pre className={styles.execStepOutput}>
+                                            {typeof step.output === "string"
+                                                ? step.output.slice(0, 400)
+                                                : JSON.stringify(step.output, null, 2).slice(0, 400)}
+                                            {JSON.stringify(step.output || "").length > 400 ? "\n…" : ""}
+                                        </pre>
+                                    )}
+                                    {step.error && <div className={styles.execStepError}>{step.error}</div>}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
