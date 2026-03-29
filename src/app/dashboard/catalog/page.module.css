@@ -343,13 +343,9 @@
     cursor: not-allowed;
 }
 
-.textarea::placeholder {
-    color: #6b7280;
-}
-
 .btnSend {
-    background: #10b981;
-    color: white;
+    background: var(--accent-cta);
+    color: var(--cta-text);
     border: none;
     width: 36px;
     height: 36px;
@@ -363,11 +359,6 @@
     margin-bottom: 2px;
 }
 
-.btnSend:disabled {
-    background: #2d2f3e;
-    color: #6b7280;
-    cursor: not-allowed;
-}
 
 .spin {
     animation: spin 1s linear infinite;
@@ -458,18 +449,4 @@
 
 .inputWrapper:focus-within {
     border-color: var(--text-muted);
-}
-    .inputWrapper:focus-within {
-        border-color: var(--text-muted);
-    }
-    .textarea {
-        color: var(--text-primary);
-    }
-    .textarea::placeholder {
-        color: var(--text-muted);
-    }
-    .btnSend:disabled {
-        background: var(--card-border);
-        color: var(--text-muted);
-    }
 }

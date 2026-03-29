@@ -1916,45 +1916,6 @@ export default function SettingsPage() {
                                     </p>
                                 </div>
                             </div>
-                                        <div>
-                                            <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>Порт</label>
-                                            <input type="text" value={integrations.smtp_port || ''}
-                                                onChange={e => setIntegrations(p => ({ ...p, smtp_port: e.target.value }))}
-                                                placeholder="587" className={styles.input}
-                                                style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
-                                        </div>
-                                        <div>
-                                            <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>Логин</label>
-                                            <input type="text" value={integrations.smtp_user || ''}
-                                                onChange={e => setIntegrations(p => ({ ...p, smtp_user: e.target.value }))}
-                                                placeholder="you@gmail.com" className={styles.input}
-                                                style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
-                                        </div>
-                                        <div>
-                                            <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>Пароль</label>
-                                            <div style={{ display: 'flex', gap: 6 }}>
-                                                <input type={showSecrets.smtp ? 'text' : 'password'} value={integrations.smtp_password || ''}
-                                                    onChange={e => setIntegrations(p => ({ ...p, smtp_password: e.target.value }))}
-                                                    placeholder="••••••" className={styles.input} style={{ flex: 1, fontSize: 12, padding: '7px 10px' }} />
-                                                <button className={styles.iconBtn} onClick={() => setShowSecrets(p => ({ ...p, smtp: !p.smtp }))}>
-                                                    {showSecrets.smtp ? '🙈' : '👁️'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div style={{ marginTop: 12 }}>
-                                        <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>From (адрес отправителя)</label>
-                                        <input type="text" value={integrations.smtp_from || ''}
-                                            onChange={e => setIntegrations(p => ({ ...p, smtp_from: e.target.value }))}
-                                            placeholder="AI Hub <noreply@yourshop.ru>" className={styles.input}
-                                            style={{ width: '320px', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
-                                    </div>
-                                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
-                                        💡 Gmail: используйте App Password. Бесплатные альтернативы: Resend, Brevo, Mailjet.
-                                    </p>
-                                </div>
-
-                            </div>
                         )}
                     </div>
                 </div>

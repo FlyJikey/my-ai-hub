@@ -155,13 +155,8 @@
 }
 
 .listItem:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    border-color: var(--border);
-}
-
-.listItem:hover {
     background-color: var(--dropdown-hover);
-}
+    border-color: var(--border);
 }
 
 .itemIconWrap1 {
