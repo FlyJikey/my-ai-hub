@@ -54,17 +54,10 @@
     flex-shrink: 0;
 }
 
-.srHeaderActions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-left: auto;
-}
-
-.sidebarCollapsed .srHeaderActions {
-    flex-direction: column;
-    gap: 6px;
-    margin-left: 0;
+/* Collapsed: center logo and button vertically in the header row */
+.sidebarCollapsed .srHeader {
+    justify-content: space-between;
+    padding: 0 0.6rem;
 }
 
 .collapseBtn {
@@ -80,30 +73,14 @@
     cursor: pointer;
     transition: background 0.15s, color 0.15s, border-color 0.15s;
     flex-shrink: 0;
+    margin-left: auto;
+}
+
+.sidebarCollapsed .collapseBtn {
+    margin-left: 0;
 }
 
 .collapseBtn:hover {
-    background: var(--card-hover);
-    color: var(--text-primary);
-    border-color: var(--card-border);
-}
-
-.themeBtn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-    flex-shrink: 0;
-}
-
-.themeBtn:hover {
     background: var(--card-hover);
     color: var(--text-primary);
     border-color: var(--card-border);

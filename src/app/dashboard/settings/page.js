@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Plus, Trash2, Edit2, CheckCircle, AlertCircle, RefreshCw, ChevronUp, ChevronDown, RotateCcw, FileText } from "lucide-react";
+import { Save, Plus, Trash2, Edit2, CheckCircle, AlertCircle, RefreshCw, ChevronUp, ChevronDown, RotateCcw, FileText, Sun, Moon, Monitor } from "lucide-react";
 import styles from "./page.module.css";
 
 export default function SettingsPage() {
@@ -39,6 +39,9 @@ export default function SettingsPage() {
     const [huggingfaceSearch, setHuggingfaceSearch] = useState("");
     const [huggingfaceTypeFilter, setHuggingfaceTypeFilter] = useState("all");
 
+    // Appearance / theme state
+    const [currentTheme, setCurrentTheme] = useState("system");
+
     // Integrations state
     const [integrations, setIntegrations] = useState({
         telegram_token: "", huggingface_api_key: "",
@@ -53,7 +56,19 @@ export default function SettingsPage() {
 
     useEffect(() => {
         fetchSettings();
+        const saved = localStorage.getItem("ai-hub-theme") || "system";
+        setCurrentTheme(saved);
     }, []);
+
+    const applyTheme = (value) => {
+        setCurrentTheme(value);
+        localStorage.setItem("ai-hub-theme", value);
+        if (value === "system") {
+            document.documentElement.removeAttribute("data-theme");
+        } else {
+            document.documentElement.setAttribute("data-theme", value);
+        }
+    };
 
     const fetchSettings = async () => {
         setIsLoading(true);
@@ -515,6 +530,12 @@ export default function SettingsPage() {
                     onClick={() => setActiveTab('integrations')}
                 >
                     🔌 Интеграции
+                </button>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'appearance' ? styles.tabBtnActive : ''}`}
+                    onClick={() => setActiveTab('appearance')}
+                >
+                    🎨 Оформление
                 </button>
             </div>
 
@@ -1908,6 +1929,57 @@ export default function SettingsPage() {
 
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* TAB: APPEARANCE */}
+            {activeTab === 'appearance' && (
+                <div className={styles.grid}>
+                    <div className={styles.card} style={{ gridColumn: '1 / -1' }}>
+                        <div className={styles.cardHeader}>
+                            <h2 className={styles.cardTitle}>Оформление</h2>
+                        </div>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: '0 0 24px 0' }}>
+                            Выберите тему интерфейса. Настройка сохраняется в браузере.
+                        </p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, maxWidth: 600 }}>
+                            {[
+                                { value: 'dark', label: 'Ночь', desc: 'Тёмная тема', icon: <Moon size={28} /> },
+                                { value: 'light', label: 'День', desc: 'Светлая тема', icon: <Sun size={28} /> },
+                                { value: 'system', label: 'Системная', desc: 'Как на устройстве', icon: <Monitor size={28} /> },
+                            ].map(opt => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => {
+                                        setCurrentTheme(opt.value);
+                                        localStorage.setItem('ai-hub-theme', opt.value);
+                                        if (opt.value === 'system') {
+                                            document.documentElement.removeAttribute('data-theme');
+                                        } else {
+                                            document.documentElement.setAttribute('data-theme', opt.value);
+                                        }
+                                    }}
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        padding: '20px 16px',
+                                        borderRadius: 12,
+                                        border: `2px solid ${currentTheme === opt.value ? 'var(--accent-cta)' : 'var(--card-border)'}`,
+                                        background: currentTheme === opt.value ? 'var(--card-hover)' : 'var(--card-bg)',
+                                        cursor: 'pointer',
+                                        color: 'var(--text-primary)',
+                                        transition: 'all 0.15s',
+                                    }}
+                                >
+                                    <span style={{ color: currentTheme === opt.value ? 'var(--text-primary)' : 'var(--text-muted)' }}>{opt.icon}</span>
+                                    <span style={{ fontWeight: 700, fontSize: 14 }}>{opt.label}</span>
+                                    <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{opt.desc}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}

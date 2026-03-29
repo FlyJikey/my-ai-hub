@@ -689,7 +689,7 @@ export default function FlowsPage() {
                         onInit={setReactFlowInstance} onNodeClick={onNodeClick} onPaneClick={onPaneClick}
                         nodeTypes={nodeTypes} fitView colorMode="dark" deleteKeyCode="Delete"
                         proOptions={{ hideAttribution: true }}>
-                        <Background variant={BackgroundVariant.Dots} color="#333" gap={20} size={1} />
+                        <Background variant={BackgroundVariant.Dots} color="#2a2a40" gap={20} size={1} />
                         <Controls />
                         <MiniMap nodeColor={(n) => NODE_DEFS[n.data?.nodeType]?.color || "#6366f1"}
                             style={{ background: "#1a1a2e" }} maskColor="rgba(0,0,0,0.5)" />

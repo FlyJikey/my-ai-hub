@@ -3,27 +3,27 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Settings, Shapes, Menu, History, Eye, Scan, MessageSquare, Package, Workflow, PanelLeftClose, PanelLeftOpen, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, Settings, Shapes, Menu, History, Eye, Scan, MessageSquare, Package, Workflow, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import styles from "./layout.module.css";
+
+// Used by Settings page too (imported via window or called directly)
+export function applyTheme(value) {
+    if (value === "system") {
+        document.documentElement.removeAttribute("data-theme");
+    } else {
+        document.documentElement.setAttribute("data-theme", value);
+    }
+}
 
 export default function DashboardLayout({ children }) {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
-    const [theme, setTheme] = useState("dark");
 
-    // Load theme from localStorage and apply to <html>
+    // Apply saved theme on mount
     useEffect(() => {
-        const saved = localStorage.getItem("ai-hub-theme") || "dark";
-        setTheme(saved);
-        document.documentElement.setAttribute("data-theme", saved);
+        const saved = localStorage.getItem("ai-hub-theme") || "system";
+        applyTheme(saved);
     }, []);
-
-    const toggleTheme = () => {
-        const next = theme === "dark" ? "light" : "dark";
-        setTheme(next);
-        localStorage.setItem("ai-hub-theme", next);
-        document.documentElement.setAttribute("data-theme", next);
-    };
 
     const isActive = (path) => {
         return pathname === path ? styles.linkActive : styles.linkDisabled;
@@ -35,30 +35,19 @@ export default function DashboardLayout({ children }) {
             <aside className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ""}`}>
                 <div className={styles.srHeader}>
                     {collapsed ? (
-                        <Link href="/" className={styles.logoMini} title="AI HUB">
-                            AI
-                        </Link>
+                        <Link href="/" className={styles.logoMini} title="AI HUB">AI</Link>
                     ) : (
                         <Link href="/" className={styles.logo}>
                             AI<span className={styles.hubText}>HUB</span>
                         </Link>
                     )}
-                    <div className={styles.srHeaderActions}>
-                        <button
-                            className={styles.themeBtn}
-                            onClick={toggleTheme}
-                            title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-                        >
-                            {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
-                        </button>
-                        <button
-                            className={styles.collapseBtn}
-                            onClick={() => setCollapsed(!collapsed)}
-                            title={collapsed ? "Развернуть меню" : "Свернуть меню"}
-                        >
-                            {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-                        </button>
-                    </div>
+                    <button
+                        className={styles.collapseBtn}
+                        onClick={() => setCollapsed(!collapsed)}
+                        title={collapsed ? "Развернуть меню" : "Свернуть меню"}
+                    >
+                        {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+                    </button>
                 </div>
 
                 <nav className={styles.nav}>
