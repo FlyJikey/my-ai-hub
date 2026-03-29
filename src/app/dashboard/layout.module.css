@@ -42,45 +42,71 @@
     height: 1.25rem;
 }
 
-.sidebarCollapsed .logo {
-    display: none;
-}
+/* Logo is conditionally rendered in JS — no CSS hide needed */
 
 .srHeader {
     height: 4rem;
     display: flex;
     align-items: center;
-    padding: 0 1rem;
+    padding: 0 0.75rem;
     border-bottom: 1px solid var(--border);
     gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.srHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.sidebarCollapsed .srHeaderActions {
+    flex-direction: column;
+    gap: 6px;
+    margin-left: 0;
 }
 
 .collapseBtn {
-    position: absolute;
-    top: 50%;
-    right: -12px;
-    transform: translateY(-50%);
-    background: var(--surface-opaque);
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    color: var(--foreground);
-    cursor: pointer;
-    width: 24px;
-    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s;
-    z-index: 10;
-}
-
-.sidebar:hover .collapseBtn {
-    opacity: 1;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    flex-shrink: 0;
 }
 
 .collapseBtn:hover {
-    background: var(--border);
+    background: var(--card-hover);
+    color: var(--text-primary);
+    border-color: var(--card-border);
+}
+
+.themeBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+}
+
+.themeBtn:hover {
+    background: var(--card-hover);
+    color: var(--text-primary);
+    border-color: var(--card-border);
 }
 
 .logo {
@@ -90,10 +116,28 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.logoMini {
+    font-weight: 800;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    color: var(--foreground);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--accent-cta);
+    color: var(--cta-text);
+    border-radius: 8px;
+    flex-shrink: 0;
 }
 
 .hubText {
-    color: #9ca3af;
+    color: var(--text-muted);
     font-weight: 300;
 }
 
