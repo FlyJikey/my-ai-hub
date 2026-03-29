@@ -474,6 +474,12 @@ const OUTPUT_HANDLES = {
     int_http:        ["response"],
 };
 
+const TRIGGER_NODE_TYPES = new Set([
+    "trigger_photo",
+    "trigger_webhook",
+    "trigger_manual",
+]);
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 export async function POST(request) {
     try {
@@ -503,6 +509,11 @@ export async function POST(request) {
         // Topological sort
         const sortedIds = topoSort(nodes, edges);
         const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
+        const incomingEdgeCount = {};
+
+        nodes.forEach((node) => {
+            incomingEdgeCount[node.id] = 0;
+        });
 
         // Edge map: `sourceId::sourceHandle` → [{targetId, targetHandle}]
         const edgeMap = {};
@@ -510,6 +521,9 @@ export async function POST(request) {
             const key = `${e.source}::${e.sourceHandle || "output"}`;
             if (!edgeMap[key]) edgeMap[key] = [];
             edgeMap[key].push({ targetId: e.target, targetHandle: e.targetHandle || "input" });
+            if (incomingEdgeCount[e.target] !== undefined) {
+                incomingEdgeCount[e.target] += 1;
+            }
         });
 
         // Merge node input accumulator: nodeId → Map<targetHandle, value>
@@ -545,6 +559,14 @@ export async function POST(request) {
                 } else {
                     input = partValues.length === 1 ? partValues[0] : partValues;
                 }
+            }
+
+            const hasIncomingEdges = (incomingEdgeCount[nodeId] || 0) > 0;
+            const hasResolvedInput = input !== undefined;
+            const isTriggerNode = TRIGGER_NODE_TYPES.has(nodeType);
+
+            if (hasIncomingEdges && !hasResolvedInput && !isTriggerNode) {
+                continue;
             }
 
             let output;
