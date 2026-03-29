@@ -130,14 +130,12 @@
 /* Vision Attributes in AI response */
 .attributesGrid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-    background-color: rgba(0, 0, 0, 0.02);
-    padding: 1rem;
-    border-radius: 0.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background-color: var(--panel-subtle);
+    border-radius: 12px;
 }
 
 /* Markdown Rendering */
@@ -171,25 +169,12 @@
     border-radius: 2px;
 }
 
-@media (prefers-color-scheme: dark) {
-    .markdownContent strong {
-        color: #fff;
-        background: rgba(255, 255, 255, 0.05);
-    }
-}
-
 .markdownContent code {
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--code-bg);
     padding: 0.2rem 0.4rem;
     border-radius: 4px;
     font-size: 0.85em;
     font-family: inherit;
-}
-
-@media (prefers-color-scheme: dark) {
-    .markdownContent code {
-        background: rgba(255, 255, 255, 0.1);
-    }
 }
 
 .markdownContent h1, .markdownContent h2, .markdownContent h3 {
@@ -201,16 +186,20 @@
 .markdownContent h2 { font-size: 1.3rem; }
 .markdownContent h3 { font-size: 1.1rem; }
 
-@media (prefers-color-scheme: dark) {
-    .attributesGrid {
-        background-color: rgba(255, 255, 255, 0.02);
-    }
+.attributesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background-color: var(--panel-subtle);
+    border-radius: 12px;
 }
 
 .attrLabel {
     font-size: 0.75rem;
     text-transform: uppercase;
-    color: #6b7280;
+    color: var(--text-secondary);
     font-weight: 600;
     margin-bottom: 0.15rem;
 }
@@ -326,18 +315,16 @@
 }
 
 .btnAttach {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 3rem;
-    height: 3rem;
-    border-radius: 1rem;
-    border: 1px dashed var(--border);
-    background: var(--background);
-    color: #6b7280;
-    cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
 }
 
 .btnAttach:hover {
@@ -358,7 +345,7 @@
 
 .textareaContainer:focus-within {
     border-color: var(--accent-cta);
-    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 .textarea {
@@ -520,9 +507,9 @@
 }
 
 .modelDesc {
-    font-size: 0.75rem;
-    color: #6b7280;
-    line-height: 1.4;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
 }
 
 .modelBadgeEconomy {
@@ -800,14 +787,4 @@
 .chatDeleteBtn:hover {
     background: rgba(239, 68, 68, 0.15);
     color: #ef4444;
-}
-
-/* ===== Light Theme Overrides ===== */
-@media (prefers-color-scheme: light) {
-    .debugContent strong {
-        color: var(--text-primary);
-    }
-    .debugPrompt {
-        background: rgba(0, 0, 0, 0.04);
-    }
 }

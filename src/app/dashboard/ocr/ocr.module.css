@@ -19,7 +19,7 @@
 }
 
 .subtitle {
-    color: #9ca3af;
+    color: var(--text-secondary);
     font-size: 1rem;
 }
 
@@ -48,29 +48,16 @@
 
 .dropzone {
     aspect-ratio: 16/9;
-    border: 2px dashed var(--border);
+    border: 2px dashed var(--card-border);
     border-radius: 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: rgba(0, 0, 0, 0.02);
+    background: var(--panel-subtle);
     position: relative;
     overflow: hidden;
 }
 
-@media (prefers-color-scheme: dark) {
-    .dropzone {
-        background: rgba(255, 255, 255, 0.02);
-    }
-}
-
 .dropzone:hover {
     border-color: var(--accent-cta);
-    background: rgba(139, 92, 246, 0.05);
+    background: var(--muted-surface);
 }
 
 .dropzoneActive {
@@ -79,8 +66,10 @@
 }
 
 .dropzoneIcon {
-    color: #9ca3af;
-    transition: color 0.2s;
+    width: 48px;
+    height: 48px;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
 }
 
 .dropzone:hover .dropzoneIcon {
@@ -138,10 +127,9 @@
 }
 
 .actionBtn:disabled {
-    opacity: 0.5;
+    background: var(--disabled-bg);
+    color: var(--disabled-text);
     cursor: not-allowed;
-    background: var(--border);
-    color: #9ca3af;
 }
 
 .resultSection {
@@ -187,17 +175,13 @@
 
 .attributesGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
+    margin: 1.5rem 0;
     padding: 1.5rem;
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: 1rem;
-}
-
-@media (prefers-color-scheme: dark) {
-    .attributesGrid {
-        background: rgba(255, 255, 255, 0.05);
-    }
+    background: var(--panel-subtle);
+    border-radius: 12px;
+    width: 100%;
 }
 
 .attrItem {
@@ -209,7 +193,7 @@
 .attrLabel {
     font-size: 0.75rem;
     text-transform: uppercase;
-    color: #6b7280;
+    color: var(--text-secondary);
     font-weight: 600;
 }
 
@@ -238,12 +222,8 @@
 }
 
 .loadingOverlay {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    color: #9ca3af;
+    background: var(--overlay);
+    backdrop-filter: blur(4px);
 }
 
 .spin {

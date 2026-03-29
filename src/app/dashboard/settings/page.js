@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Save, Plus, Trash2, Edit2, CheckCircle, AlertCircle, RefreshCw, ChevronUp, ChevronDown, RotateCcw, FileText, Sun, Moon, Monitor } from "lucide-react";
 import styles from "./page.module.css";
+import { applyTheme } from "../layout";
 
 export default function SettingsPage() {
     const [settings, setSettings] = useState(null);
@@ -650,7 +651,7 @@ export default function SettingsPage() {
                         <div className={styles.cardHeader}>
                             <h2 className={styles.cardTitle}>Пресеты и Сценарии (Промпты)</h2>
                             <div style={{ display: 'flex', gap: '8px' }}>
-                                <button className={styles.addBtn} onClick={restoreScenarios} style={{ background: '#3f3f46' }} title="Сбросить к заводским настройкам">
+                                <button className={`${styles.addBtn} ${styles.restoreBtn}`} onClick={restoreScenarios} title="Сбросить к заводским настройкам">
                                     <RotateCcw size={16} /> Сбросить
                                 </button>
                                 <button className={styles.addBtn} onClick={() => setEditingScenario({ name: "", icon: "📝", description: "", prompt: "" })}>
@@ -658,7 +659,7 @@ export default function SettingsPage() {
                                 </button>
                             </div>
                         </div>
-                        <p style={{ fontSize: '13px', color: '#a1a1aa', marginBottom: '16px' }}>
+                        <p className={styles.itemDesc} style={{ marginBottom: '16px' }}>
                             Создавайте различные пресеты (например: &quot;Обувь&quot;, &quot;Характеристики не нужны&quot;) и задавайте в промпте, какие параметры надо писать, а какие нет. Затем выбирайте их прямо при генерации на Спартаке!
                         </p>
 
@@ -704,7 +705,7 @@ export default function SettingsPage() {
                         <div className={styles.cardHeader}>
                             <h2 className={styles.cardTitle}>Поведение ИИ (Системные инструкции)</h2>
                             <div style={{ display: 'flex', gap: '8px' }}>
-                                <button className={styles.addBtn} onClick={restoreBehaviors} style={{ background: '#3f3f46' }} title="Сбросить к заводским настройкам (эталону)">
+                                <button className={`${styles.addBtn} ${styles.restoreBtn}`} onClick={restoreBehaviors} title="Сбросить к заводским настройкам (эталону)">
                                     <RotateCcw size={16} /> Сбросить к эталону
                                 </button>
                                 <button className={styles.addBtn} onClick={() => setEditingBehavior({
@@ -721,17 +722,17 @@ export default function SettingsPage() {
                                 </button>
                             </div>
                         </div>
-                        <p style={{ fontSize: '13px', color: '#a1a1aa', marginBottom: '16px' }}>
+                        <p className={styles.itemDesc} style={{ marginBottom: '16px' }}>
                             ВНИМАНИЕ: Здесь настраиваются жесткие базовые правила для ИИ. Меняйте аккуратно, чтобы не сломать JSON-формат для таблицы характеристик!
                         </p>
 
                         <div className={styles.list}>
                             {(settings.behaviors || []).map(behavior => (
-                                <div key={behavior.id} className={styles.scenarioItem} style={{ borderLeft: behavior.isActive ? '4px solid #10b981' : 'none' }}>
+                                <div key={behavior.id} className={`${styles.scenarioItem} ${behavior.isActive ? styles.behaviorActive : ''}`}>
                                     <div className={styles.scenarioInfo}>
                                         <div className={styles.itemName}>
                                             {behavior.icon} {behavior.name}
-                                            {behavior.isActive && <span style={{ fontSize: '10px', background: 'rgba(16,185,129,0.15)', color: '#34d399', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>АКТИВЕН</span>}
+                                            {behavior.isActive && <span className={styles.activeBadge}>АКТИВЕН</span>}
                                         </div>
                                         <div className={styles.itemDesc}>{behavior.description}</div>
                                     </div>
@@ -878,7 +879,7 @@ export default function SettingsPage() {
                             <button className={styles.addBtn} onClick={fetchLogs}>
                                 <RefreshCw size={16} /> Обновить
                             </button>
-                            <button className={styles.addBtn} style={{ background: '#ef4444' }} onClick={clearLogs}>
+                            <button className={`${styles.addBtn} ${styles.clearLogsBtn}`} onClick={clearLogs}>
                                 <Trash2 size={16} /> Очистить
                             </button>
                         </div>
@@ -897,25 +898,25 @@ export default function SettingsPage() {
                                 <div key={log.id} className={styles.card} style={{ padding: '1.5rem' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
                                         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem', padding: '0.25rem 0.5rem', background: log.type === 'vision' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(59, 130, 246, 0.15)', color: log.type === 'vision' ? '#c084fc' : '#60a5fa', borderRadius: '0.5rem' }}>
+                                            <span className={`${styles.logTypeBadge} ${log.type === 'vision' ? styles.logTypeVision : styles.logTypeText}`}>
                                                 {log.type === 'vision' ? 'ФОТО (VISION)' : 'ТЕКСТ (TEXT)'}
                                             </span>
-                                            <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}><b>Провайдер:</b> {log.provider}</span>
-                                            <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}><b>Модель:</b> {log.model}</span>
+                                            <span className={styles.logMeta}><b>Провайдер:</b> {log.provider}</span>
+                                            <span className={styles.logMeta}><b>Модель:</b> {log.model}</span>
                                         </div>
-                                        <div style={{ color: '#6b7280', fontSize: '0.875rem', display: 'flex', alignItems: 'center' }}>
+                                        <div className={styles.logTime}>
                                             {new Date(log.timestamp).toLocaleString('ru-RU')}
                                         </div>
                                     </div>
 
-                                    <h3 style={{ color: '#f87171', marginBottom: '1.25rem', fontSize: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                                    <h3 className={styles.logErrorTitle}>
                                         <AlertCircle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
                                         <span>{log.message}</span>
                                     </h3>
 
                                     {log.details && (
-                                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1.25rem', borderRadius: '0.75rem', overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                            <pre style={{ fontSize: '0.75rem', color: '#d1d5db', margin: 0, fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                                        <div className={styles.logErrorBlock}>
+                                            <pre className={styles.logErrorPre}>
                                                 {JSON.stringify(log.details, null, 2)}
                                             </pre>
                                         </div>
@@ -1248,23 +1249,22 @@ export default function SettingsPage() {
                                     placeholder="Инструкция без указания материалов..."
                                 />
                             </div>
-                            <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '14px', color: '#e4e4e7', borderBottom: '1px solid #3f3f46', paddingBottom: '8px' }}>
+                            <h4 className={styles.sectionHeader}>
                                 Блок 1: Настройки для Фото ИИ (Vision)
                             </h4>
                             <div className={styles.inputGroup} style={{ opacity: 0.7 }}>
-                                <label style={{ color: '#a1a1aa' }}>Системный Промпт (Зашит в код для надежности, чтобы не ломался JSON Спартака)</label>
+                                <label className={styles.fieldLabel}>Системный Промпт (Зашит в код для надежности, чтобы не ломался JSON Спартака)</label>
                                 <textarea
                                     value={`СТРОГОЕ ПРАВИЛО: Описывай ТОЛЬКО то, что БУКВАЛЬНО ВИДИШЬ на фото. ЗАПРЕЩЕНО додумывать.
 ВАЖНОЕ ПРАВИЛО ЯЗЫКА: Весь твой ответ должен быть СТРОГО на русском языке.
 ВАЖНОЕ ПРАВИЛО JSON: ЗАПРЕЩЕНО использовать двойные кавычки (") внутри текстовых значений!`}
                                     disabled
-                                    className={styles.textareaInput}
+                                    className={`${styles.textareaInput} ${styles.disabledTextarea}`}
                                     rows={4}
-                                    style={{ fontFamily: 'monospace', fontSize: '13px', background: 'rgba(255,255,255,0.05)', cursor: 'not-allowed' }}
                                 />
                             </div>
 
-                            <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '14px', color: '#e4e4e7', borderBottom: '1px solid #3f3f46', paddingBottom: '8px' }}>
+                            <h4 className={styles.sectionHeader}>
                                 Блок 2: Настройки для Текстового ИИ (Генерация текста)
                             </h4>
                             <div className={styles.inputGroup}>
@@ -1279,7 +1279,7 @@ export default function SettingsPage() {
                                 />
                             </div>
 
-                            <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '14px', color: '#e4e4e7', borderBottom: '1px solid #3f3f46', paddingBottom: '8px' }}>
+                            <h4 className={styles.sectionHeader}>
                                 Технические настройки (Параметры генерации Text AI)
                             </h4>
                             <div className={styles.inputGroupRow}>
@@ -1482,7 +1482,7 @@ export default function SettingsPage() {
                                 <button className={styles.polzaRefreshBtn} onClick={fetchOpenrouterData} disabled={isLoadingOpenrouter}>
                                     <RefreshCw size={14} className={isLoadingOpenrouter ? styles.spin : ''} /> Обновить список моделей
                                 </button>
-                                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>
+                                <span className={styles.itemDesc}>
                                     {openrouterModels.length > 0 ? `Найдено бесплатных моделей: ${openrouterModels.length}` : ''}
                                 </span>
                             </div>
@@ -1527,7 +1527,7 @@ export default function SettingsPage() {
                                                 <div className={styles.modelId}>{model.id}</div>
                                             </div>
                                             <div className={styles.modelCapabilities}>
-                                                <span className={styles.capBadge} style={{ background: 'rgba(16,185,129,0.15)', color: '#34d399' }}>БЕСПЛАТНО</span>
+                                                <span className={`${styles.capBadge} ${styles.freeBadgeGreen}`}>БЕСПЛАТНО</span>
                                                 <span className={styles.capBadge}>ctx: {contextLen}</span>
                                                 {hasVision && <span className={styles.capBadge}>vision</span>}
                                                 {model.architecture?.input_modalities?.map(cap => (
@@ -1589,7 +1589,7 @@ export default function SettingsPage() {
                                 <button className={styles.polzaRefreshBtn} onClick={fetchHuggingfaceData} disabled={isLoadingHuggingface}>
                                     <RefreshCw size={14} className={isLoadingHuggingface ? styles.spin : ''} /> Обновить список моделей
                                 </button>
-                                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>
+                                <span className={styles.itemDesc}>
                                     {huggingfaceModels.length > 0 ? `Найдено моделей: ${huggingfaceModels.length}` : ''}
                                 </span>
                             </div>
@@ -1643,7 +1643,7 @@ export default function SettingsPage() {
                                                 <div className={styles.modelId}>{model.id}</div>
                                             </div>
                                             <div className={styles.modelCapabilities}>
-                                                <span className={styles.capBadge} style={{ background: 'rgba(16,185,129,0.15)', color: '#34d399' }}>БЕСПЛАТНО</span>
+                                                <span className={`${styles.capBadge} ${styles.freeBadgeGreen}`}>БЕСПЛАТНО</span>
                                                 <span className={styles.capBadge}>{isVision ? 'vision' : 'text'}</span>
                                                 {model.likes > 0 && <span className={styles.capBadge}>❤ {model.likes}</span>}
                                                 {model.downloads > 0 && <span className={styles.capBadge}>↓ {(model.downloads / 1000).toFixed(0)}K</span>}
@@ -1707,12 +1707,12 @@ export default function SettingsPage() {
                                 Сохранить интеграции
                             </button>
                         </div>
-                        <p style={{ color: '#a1a1aa', fontSize: 13, margin: '0 0 20px 0' }}>
+                        <p className={styles.itemDesc} style={{ margin: '0 0 20px 0' }}>
                             Данные хранятся в Supabase (зашифрованы на сервере). Узлы на холсте «Цепочки ИИ» используют эти настройки автоматически.
                         </p>
 
                         {isLoadingIntegrations ? (
-                            <div style={{ textAlign: 'center', color: '#a1a1aa', padding: 20 }}>
+                            <div className={styles.emptyIntegrations}>
                                 <RefreshCw size={18} className={styles.spin} /> Загрузка...
                             </div>
                         ) : (
@@ -1720,12 +1720,12 @@ export default function SettingsPage() {
 
                                 {/* Бесплатные API */}
                                 <div>
-                                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f4f4f5', marginBottom: 14, borderBottom: '1px solid #27272a', paddingBottom: 8 }}>
+                                    <h3 className={styles.integrationTitle}>
                                         🆓 Бесплатные API
                                     </h3>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                                         <div>
-                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>
+                                            <label className={styles.integrationLabel}>
                                                 Telegram Bot Token
                                             </label>
                                             <div style={{ display: 'flex', gap: 6 }}>
@@ -1741,10 +1741,10 @@ export default function SettingsPage() {
                                                     {showSecrets.telegram ? '🙈' : '👁️'}
                                                 </button>
                                             </div>
-                                            <p style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>Получить через @BotFather в Telegram</p>
+                                            <p className={styles.helpText}>Получить через @BotFather в Telegram</p>
                                         </div>
                                         <div>
-                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>
+                                            <label className={styles.integrationLabel}>
                                                 Hugging Face API Key
                                             </label>
                                             <div style={{ display: 'flex', gap: 6 }}>
@@ -1760,19 +1760,19 @@ export default function SettingsPage() {
                                                     {showSecrets.hf ? '🙈' : '👁️'}
                                                 </button>
                                             </div>
-                                            <p style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>huggingface.co/settings/tokens</p>
+                                            <p className={styles.helpText}>huggingface.co/settings/tokens</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Supabase */}
                                 <div>
-                                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f4f4f5', marginBottom: 14, borderBottom: '1px solid #27272a', paddingBottom: 8 }}>
+                                    <h3 className={styles.integrationTitle}>
                                         🗄️ Supabase (бесплатная БД)
                                     </h3>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                                         <div>
-                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Project URL</label>
+                                            <label className={styles.integrationLabel}>Project URL</label>
                                             <input
                                                 type="text"
                                                 value={integrations.supabase_url || ''}
@@ -1783,7 +1783,7 @@ export default function SettingsPage() {
                                             />
                                         </div>
                                         <div>
-                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Service Role Key</label>
+                                            <label className={styles.integrationLabel}>Service Role Key</label>
                                             <div style={{ display: 'flex', gap: 6 }}>
                                                 <input
                                                     type={showSecrets.sb ? 'text' : 'password'}
@@ -1797,21 +1797,10 @@ export default function SettingsPage() {
                                                     {showSecrets.sb ? '🙈' : '👁️'}
                                                 </button>
                                             </div>
-                                        </div>
                                     </div>
-                                    <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
-                                        ℹ️ Уже настроено через .env.local? Можете оставить пустым — будут использованы переменные окружения.
-                                    </p>
-                                </div>
-
-                                {/* External DB */}
-                                <div>
-                                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f4f4f5', marginBottom: 14, borderBottom: '1px solid #27272a', paddingBottom: 8 }}>
-                                        🐘 Внешняя БД (PostgreSQL / MySQL)
-                                    </h3>
                                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16 }}>
                                         <div>
-                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Connection URL</label>
+                                            <label className={styles.integrationLabel}>Connection URL</label>
                                             <input
                                                 type="text"
                                                 value={integrations.extra_db_url || ''}
@@ -1822,7 +1811,7 @@ export default function SettingsPage() {
                                             />
                                         </div>
                                         <div>
-                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Пользователь</label>
+                                            <label className={styles.integrationLabel}>Пользователь</label>
                                             <input
                                                 type="text"
                                                 value={integrations.extra_db_user || ''}
@@ -1833,7 +1822,7 @@ export default function SettingsPage() {
                                             />
                                         </div>
                                         <div>
-                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Пароль</label>
+                                            <label className={styles.integrationLabel}>Пароль</label>
                                             <div style={{ display: 'flex', gap: 6 }}>
                                                 <input
                                                     type={showSecrets.dbpwd ? 'text' : 'password'}
@@ -1853,58 +1842,58 @@ export default function SettingsPage() {
 
                                 {/* Webhooks — Discord / Slack */}
                                 <div>
-                                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f4f4f5', marginBottom: 14, borderBottom: '1px solid #27272a', paddingBottom: 8 }}>
+                                    <h3 className={styles.integrationTitle}>
                                         🔔 Webhooks (Discord / Slack)
                                     </h3>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                                         <div>
-                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Discord Webhook URL</label>
+                                            <label className={styles.integrationLabel}>Discord Webhook URL</label>
                                             <input type="text" value={integrations.discord_webhook_url || ''}
                                                 onChange={e => setIntegrations(p => ({ ...p, discord_webhook_url: e.target.value }))}
                                                 placeholder="https://discord.com/api/webhooks/..."
                                                 className={styles.input} style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
-                                            <p style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>Канал → Настройки → Интеграции → Вебхуки</p>
+                                            <p className={styles.helpText}>Канал → Настройки → Интеграции → Вебхуки</p>
                                         </div>
                                         <div>
-                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Slack Incoming Webhook</label>
+                                            <label className={styles.integrationLabel}>Slack Incoming Webhook</label>
                                             <input type="text" value={integrations.slack_webhook_url || ''}
                                                 onChange={e => setIntegrations(p => ({ ...p, slack_webhook_url: e.target.value }))}
                                                 placeholder="https://hooks.slack.com/services/..."
                                                 className={styles.input} style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
-                                            <p style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>api.slack.com/apps → Incoming Webhooks</p>
+                                            <p className={styles.helpText}>api.slack.com/apps → Incoming Webhooks</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Email SMTP */}
                                 <div>
-                                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f4f4f5', marginBottom: 14, borderBottom: '1px solid #27272a', paddingBottom: 8 }}>
+                                    <h3 className={styles.integrationTitle}>
                                         📧 Email (SMTP)
                                     </h3>
                                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 12 }}>
                                         <div>
-                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>SMTP Хост</label>
+                                            <label className={styles.integrationLabel}>SMTP Хост</label>
                                             <input type="text" value={integrations.smtp_host || ''}
                                                 onChange={e => setIntegrations(p => ({ ...p, smtp_host: e.target.value }))}
                                                 placeholder="smtp.gmail.com" className={styles.input}
                                                 style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
                                         </div>
                                         <div>
-                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Порт</label>
+                                            <label className={styles.integrationLabel}>Порт</label>
                                             <input type="text" value={integrations.smtp_port || ''}
                                                 onChange={e => setIntegrations(p => ({ ...p, smtp_port: e.target.value }))}
                                                 placeholder="587" className={styles.input}
                                                 style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
                                         </div>
                                         <div>
-                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Логин</label>
+                                            <label className={styles.integrationLabel}>Логин</label>
                                             <input type="text" value={integrations.smtp_user || ''}
                                                 onChange={e => setIntegrations(p => ({ ...p, smtp_user: e.target.value }))}
                                                 placeholder="you@gmail.com" className={styles.input}
                                                 style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
                                         </div>
                                         <div>
-                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Пароль</label>
+                                            <label className={styles.integrationLabel}>Пароль</label>
                                             <div style={{ display: 'flex', gap: 6 }}>
                                                 <input type={showSecrets.smtp ? 'text' : 'password'} value={integrations.smtp_password || ''}
                                                     onChange={e => setIntegrations(p => ({ ...p, smtp_password: e.target.value }))}
@@ -1916,13 +1905,51 @@ export default function SettingsPage() {
                                         </div>
                                     </div>
                                     <div style={{ marginTop: 12 }}>
-                                        <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>From (адрес отправителя)</label>
+                                        <label className={styles.integrationLabel}>From (адрес отправителя)</label>
                                         <input type="text" value={integrations.smtp_from || ''}
                                             onChange={e => setIntegrations(p => ({ ...p, smtp_from: e.target.value }))}
                                             placeholder="AI Hub <noreply@yourshop.ru>" className={styles.input}
                                             style={{ width: '320px', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
                                     </div>
-                                    <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
+                                    <p className={styles.helpText}>
+                                        💡 Gmail: используйте App Password. Бесплатные альтернативы: Resend, Brevo, Mailjet.
+                                    </p>
+                                </div>
+                            </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>Порт</label>
+                                            <input type="text" value={integrations.smtp_port || ''}
+                                                onChange={e => setIntegrations(p => ({ ...p, smtp_port: e.target.value }))}
+                                                placeholder="587" className={styles.input}
+                                                style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>Логин</label>
+                                            <input type="text" value={integrations.smtp_user || ''}
+                                                onChange={e => setIntegrations(p => ({ ...p, smtp_user: e.target.value }))}
+                                                placeholder="you@gmail.com" className={styles.input}
+                                                style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>Пароль</label>
+                                            <div style={{ display: 'flex', gap: 6 }}>
+                                                <input type={showSecrets.smtp ? 'text' : 'password'} value={integrations.smtp_password || ''}
+                                                    onChange={e => setIntegrations(p => ({ ...p, smtp_password: e.target.value }))}
+                                                    placeholder="••••••" className={styles.input} style={{ flex: 1, fontSize: 12, padding: '7px 10px' }} />
+                                                <button className={styles.iconBtn} onClick={() => setShowSecrets(p => ({ ...p, smtp: !p.smtp }))}>
+                                                    {showSecrets.smtp ? '🙈' : '👁️'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ marginTop: 12 }}>
+                                        <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>From (адрес отправителя)</label>
+                                        <input type="text" value={integrations.smtp_from || ''}
+                                            onChange={e => setIntegrations(p => ({ ...p, smtp_from: e.target.value }))}
+                                            placeholder="AI Hub <noreply@yourshop.ru>" className={styles.input}
+                                            style={{ width: '320px', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
+                                    </div>
+                                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
                                         💡 Gmail: используйте App Password. Бесплатные альтернативы: Resend, Brevo, Mailjet.
                                     </p>
                                 </div>
@@ -1951,15 +1978,7 @@ export default function SettingsPage() {
                             ].map(opt => (
                                 <button
                                     key={opt.value}
-                                    onClick={() => {
-                                        setCurrentTheme(opt.value);
-                                        localStorage.setItem('ai-hub-theme', opt.value);
-                                        if (opt.value === 'system') {
-                                            document.documentElement.removeAttribute('data-theme');
-                                        } else {
-                                            document.documentElement.setAttribute('data-theme', opt.value);
-                                        }
-                                    }}
+                                    onClick={() => applyTheme(opt.value)}
                                     style={{
                                         display: 'flex',
                                         flexDirection: 'column',

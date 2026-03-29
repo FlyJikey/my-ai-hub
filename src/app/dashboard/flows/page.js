@@ -692,7 +692,7 @@ export default function FlowsPage() {
                         <Background variant={BackgroundVariant.Dots} color="#2a2a40" gap={20} size={1} />
                         <Controls />
                         <MiniMap nodeColor={(n) => NODE_DEFS[n.data?.nodeType]?.color || "#6366f1"}
-                            style={{ background: "#1a1a2e" }} maskColor="rgba(0,0,0,0.5)" />
+                            style={{ background: 'var(--minimap-bg)' }} maskColor="rgba(0,0,0,0.5)" />
                         <Panel position="top-center">
                             {nodes.length === 0 && (
                                 <div className={styles.emptyHint}>

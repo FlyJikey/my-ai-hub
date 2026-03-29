@@ -324,7 +324,7 @@ export default function CatalogPage() {
                             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.65rem', fontSize: '1.1rem' }}>
                                 <Database size={20} color="#10b981" /> Каталог подключен
                             </h3>
-                            <p style={{ margin: '0.75rem 0 0', color: '#a1a1aa', lineHeight: 1.6 }}>
+                            <p style={{ margin: '0.75rem 0 0', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                                 База товаров загружена и доступна для поиска. Для вопросов по каталогу используйте переключатель базы в `Чат ИИ`.
                             </p>
                             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1rem' }}>
@@ -343,7 +343,7 @@ export default function CatalogPage() {
                         {stats.total > stats.vectorized && (
                             <div style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                                 <h3 style={{ color: '#10b981', marginBottom: '0.5rem', fontSize: '1.1rem' }}>Требуется векторизация</h3>
-                                <p style={{ color: '#a1a1aa', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>
                                     В базе есть {stats.total - stats.vectorized} товаров без векторов. Они не будут доступны для поиска ИИ, пока вы их не векторизуете.
                                 </p>
                                 
@@ -376,7 +376,7 @@ export default function CatalogPage() {
                                                         {model.tier === 'premium' && <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', background: '#8b5cf6', color: 'white', borderRadius: '4px', fontWeight: 600 }}>PRO</span>}
                                                         {model.tier === 'economy' && <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', background: '#3b82f6', color: 'white', borderRadius: '4px', fontWeight: 600 }}>ЭКОНОМ</span>}
                                                     </div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#a1a1aa', marginTop: '0.25rem' }}>{model.description}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{model.description}</div>
                                                 </button>
                                             ))}
                                         </div>
@@ -468,7 +468,7 @@ export default function CatalogPage() {
                     {stats.hasData && stats.total > stats.vectorized && !isUploading && (
                         <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                             <h3 style={{ color: '#10b981', marginBottom: '0.5rem', fontSize: '1.1rem' }}>Требуется векторизация</h3>
-                            <p style={{ color: '#a1a1aa', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>
                                 В базе есть {stats.total - stats.vectorized} товаров без векторов. Они не будут доступны для поиска ИИ, пока вы их не векторизуете.
                             </p>
                             
@@ -501,7 +501,7 @@ export default function CatalogPage() {
                                                     {model.tier === 'premium' && <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', background: '#8b5cf6', color: 'white', borderRadius: '4px', fontWeight: 600 }}>PRO</span>}
                                                     {model.tier === 'economy' && <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', background: '#3b82f6', color: 'white', borderRadius: '4px', fontWeight: 600 }}>ЭКОНОМ</span>}
                                                 </div>
-                                                <div style={{ fontSize: '0.8rem', color: '#a1a1aa', marginTop: '0.25rem' }}>{model.description}</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{model.description}</div>
                                             </button>
                                         ))}
                                     </div>

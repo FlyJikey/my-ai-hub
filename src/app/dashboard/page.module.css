@@ -13,7 +13,7 @@
 }
 
 .headerDesc {
-    color: #6b7280;
+    color: var(--text-secondary);
 }
 
 .statsGrid {
@@ -53,7 +53,8 @@
 .statTitle {
     font-size: 0.875rem;
     font-weight: 500;
-    color: #6b7280;
+    color: var(--text-secondary);
+    margin: 0;
 }
 
 .statIcon {
@@ -90,7 +91,9 @@
 }
 
 .trendGray {
-    color: #6b7280;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
 }
 
 .trendGreen {
@@ -156,10 +159,9 @@
     border-color: var(--border);
 }
 
-@media (prefers-color-scheme: dark) {
-    .listItem:hover {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
+.listItem:hover {
+    background-color: var(--dropdown-hover);
+}
 }
 
 .itemIconWrap1 {
@@ -201,9 +203,10 @@
 }
 
 .itemDesc {
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin-top: 0.25rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
 }
 
 .actList {
@@ -260,13 +263,7 @@
 }
 
 .btnOutline:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
-@media (prefers-color-scheme: dark) {
-    .btnOutline:hover {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
+    background-color: var(--dropdown-hover);
 }
 
 .btnOutline:active {

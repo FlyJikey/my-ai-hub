@@ -23,6 +23,8 @@
   --card-border: #e5e7eb;
   --card-hover: #f3f4f6;
   --input-bg: #f4f4f5;
+  --input-hover: #e4e4e7;
+  --focus-ring: rgba(59, 130, 246, 0.5);
   --text-primary: #111111;
   --text-secondary: #6b7280;
   --text-muted: #9ca3af;
@@ -35,6 +37,30 @@
   --dropdown-border: #e5e7eb;
   --dropdown-hover: rgba(0, 0, 0, 0.05);
   --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --muted-surface: #f4f4f5;
+  --panel-bg: #ffffff;
+  --panel-subtle: #f9fafb;
+  --overlay: rgba(0, 0, 0, 0.5);
+  --code-bg: #f4f4f5;
+  --minimap-bg: #eef0f4;
+
+  /* Status colors */
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --success-border: #34d399;
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.1);
+  --danger-border: #f87171;
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.1);
+  --warning-border: #fbbf24;
+  --info: #3b82f6;
+  --info-bg: rgba(59, 130, 246, 0.1);
+  --info-border: #60a5fa;
+  
+  /* Disabled states */
+  --disabled-bg: #e5e7eb;
+  --disabled-text: #9ca3af;
 
   /* Special Effects */
   --glow-internal-blue: inset 0 0 60px rgba(0, 112, 243, 0.15), inset 0 0 20px rgba(0, 112, 243, 0.1);
@@ -58,6 +84,8 @@
     --card-border: #27272a;
     --card-hover: #27272a;
     --input-bg: #27272a;
+    --input-hover: #3f3f46;
+    --focus-ring: rgba(59, 130, 246, 0.5);
     --text-primary: #fafafa;
     --text-secondary: #a1a1aa;
     --text-muted: #71717a;
@@ -70,6 +98,30 @@
     --dropdown-border: rgba(255, 255, 255, 0.05);
     --dropdown-hover: rgba(255, 255, 255, 0.05);
     --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+    --muted-surface: #27272a;
+    --panel-bg: #18181b;
+    --panel-subtle: #1a1a1e;
+    --overlay: rgba(0, 0, 0, 0.7);
+    --code-bg: #1a1a1e;
+    --minimap-bg: #1a1a2e;
+
+    /* Status colors */
+    --success: #10b981;
+    --success-bg: rgba(16, 185, 129, 0.15);
+    --success-border: #34d399;
+    --danger: #ef4444;
+    --danger-bg: rgba(239, 68, 68, 0.15);
+    --danger-border: #f87171;
+    --warning: #f59e0b;
+    --warning-bg: rgba(245, 158, 11, 0.15);
+    --warning-border: #fbbf24;
+    --info: #3b82f6;
+    --info-bg: rgba(59, 130, 246, 0.15);
+    --info-border: #60a5fa;
+    
+    /* Disabled states */
+    --disabled-bg: #27272a;
+    --disabled-text: #71717a;
     --glow-internal-blue: inset 0 0 60px rgba(0, 112, 243, 0.2), inset 0 0 20px rgba(0, 112, 243, 0.2);
   }
 }
@@ -89,6 +141,8 @@
   --card-border: #27272a;
   --card-hover: #27272a;
   --input-bg: #27272a;
+  --input-hover: #3f3f46;
+  --focus-ring: rgba(59, 130, 246, 0.5);
   --text-primary: #fafafa;
   --text-secondary: #a1a1aa;
   --text-muted: #71717a;
@@ -101,6 +155,29 @@
   --dropdown-border: rgba(255, 255, 255, 0.05);
   --dropdown-hover: rgba(255, 255, 255, 0.05);
   --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --muted-surface: #27272a;
+  --panel-bg: #18181b;
+  --panel-subtle: #1a1a1e;
+  --overlay: rgba(0, 0, 0, 0.7);
+  --code-bg: #1a1a1e;
+  
+  /* Status colors */
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --success-border: #34d399;
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --danger-border: #f87171;
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --warning-border: #fbbf24;
+  --info: #3b82f6;
+  --info-bg: rgba(59, 130, 246, 0.15);
+  --info-border: #60a5fa;
+  
+  /* Disabled states */
+  --disabled-bg: #27272a;
+  --disabled-text: #71717a;
   --glow-internal-blue: inset 0 0 60px rgba(0, 112, 243, 0.2), inset 0 0 20px rgba(0, 112, 243, 0.2);
 }
 
@@ -119,6 +196,8 @@
   --card-border: #e5e7eb;
   --card-hover: #f3f4f6;
   --input-bg: #f4f4f5;
+  --input-hover: #e4e4e7;
+  --focus-ring: rgba(59, 130, 246, 0.5);
   --text-primary: #111111;
   --text-secondary: #6b7280;
   --text-muted: #9ca3af;
@@ -131,6 +210,30 @@
   --dropdown-border: #e5e7eb;
   --dropdown-hover: rgba(0, 0, 0, 0.05);
   --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --muted-surface: #f4f4f5;
+  --panel-bg: #ffffff;
+  --panel-subtle: #f9fafb;
+  --overlay: rgba(0, 0, 0, 0.5);
+  --code-bg: #f4f4f5;
+  --minimap-bg: #eef0f4;
+
+  /* Status colors */
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --success-border: #34d399;
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.1);
+  --danger-border: #f87171;
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.1);
+  --warning-border: #fbbf24;
+  --info: #3b82f6;
+  --info-bg: rgba(59, 130, 246, 0.1);
+  --info-border: #60a5fa;
+  
+  /* Disabled states */
+  --disabled-bg: #e5e7eb;
+  --disabled-text: #9ca3af;
   --glow-internal-blue: inset 0 0 60px rgba(0, 112, 243, 0.15), inset 0 0 20px rgba(0, 112, 243, 0.1);
 }
 

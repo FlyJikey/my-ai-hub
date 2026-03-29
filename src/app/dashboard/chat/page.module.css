@@ -2,17 +2,17 @@
     display: flex;
     height: 100%;
     width: 100%;
-    background: #212121;
+    background: var(--chat-bg);
     overflow: hidden;
     position: relative;
-    color: #ececec;
+    color: var(--text-primary);
 }
 
 /* Sidebar Styling */
 .sidebar {
     width: 260px;
     height: 100%;
-    background: #171717;
+    background: var(--chat-sidebar);
     display: flex;
     flex-direction: column;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -33,7 +33,7 @@
 .btnNewChat {
     width: 100%;
     background: transparent;
-    color: #ececec;
+    color: var(--text-primary);
     padding: 0.6rem 0.75rem;
     border-radius: 8px;
     display: flex;
@@ -45,6 +45,10 @@
     transition: background 0.2s;
     border: none;
     text-align: left;
+}
+
+.btnNewChat:hover {
+    background: var(--dropdown-hover);
 }
 
 .btnNewChat:hover {
@@ -126,11 +130,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    background: var(--chat-bg);
     position: relative;
-    height: 100%;
-    max-width: 100%;
-    overflow: hidden;
-    background: #212121;
 }
 
 /* --- Top Bar --- */
@@ -153,16 +154,23 @@
 
 .newChatBtn {
     background: transparent;
-    border: none;
-    color: #ececec;
-    padding: 0.5rem;
+    color: var(--text-primary);
+    padding: 0.6rem 0.75rem;
     border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
     display: flex;
     align-items: center;
-    justify-content: center;
-    opacity: 0.8;
+    gap: 12px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: none;
+    width: 100%;
+    text-align: left;
+}
+
+.newChatBtn:hover {
+    background: var(--dropdown-hover);
 }
 
 .newChatBtn:hover {
@@ -176,18 +184,21 @@
 
 .modelDropdownButton {
     background: transparent;
-    border: none;
-    color: #ececec;
+    color: var(--text-primary);
     padding: 0.5rem 0.75rem;
     border-radius: 8px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 500;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    transition: background 0.2s;
-    opacity: 0.9;
+    gap: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--card-border);
+    width: 100%;
+}
+
+.modelDropdownButton:hover {
+    background: var(--dropdown-hover);
 }
 
 .modelDropdownButton:hover {
@@ -197,16 +208,17 @@
 
 .modelDropdownMenu {
     position: absolute;
-    top: calc(100% + 4px);
+    top: 100%;
     left: 0;
-    width: 280px;
-    background: #2f2f2f;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    overflow: hidden;
-    z-index: 100;
-    padding: 0.5rem;
+    width: 100%;
+    background: var(--dropdown-bg);
+    border: 1px solid var(--dropdown-border);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    z-index: 50;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 4px;
 }
 
 .modelOption {
@@ -244,7 +256,7 @@
 
 .modelDesc {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -328,8 +340,9 @@
 }
 
 .avatarUser {
-    background: #2f2f2f;
-    color: #ececec;
+    background: var(--chat-bubble-user);
+    color: var(--text-primary);
+    border: 1px solid var(--card-border);
 }
 
 .avatarAi {
@@ -346,11 +359,8 @@
 }
 
 .messageUser .messageContent {
-    background: #2f2f2f;
-    padding: 0.75rem 1.25rem;
-    border-radius: 1.5rem;
-    border-bottom-right-radius: 0.5rem;
-    color: #ececec;
+    background: var(--chat-bubble-user);
+    color: var(--text-primary);
 }
 
 .attachedImage {
@@ -461,18 +471,22 @@
 }
 
 .textarea {
-    width: 100%;
-    min-height: 44px;
-    max-height: 200px;
     background: transparent;
     border: none;
-    color: #ececec;
-    font-size: 1rem;
-    line-height: 1.5;
-    padding: 10px 0;
     resize: none;
-    outline: none;
+    max-height: 200px;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    padding: 0.25rem 0.5rem;
+    width: 100%;
+    min-height: 24px;
     font-family: inherit;
+    outline: none;
+    line-height: 1.5;
+}
+
+.textarea::placeholder {
+    color: var(--text-muted);
 }
 
 .textarea::placeholder {
@@ -480,16 +494,20 @@
 }
 
 .btnAttach {
-    background: transparent;
+    background: none;
     border: none;
-    color: #ececec;
-    padding: 10px;
+    color: var(--text-secondary);
+    padding: 0.5rem;
+    border-radius: 6px;
     cursor: pointer;
-    border-radius: 12px;
-    transition: background 0.2s;
+    transition: all 0.2s;
     display: flex;
     align-items: center;
-    opacity: 0.7;
+    justify-content: center;
+}
+
+.btnAttach:hover {
+    background: var(--dropdown-hover);
 }
 
 .btnAttach:hover {
@@ -572,17 +590,20 @@
 
 /* --- Settings Menu & Tools Menu --- */
 .settingsToggle {
-    background: transparent;
+    background: none;
     border: none;
-    color: #ececec;
+    color: var(--text-primary);
     padding: 0.5rem;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.8;
+}
+
+.settingsToggle:hover, .settingsToggleActive {
+    background: var(--dropdown-hover);
 }
 
 .settingsToggle:hover, .settingsToggleActive {
@@ -592,17 +613,19 @@
 
 .settingsPanel {
     position: absolute;
-    top: calc(100% + 12px);
-    right: 0.5rem;
-    width: 320px;
-    background: #2f2f2f;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    bottom: 100%;
+    right: 0;
+    width: 300px;
+    background: var(--dropdown-bg);
+    border: 1px solid var(--card-border);
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-    z-index: 1000;
     padding: 1.25rem;
-    pointer-events: auto;
-    animation: fadeInScale 0.2s ease-out;
+    z-index: 60;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 @keyframes fadeInScale {
@@ -624,15 +647,12 @@
 }
 
 .settingsTitle {
+    margin: 0;
+    font-size: 1.1rem;
     font-weight: 600;
-    font-size: 1rem;
-    margin-bottom: 1rem;
-    color: #ececec;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
     padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--card-border);
 }
 
 .settingsGroup {
@@ -649,17 +669,20 @@
 
 .visionSelect {
     width: 100%;
-    padding: 0.5rem 0.75rem;
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #ececec;
-    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+    color: var(--text-primary);
+    font-size: 0.9rem;
     outline: none;
     cursor: pointer;
     transition: all 0.2s;
-    appearance: none;
-    margin-bottom: 0.5rem;
+}
+
+.visionSelect:focus, .visionSelect:hover {
+    background: var(--input-hover);
+    border-color: var(--text-muted);
 }
 
 .visionSelect:focus, .visionSelect:hover {
@@ -689,7 +712,15 @@
 
 .toggleTitle {
     font-size: 0.9rem;
-    color: #ececec;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.toggleDesc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
 }
 
 .toggleDesc {
@@ -700,20 +731,20 @@
 .switch {
     width: 40px;
     height: 22px;
-    background: #4b5563;
+    background: var(--disabled-bg);
     border-radius: 11px;
     position: relative;
     transition: background 0.3s;
 }
 
 .switchActive {
-    background: #10b981;
+    background: var(--success);
 }
 
 .switchKnob {
     width: 16px;
     height: 16px;
-    background: #fff;
+    background: var(--text-primary);
     border-radius: 50%;
     position: absolute;
     top: 3px;
@@ -730,13 +761,15 @@
     bottom: calc(100% + 12px);
     left: 0;
     width: 240px;
-    background: #2f2f2f;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--dropdown-bg);
+    border: 1px solid var(--card-border);
     border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    z-index: 110;
-    padding: 0.5rem;
-    animation: slideInUp 0.15s ease-out;
+    padding: 0.75rem;
+    z-index: 60;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 @keyframes slideInUp {
@@ -752,11 +785,18 @@
     gap: 12px;
     background: transparent;
     border: none;
-    color: #ececec;
+    color: var(--text-primary);
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.2s;
-    font-size: 0.85rem;
+}
+
+.toolItem:hover {
+    background: var(--dropdown-hover);
+}
+
+.toolItemActive {
+    background: var(--success-bg);
 }
 
 .toolItem:hover {
@@ -771,17 +811,19 @@
     width: 28px;
     height: 28px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--input-bg);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ececec;
+    flex-shrink: 0;
+    color: var(--text-primary);
 }
 
 .toolSubLabel {
-    font-size: 0.7rem;
-    color: #9ca3af;
-    margin-top: 2px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+    line-height: 1.3;
 }
 
 .toolContent {
@@ -806,216 +848,5 @@
     }
     .chatMain {
         padding-top: 50px;
-    }
-}
-
-/* ===== Light Theme Overrides ===== */
-@media (prefers-color-scheme: light) {
-    .wrapper {
-        background: var(--chat-bg);
-        color: var(--text-primary);
-    }
-    .sidebar {
-        background: var(--chat-sidebar);
-        border-right: 1px solid var(--card-border);
-    }
-    .btnNewChat {
-        color: var(--text-primary);
-    }
-    .btnNewChat:hover {
-        background: rgba(0, 0, 0, 0.05);
-    }
-    .sidebarScroll::-webkit-scrollbar-thumb {
-        background: var(--scrollbar-thumb);
-    }
-    .chatListItem {
-        color: var(--text-primary);
-    }
-    .chatListItem:hover {
-        background: rgba(0, 0, 0, 0.05);
-    }
-    .chatListItemActive {
-        background: rgba(0, 0, 0, 0.08);
-    }
-    .btnDeleteChat {
-        color: var(--text-secondary);
-    }
-    .chatContainer {
-        background: var(--chat-bg);
-    }
-    .newChatBtn {
-        color: var(--text-primary);
-    }
-    .newChatBtn:hover {
-        background: rgba(0, 0, 0, 0.05);
-    }
-    .modelDropdownButton {
-        color: var(--text-primary);
-    }
-    .modelDropdownButton:hover {
-        background: rgba(0, 0, 0, 0.05);
-    }
-    .modelDropdownMenu {
-        background: var(--dropdown-bg);
-        border: 1px solid var(--dropdown-border);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-    }
-    .modelOption {
-        color: var(--text-primary);
-    }
-    .modelOption:hover {
-        background: var(--dropdown-hover);
-    }
-    .modelOptionActive {
-        background: rgba(0, 0, 0, 0.06);
-    }
-    .modelDesc {
-        color: var(--text-secondary);
-    }
-    .chatHistory {
-        scrollbar-color: var(--scrollbar-thumb) transparent;
-    }
-    .chatHistory::-webkit-scrollbar-thumb {
-        background: var(--scrollbar-thumb);
-    }
-    .emptyState {
-        color: var(--text-primary);
-    }
-    .emptyState p {
-        color: var(--text-secondary);
-    }
-    .avatar {
-        border: 1px solid var(--card-border);
-    }
-    .avatarUser {
-        background: var(--chat-bubble-user);
-        color: var(--text-primary);
-    }
-    .messageContent {
-        color: var(--text-primary);
-    }
-    .messageUser .messageContent {
-        background: var(--chat-bubble-user);
-        color: var(--text-primary);
-    }
-    .attachedImage {
-        border: 1px solid var(--card-border);
-    }
-    .markdownContent strong {
-        color: var(--text-primary);
-        background: rgba(0, 0, 0, 0.05);
-    }
-    .markdownContent code {
-        background: rgba(0, 0, 0, 0.06);
-    }
-    .copyBtn {
-        color: var(--text-secondary);
-    }
-    .copyBtn:hover {
-        color: var(--text-primary);
-    }
-    .inputWrapper {
-        background: var(--chat-input-bg);
-        border: 1px solid var(--card-border);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    }
-    .inputWrapper:focus-within {
-        background: #eaeaeb;
-    }
-    .textarea {
-        color: var(--text-primary);
-    }
-    .textarea::placeholder {
-        color: var(--text-muted);
-    }
-    .btnAttach {
-        color: var(--text-secondary);
-    }
-    .btnAttach:hover {
-        background: rgba(0, 0, 0, 0.05);
-    }
-    .btnSend {
-        background: var(--text-primary);
-        color: #ffffff;
-    }
-    .btnSend:disabled {
-        background: var(--card-border);
-        color: var(--text-muted);
-    }
-    .imagePreviewWrapper {
-        background: rgba(0, 0, 0, 0.03);
-    }
-    .settingsToggle {
-        color: var(--text-primary);
-    }
-    .settingsToggle:hover, .settingsToggleActive {
-        background: rgba(0, 0, 0, 0.05);
-    }
-    .settingsPanel {
-        background: var(--dropdown-bg);
-        border: 1px solid var(--card-border);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
-    }
-    .settingsPanel::before {
-        background: var(--dropdown-bg);
-        border-top: 1px solid var(--card-border);
-        border-left: 1px solid var(--card-border);
-    }
-    .settingsTitle {
-        color: var(--text-primary);
-        border-bottom: 1px solid var(--card-border);
-    }
-    .settingsLabel {
-        color: var(--text-secondary);
-    }
-    .visionSelect {
-        background: var(--input-bg);
-        border: 1px solid var(--card-border);
-        color: var(--text-primary);
-    }
-    .visionSelect:focus, .visionSelect:hover {
-        background: #eaeaeb;
-        border-color: var(--text-muted);
-    }
-    .visionSelect option {
-        background: var(--dropdown-bg);
-        color: var(--text-primary);
-    }
-    .toggleContainer {
-        background: var(--input-bg);
-    }
-    .toggleContainer:hover {
-        background: #eaeaeb;
-    }
-    .toggleTitle {
-        color: var(--text-primary);
-    }
-    .toggleDesc {
-        color: var(--text-secondary);
-    }
-    .switch {
-        background: #d1d5db;
-    }
-    .toolsMenuContainer {
-        background: var(--dropdown-bg);
-        border: 1px solid var(--card-border);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-    }
-    .toolItem {
-        color: var(--text-primary);
-    }
-    .toolItem:hover {
-        background: rgba(0, 0, 0, 0.05);
-    }
-    .toolIcon {
-        background: var(--input-bg);
-        color: var(--text-primary);
-    }
-    .toolSubLabel {
-        color: var(--text-secondary);
-    }
-    .styleBadge {
-        background: var(--input-bg);
-        color: var(--text-primary);
     }
 }

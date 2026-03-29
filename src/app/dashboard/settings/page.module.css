@@ -15,16 +15,14 @@
 .title {
     font-size: 28px;
     font-weight: 700;
-    color: #f4f4f5;
-    /* Light text for dark mode */
+    color: var(--text-primary);
     margin: 0 0 8px 0;
     letter-spacing: -0.01em;
 }
 
 .subtitle {
     font-size: 15px;
-    color: #a1a1aa;
-    /* Muted text for dark mode */
+    color: var(--text-secondary);
     margin: 0;
     line-height: 1.5;
 }
@@ -82,17 +80,15 @@
 }
 
 .alertSuccess {
-    background-color: rgba(16, 185, 129, 0.1);
-    color: #34d399;
-    /* Emerald 400 */
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    background-color: var(--success-bg);
+    color: var(--success);
+    border: 1px solid var(--success-border);
 }
 
 .alertError {
-    background-color: rgba(239, 68, 68, 0.1);
-    color: #f87171;
-    /* Red 400 */
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    background-color: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger-border);
 }
 
 .grid {
@@ -106,12 +102,10 @@
 }
 
 .card {
-    background: #18181b;
-    /* Zinc 900 */
+    background: var(--card-bg);
     border-radius: 16px;
     padding: 24px;
-    border: 1px solid #27272a;
-    /* Zinc 800 */
+    border: 1px solid var(--card-border);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
@@ -125,8 +119,7 @@
 .cardTitle {
     font-size: 18px;
     font-weight: 600;
-    color: #f4f4f5;
-    /* Zinc 100 */
+    color: var(--text-primary);
     margin: 0 0 20px 0;
     letter-spacing: -0.01em;
 }
@@ -139,25 +132,20 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: #27272a;
-    /* Zinc 800 */
-    border: 1px solid #3f3f46;
-    /* Zinc 700 */
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
     padding: 6px 12px;
     border-radius: 6px;
     font-size: 13px;
     font-weight: 600;
-    color: #e4e4e7;
-    /* Zinc 200 */
+    color: var(--text-primary);
     cursor: pointer;
     transition: background 0.2s, border-color 0.2s;
 }
 
 .addBtn:hover {
-    background: #3f3f46;
-    /* Zinc 700 */
-    border-color: #52525b;
-    /* Zinc 600 */
+    background: var(--input-hover);
+    border-color: var(--text-muted);
 }
 
 .list {
@@ -171,17 +159,14 @@
     justify-content: space-between;
     align-items: center;
     padding: 16px;
-    background: #27272a;
-    /* Zinc 800 */
+    background: var(--input-bg);
     border-radius: 12px;
-    border: 1px solid #3f3f46;
-    /* Zinc 700 */
+    border: 1px solid var(--card-border);
     transition: border-color 0.2s;
 }
 
 .listItem:hover {
-    border-color: #52525b;
-    /* Zinc 600 */
+    border-color: var(--text-muted);
 }
 
 .scenarioItem {
@@ -189,17 +174,14 @@
     justify-content: space-between;
     align-items: center;
     padding: 16px;
-    background: #27272a;
-    /* Zinc 800 */
+    background: var(--input-bg);
     border-radius: 12px;
-    border: 1px solid #3f3f46;
-    /* Zinc 700 */
+    border: 1px solid var(--card-border);
     transition: border-color 0.2s;
 }
 
 .scenarioItem:hover {
-    border-color: #52525b;
-    /* Zinc 600 */
+    border-color: var(--text-muted);
 }
 
 .itemInfo {
@@ -218,8 +200,7 @@
 .itemName {
     font-size: 15px;
     font-weight: 600;
-    color: #f4f4f5;
-    /* Zinc 100 */
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -229,10 +210,8 @@
 .badgeFree {
     font-size: 10px;
     font-weight: 700;
-    background: rgba(59, 130, 246, 0.15);
-    /* Blue with opacity */
-    color: #93c5fd;
-    /* Blue 300 */
+    background: var(--info-bg);
+    color: var(--info);
     padding: 2px 6px;
     border-radius: 4px;
     letter-spacing: 0.05em;
@@ -242,9 +221,7 @@
     font-size: 10px;
     font-weight: 700;
     background: rgba(168, 85, 247, 0.15);
-    /* Purple with opacity */
     color: #d8b4fe;
-    /* Purple 300 */
     padding: 2px 6px;
     border-radius: 4px;
     letter-spacing: 0.05em;
@@ -252,8 +229,7 @@
 
 .itemDesc {
     font-size: 13px;
-    color: #a1a1aa;
-    /* Zinc 400 */
+    color: var(--text-secondary);
     line-height: 1.4;
 }
 
@@ -266,8 +242,7 @@
 .iconBtn {
     background: none;
     border: none;
-    color: #a1a1aa;
-    /* Zinc 400 */
+    color: var(--text-secondary);
     cursor: pointer;
     padding: 6px;
     border-radius: 6px;
@@ -275,17 +250,14 @@
 }
 
 .iconBtn:hover {
-    background: #3f3f46;
-    /* Zinc 700 */
-    color: #f4f4f5;
-    /* Zinc 100 */
+    background: var(--input-hover);
+    color: var(--text-primary);
 }
 
 .iconBtnTextDelete {
     background: none;
     border: none;
-    color: #f87171;
-    /* Red 400 */
+    color: var(--danger);
     cursor: pointer;
     padding: 6px;
     border-radius: 6px;
@@ -293,8 +265,7 @@
 }
 
 .iconBtnTextDelete:hover {
-    background: rgba(239, 68, 68, 0.15);
-    /* Red tint */
+    background: var(--danger-bg);
 }
 
 /* Switch Toggle */
@@ -318,8 +289,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #52525b;
-    /* Zinc 600 */
+    background-color: var(--disabled-bg);
     transition: .4s;
     border-radius: 24px;
 }
@@ -353,8 +323,7 @@ input:checked+.slider:before {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.75);
-    /* Darker backdrop */
+    background: var(--overlay);
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
@@ -364,14 +333,12 @@ input:checked+.slider:before {
 }
 
 .modal {
-    background: #18181b;
-    /* Zinc 900 */
+    background: var(--card-bg);
     width: 100%;
     max-width: 600px;
     border-radius: 16px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border: 1px solid #3f3f46;
-    /* Zinc 700 */
+    border: 1px solid var(--card-border);
     display: flex;
     flex-direction: column;
     max-height: 90vh;
@@ -380,12 +347,10 @@ input:checked+.slider:before {
 .modalTitle {
     margin: 0;
     padding: 24px;
-    border-bottom: 1px solid #27272a;
-    /* Zinc 800 */
+    border-bottom: 1px solid var(--card-border);
     font-size: 18px;
     font-weight: 600;
-    color: #f4f4f5;
-    /* Zinc 100 */
+    color: var(--text-primary);
 }
 
 .modalBody {
@@ -411,59 +376,48 @@ input:checked+.slider:before {
 .inputGroup label {
     font-size: 13px;
     font-weight: 500;
-    color: #d4d4d8;
-    /* Zinc 300 */
+    color: var(--text-secondary);
 }
 
 .inputGroup input {
     padding: 12px 14px;
-    background: #27272a;
-    /* Zinc 800 */
-    border: 1px solid #3f3f46;
-    /* Zinc 700 */
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
     border-radius: 8px;
     font-size: 14px;
-    color: #f4f4f5;
-    /* Zinc 100 */
+    color: var(--text-primary);
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .inputGroup textarea {
     padding: 14px;
-    background: #27272a;
-    /* Zinc 800 */
-    border: 1px solid #3f3f46;
-    /* Zinc 700 */
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
     border-radius: 8px;
     font-size: 14px;
-    color: #f4f4f5;
-    /* Zinc 100 */
+    color: var(--text-primary);
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
     resize: vertical;
     font-family: inherit;
-    /* Remove monospace for better readability */
     line-height: 1.5;
 }
 
 .inputGroup input::placeholder,
 .inputGroup textarea::placeholder {
-    color: #71717a;
-    /* Zinc 500 */
+    color: var(--text-muted);
 }
 
 .inputGroup input:focus,
 .inputGroup textarea:focus {
     border-color: #6366f1;
-    /* Indigo 500 */
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .modalFooter {
     padding: 20px 24px;
-    border-top: 1px solid #27272a;
-    /* Zinc 800 */
+    border-top: 1px solid var(--card-border);
     display: flex;
     justify-content: flex-end;
     gap: 12px;
@@ -471,23 +425,19 @@ input:checked+.slider:before {
 
 .cancelBtn {
     background: transparent;
-    border: 1px solid #3f3f46;
-    /* Zinc 700 */
+    border: 1px solid var(--card-border);
     padding: 10px 20px;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 500;
-    color: #d4d4d8;
-    /* Zinc 300 */
+    color: var(--text-secondary);
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
 }
 
 .cancelBtn:hover {
-    background: #27272a;
-    /* Zinc 800 */
-    color: #f4f4f5;
-    /* Zinc 100 */
+    background: var(--input-bg);
+    color: var(--text-primary);
 }
 
 .saveModalBtn {
@@ -516,14 +466,11 @@ input:checked+.slider:before {
 .emptyState {
     padding: 32px;
     text-align: center;
-    color: #a1a1aa;
-    /* Zinc 400 */
+    color: var(--text-secondary);
     font-size: 14px;
-    background: #18181b;
-    /* Zinc 900 */
+    background: var(--card-bg);
     border-radius: 12px;
-    border: 1px dashed #3f3f46;
-    /* Zinc 700 */
+    border: 1px dashed var(--card-border);
 }
 
 .loadingState,
@@ -533,14 +480,12 @@ input:checked+.slider:before {
     justify-content: center;
     gap: 12px;
     min-height: 400px;
-    color: #a1a1aa;
-    /* Zinc 400 */
+    color: var(--text-secondary);
     font-size: 16px;
 }
 
 .errorState {
-    color: #f87171;
-    /* Red 400 */
+    color: var(--danger);
 }
 
 @media (max-width: 768px) {
@@ -553,14 +498,14 @@ input:checked+.slider:before {
     display: flex;
     gap: 8px;
     margin-bottom: 24px;
-    border-bottom: 1px solid #27272a;
+    border-bottom: 1px solid var(--card-border);
     padding-bottom: 2px;
 }
 
 .tabBtn {
     background: transparent;
     border: none;
-    color: #a1a1aa;
+    color: var(--text-secondary);
     font-size: 15px;
     font-weight: 500;
     padding: 8px 16px;
@@ -571,7 +516,7 @@ input:checked+.slider:before {
 }
 
 .tabBtn:hover {
-    color: #e4e4e7;
+    color: var(--text-primary);
 }
 
 .tabBtnActive {
@@ -596,14 +541,14 @@ input:checked+.slider:before {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: rgba(255,255,255,0.03);
+    background: var(--panel-subtle);
     padding: 16px;
     border-radius: 8px;
-    border: 1px solid #3f3f46;
+    border: 1px solid var(--card-border);
 }
 
 .limitStatusLabel {
-    color: #a1a1aa;
+    color: var(--text-secondary);
     font-size: 14px;
 }
 
@@ -613,15 +558,15 @@ input:checked+.slider:before {
 }
 
 .statusActive {
-    color: #34d399; /* emerald 400 */
+    color: var(--success);
 }
 
 .statusError {
-    color: #f87171; /* red 400 */
+    color: var(--danger);
 }
 
 .limitHint {
-    color: #71717a;
+    color: var(--text-muted);
     font-size: 13px;
     line-height: 1.5;
     margin: 0;
@@ -702,8 +647,8 @@ input:checked+.slider:before {
 }
 
 .polzaInfoCard {
-    background: rgba(24, 24, 27, 0.5);
-    border: 1px solid #27272a;
+    background: var(--panel-subtle);
+    border: 1px solid var(--card-border);
     border-radius: 20px;
     padding: 24px;
     display: flex;
@@ -715,14 +660,14 @@ input:checked+.slider:before {
 .polzaInfoCard h3 {
     margin: 0;
     font-size: 18px;
-    color: #fff;
+    color: var(--text-primary);
 }
 
 .polzaInfoCard p {
     margin: 0;
     font-size: 14px;
     line-height: 1.6;
-    color: #a1a1aa;
+    color: var(--text-secondary);
 }
 
 .externalLink {
@@ -753,10 +698,10 @@ input:checked+.slider:before {
 .searchInput {
     width: 100%;
     padding: 10px 16px;
-    background: #18181b;
-    border: 1px solid #27272a;
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
     border-radius: 100px;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 14px;
     outline: none;
     transition: all 0.2s;
@@ -764,7 +709,7 @@ input:checked+.slider:before {
 
 .searchInput:focus {
     border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .modelGrid {
@@ -774,8 +719,8 @@ input:checked+.slider:before {
 }
 
 .modelCard {
-    background: #18181b;
-    border: 1px solid #27272a;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 16px;
     padding: 20px;
     display: flex;
@@ -785,7 +730,7 @@ input:checked+.slider:before {
 }
 
 .modelCard:hover {
-    border-color: #3f3f46;
+    border-color: var(--text-muted);
     transform: translateY(-4px);
     box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.5);
 }
@@ -799,13 +744,13 @@ input:checked+.slider:before {
 .modelName {
     font-size: 16px;
     font-weight: 700;
-    color: #fff;
+    color: var(--text-primary);
 }
 
 .modelId {
     font-size: 12px;
     font-family: monospace;
-    color: #71717a;
+    color: var(--text-muted);
     word-break: break-all;
 }
 
@@ -813,7 +758,7 @@ input:checked+.slider:before {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--muted-surface);
     padding: 12px;
     border-radius: 12px;
 }
@@ -826,19 +771,19 @@ input:checked+.slider:before {
 
 .priceLabel {
     font-size: 10px;
-    color: #71717a;
+    color: var(--text-muted);
     text-transform: uppercase;
 }
 
 .priceValue {
     font-size: 14px;
     font-weight: 600;
-    color: #f4f4f5;
+    color: var(--text-primary);
 }
 
 .priceValue small {
     font-weight: 400;
-    color: #71717a;
+    color: var(--text-muted);
 }
 
 .modelCapabilities {
@@ -864,9 +809,9 @@ input:checked+.slider:before {
 .addToSettingsBtn {
     width: 100%;
     padding: 10px;
-    background: #27272a;
-    border: 1px solid #3f3f46;
-    color: #e4e4e7;
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text-primary);
     border-radius: 10px;
     font-size: 14px;
     font-weight: 600;
@@ -893,8 +838,8 @@ input:checked+.slider:before {
 .badgeCustom {
     font-size: 10px;
     font-weight: 700;
-    background: rgba(16, 185, 129, 0.15);
-    color: #34d399;
+    background: var(--success-bg);
+    color: var(--success);
     padding: 2px 6px;
     border-radius: 4px;
     letter-spacing: 0.05em;
@@ -907,9 +852,9 @@ input:checked+.slider:before {
 }
 
 .filterSelect {
-    background: #18181b;
-    border: 1px solid #27272a;
-    color: #fff;
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text-primary);
     padding: 8px 12px;
     border-radius: 100px;
     font-size: 14px;
@@ -923,248 +868,16 @@ input:checked+.slider:before {
 }
 
 .filterSelect option {
-    background: #18181b;
-    color: #fff;
-}
-
-/* ===== LIGHT THEME ===== */
-@media (prefers-color-scheme: light) {
-    .title {
-        color: #18181b;
-    }
-
-    .subtitle {
-        color: #71717a;
-    }
-
-    .card {
-        background: #ffffff;
-        border-color: #e4e4e7;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    }
-
-    .cardTitle {
-        color: #18181b;
-    }
-
-    .addBtn {
-        background: #f4f4f5;
-        border-color: #d4d4d8;
-        color: #27272a;
-    }
-
-    .addBtn:hover {
-        background: #e4e4e7;
-        border-color: #a1a1aa;
-    }
-
-    .listItem,
-    .scenarioItem {
-        background: #f4f4f5;
-        border-color: #e4e4e7;
-    }
-
-    .listItem:hover,
-    .scenarioItem:hover {
-        border-color: #d4d4d8;
-    }
-
-    .itemName {
-        color: #18181b;
-    }
-
-    .itemDesc {
-        color: #71717a;
-    }
-
-    .iconBtn {
-        color: #71717a;
-    }
-
-    .iconBtn:hover {
-        background: #e4e4e7;
-        color: #18181b;
-    }
-
-    .tabsContainer {
-        border-bottom-color: #e4e4e7;
-    }
-
-    .tabBtn {
-        color: #71717a;
-    }
-
-    .tabBtn:hover {
-        color: #27272a;
-    }
-
-    .modal {
-        background: #ffffff;
-        border-color: #d4d4d8;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-    }
-
-    .modalTitle {
-        border-bottom-color: #e4e4e7;
-        color: #18181b;
-    }
-
-    .modalFooter {
-        border-top-color: #e4e4e7;
-    }
-
-    .inputGroup label {
-        color: #52525b;
-    }
-
-    .inputGroup input,
-    .inputGroup textarea {
-        background: #f4f4f5;
-        border-color: #d4d4d8;
-        color: #18181b;
-    }
-
-    .inputGroup input::placeholder,
-    .inputGroup textarea::placeholder {
-        color: #a1a1aa;
-    }
-
-    .cancelBtn {
-        border-color: #d4d4d8;
-        color: #52525b;
-    }
-
-    .cancelBtn:hover {
-        background: #f4f4f5;
-        color: #18181b;
-    }
-
-    .emptyState {
-        background: #f4f4f5;
-        border-color: #d4d4d8;
-    }
-
-    .limitStatusWrapper {
-        background: rgba(0, 0, 0, 0.02);
-        border-color: #e4e4e7;
-    }
-
-    .polzaInfoCard {
-        background: #f4f4f5;
-        border-color: #e4e4e7;
-    }
-
-    .polzaInfoCard h3 {
-        color: #18181b;
-    }
-
-    .polzaInfoCard p {
-        color: #71717a;
-    }
-
-    .polzaRefreshBtn {
-        background: rgba(0, 0, 0, 0.05);
-        border-color: rgba(0, 0, 0, 0.1);
-        color: #27272a;
-    }
-
-    .polzaRefreshBtn:hover {
-        background: rgba(0, 0, 0, 0.1);
-    }
-
-    .searchInput {
-        background: #f4f4f5;
-        border-color: #e4e4e7;
-        color: #18181b;
-    }
-
-    .filterSelect {
-        background: #f4f4f5;
-        border-color: #e4e4e7;
-        color: #18181b;
-    }
-
-    .filterSelect option {
-        background: #ffffff;
-        color: #18181b;
-    }
-
-    .modelCard {
-        background: #ffffff;
-        border-color: #e4e4e7;
-    }
-
-    .modelCard:hover {
-        border-color: #d4d4d8;
-        box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
-    }
-
-    .modelName {
-        color: #18181b;
-    }
-
-    .modelPrices {
-        background: rgba(0, 0, 0, 0.03);
-    }
-
-    .priceValue {
-        color: #27272a;
-    }
-
-    .addToSettingsBtn {
-        background: #f4f4f5;
-        border-color: #d4d4d8;
-        color: #27272a;
-    }
-
-    .addToSettingsBtn:hover {
-        background: #6366f1;
-        border-color: #6366f1;
-        color: #fff;
-    }
-
-    .slider {
-        background-color: #d4d4d8;
-    }
-
-    .selectInput {
-        background: #f4f4f5;
-        border-color: #d4d4d8;
-        color: #18181b;
-    }
-
-    .modalOverlay {
-        background: rgba(0, 0, 0, 0.4);
-    }
-
-    .badgeFree {
-        background: rgba(59, 130, 246, 0.1);
-        color: #2563eb;
-    }
-
-    .badgePremium {
-        background: rgba(168, 85, 247, 0.1);
-        color: #7c3aed;
-    }
-
-    .badgeCustom {
-        background: rgba(16, 185, 129, 0.1);
-        color: #059669;
-    }
-
-    .textareaInput {
-        background: #f4f4f5;
-        border-color: #d4d4d8;
-        color: #18181b;
-    }
+    background: var(--card-bg);
+    color: var(--text-primary);
 }
 
 /* ─── Shared input for integrations tab ───────────────────── */
 .input {
-    background: #27272a;
-    border: 1px solid #3f3f46;
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
     border-radius: 8px;
-    color: #f4f4f5;
+    color: var(--text-primary);
     outline: none;
     transition: border-color 0.2s;
     font-family: inherit;
@@ -1174,10 +887,136 @@ input:checked+.slider:before {
     border-color: #6366f1;
 }
 
-@media (prefers-color-scheme: light) {
-    .input {
-        background: #f4f4f5;
-        border-color: #d4d4d8;
-        color: #18181b;
-    }
+/* Additional utility classes for settings page */
+.restoreBtn {
+    background: var(--input-hover) !important;
+}
+
+.clearLogsBtn {
+    background: var(--danger) !important;
+}
+
+.behaviorActive {
+    border-left: 4px solid var(--success) !important;
+}
+
+.activeBadge {
+    font-size: 10px;
+    background: var(--success-bg);
+    color: var(--success);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.logTypeBadge {
+    font-weight: bold;
+    font-size: 0.85rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+}
+
+.logTypeVision {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+}
+
+.logTypeText {
+    background: var(--info-bg);
+    color: var(--info);
+}
+
+.logMeta {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.logTime {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+}
+
+.logErrorTitle {
+    color: var(--danger);
+    margin-bottom: 1.25rem;
+    font-size: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.logErrorBlock {
+    background: var(--code-bg);
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    overflow-x: auto;
+    border: 1px solid var(--card-border);
+}
+
+.logErrorPre {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.sectionHeader {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--card-border);
+    padding-bottom: 8px;
+}
+
+.fieldLabel {
+    color: var(--text-secondary);
+}
+
+.disabledTextarea {
+    font-family: monospace;
+    font-size: 13px;
+    background: var(--muted-surface);
+    cursor: not-allowed;
+}
+
+.helpText {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.integrationCard {
+    margin-bottom: 20px;
+}
+
+.integrationTitle {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--card-border);
+    padding-bottom: 8px;
+}
+
+.integrationLabel {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 5px;
+}
+
+.emptyIntegrations {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 20px;
+}
+
+.freeBadgeGreen {
+    background: var(--success-bg);
+    color: var(--success);
 }
