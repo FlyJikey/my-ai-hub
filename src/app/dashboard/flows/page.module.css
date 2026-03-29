@@ -677,8 +677,6 @@
     margin: 0;
     white-space: pre-wrap;
     word-break: break-all;
-    max-height: 120px;
-    overflow: auto;
     line-height: 1.5;
 }
 
