@@ -11,6 +11,7 @@ import {
     Zap, GitBranch, Database, Code, Send, X, CheckCircle, AlertCircle,
     RefreshCw, Eye, Loader, FileText, List, MessageSquare, Search, Layers,
     Cpu, Network, Mail, Hash, Shuffle, Filter, Link, Package, Settings,
+    HelpCircle, ChevronLeft, BookOpen,
 } from "lucide-react";
 import styles from "./page.module.css";
 
@@ -358,10 +359,13 @@ export default function FlowsPage() {
     const [message, setMessage] = useState({ text: "", type: "" });
     const [uploadedPhoto, setUploadedPhoto] = useState(null);
     const [panelSearch, setPanelSearch] = useState("");
+    const [aiSettings, setAiSettings] = useState(null);
+    const [showHelp, setShowHelp] = useState(false);
+    const [helpPage, setHelpPage] = useState("main");
     const reactFlowWrapper = useRef(null);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
-    useEffect(() => { fetchFlows(); }, []);
+    useEffect(() => { fetchFlows(); fetchAiSettings(); }, []);
 
     const fetchFlows = async () => {
         try {
@@ -369,6 +373,35 @@ export default function FlowsPage() {
             if (res.ok) { const d = await res.json(); setFlows(d.flows || []); }
         } catch (e) { }
     };
+
+    const fetchAiSettings = async () => {
+        try {
+            const res = await fetch("/api/settings");
+            if (res.ok) { const d = await res.json(); setAiSettings(d); }
+        } catch (e) { }
+    };
+
+    // Returns models from settings filtered by provider and node type
+    const getModelsForField = (fieldKey, nodeType) => {
+        if (!aiSettings) return [];
+        const providerKey = fieldKey === "vision_model" ? "vision_provider" : fieldKey === "text_model" ? "text_provider" : "provider";
+        const provider = selectedNode?.data?.config?.[providerKey];
+        if (!provider) return [];
+
+        // Decide which model list to use
+        let modelList;
+        if (["ai_vision", "ai_ocr"].includes(nodeType) || fieldKey === "vision_model") {
+            modelList = aiSettings.visionModels || [];
+        } else if (nodeType === "ai_embed") {
+            modelList = aiSettings.embeddingModels || [];
+        } else {
+            modelList = aiSettings.textModels || [];
+        }
+
+        return modelList.filter(m => m.enabled !== false && m.provider === provider);
+    };
+
+    const isModelField = (fieldKey) => ["model", "vision_model", "text_model"].includes(fieldKey);
 
     const showMsg = (text, type = "success") => {
         setMessage({ text, type });
@@ -547,6 +580,10 @@ export default function FlowsPage() {
                             {message.text}
                         </div>
                     )}
+                    <button className={styles.btnHelp} onClick={() => { setShowHelp(true); setHelpPage("main"); }}
+                        title="Справка">
+                        <HelpCircle size={15} />
+                    </button>
                     <button className={styles.btnSave} onClick={saveFlow} disabled={isSaving}>
                         {isSaving ? <RefreshCw size={14} className={styles.spin} /> : <Save size={14} />} Сохранить
                     </button>
@@ -682,10 +719,27 @@ export default function FlowsPage() {
                                 onChange={(e) => updateNodeLabel(e.target.value)} />
                         </div>
 
-                        {(def.configFields || []).map((field) => (
+                        {(def.configFields || []).map((field) => {
+                            const nodeType = selectedNode.data.nodeType;
+                            const modelFieldModels = isModelField(field.key) ? getModelsForField(field.key, nodeType) : [];
+                            const showModelDropdown = isModelField(field.key) && modelFieldModels.length > 0;
+
+                            return (
                             <div key={field.key} className={styles.configField}>
                                 <label className={styles.configLabel}>{field.label}</label>
-                                {field.type === "textarea" ? (
+                                {showModelDropdown ? (
+                                    /* Dynamic model selector from settings */
+                                    <select className={styles.configSelect}
+                                        value={selectedNode.data.config?.[field.key] || ""}
+                                        onChange={(e) => updateNodeConfig(field.key, e.target.value)}>
+                                        <option value="">— выбрать модель —</option>
+                                        {modelFieldModels.map((m) => (
+                                            <option key={m.id} value={m.id}>
+                                                {m.name}{m.tier === "free" ? " (free)" : m.tier === "economy" ? " ($)" : " ($$)"}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : field.type === "textarea" ? (
                                     <textarea className={styles.configTextarea} rows={4}
                                         value={selectedNode.data.config?.[field.key] || ""}
                                         onChange={(e) => updateNodeConfig(field.key, e.target.value)}
@@ -695,7 +749,11 @@ export default function FlowsPage() {
                                         value={selectedNode.data.config?.[field.key] || ""}
                                         onChange={(e) => updateNodeConfig(field.key, e.target.value)}>
                                         <option value="">— выбрать —</option>
-                                        {field.options.map((o) => <option key={o} value={o}>{o}</option>)}
+                                        {field.options.map((o) => {
+                                            const providerMeta = field.key === "provider" || field.key.endsWith("_provider")
+                                                ? PROVIDERS.find(p => p.value === o) : null;
+                                            return <option key={o} value={o}>{providerMeta ? providerMeta.label : o}</option>;
+                                        })}
                                     </select>
                                 ) : (
                                     <input className={styles.configInput} type={field.type || "text"}
@@ -703,8 +761,12 @@ export default function FlowsPage() {
                                         onChange={(e) => updateNodeConfig(field.key, e.target.value)}
                                         placeholder={field.placeholder} />
                                 )}
+                                {isModelField(field.key) && modelFieldModels.length === 0 && selectedNode.data.config?.provider && (
+                                    <span className={styles.configHint}>Нет моделей для этого провайдера в Настройках</span>
+                                )}
                             </div>
-                        ))}
+                            );
+                        })}
 
                         {(def.inputs.length > 0 || def.outputs.length > 0) && (
                             <div className={styles.configPortInfo}>
@@ -751,6 +813,323 @@ export default function FlowsPage() {
                         ))}
                     </div>
                 )}
+            </div>
+
+            {/* ── Help Modal ── */}
+            {showHelp && <HelpModal page={helpPage} setPage={setHelpPage} onClose={() => setShowHelp(false)} />}
+        </div>
+    );
+}
+
+// ─── Help Modal Component ──────────────────────────────────────────────────────
+const HELP_PAGES = {
+    main: {
+        title: "Справка: Цепочки ИИ",
+        content: () => (
+            <>
+                <p className={styles.helpText}>
+                    <strong>Цепочки ИИ</strong> — визуальный редактор автоматизаций.
+                    Вы создаёте потоки из узлов, соединяете их стрелками, и при запуске данные последовательно проходят через каждый узел.
+                </p>
+                <h3 className={styles.helpH3}>Быстрый старт</h3>
+                <ol className={styles.helpList}>
+                    <li>Перетащите узел из левой панели на холст</li>
+                    <li>Нажмите на узел — справа откроется панель настроек</li>
+                    <li>Соедините выход одного узла со входом другого (тяните от кружка к кружку)</li>
+                    <li>Нажмите «Запустить» для тестирования</li>
+                    <li>Нажмите «Сохранить» чтобы сохранить поток</li>
+                </ol>
+                <h3 className={styles.helpH3}>Разделы справки</h3>
+            </>
+        ),
+        links: [
+            { page: "triggers",     label: "Триггеры",            desc: "С чего начинается поток" },
+            { page: "ai_models",    label: "ИИ Модели",           desc: "Текст, зрение, OCR, генератор" },
+            { page: "catalog",      label: "Каталог товаров",     desc: "Поиск, вопросы, добавление" },
+            { page: "logic",        label: "Логика",              desc: "IF/ELSE, маршрутизатор, объединение" },
+            { page: "data",         label: "Данные / База",       desc: "JSON, шаблоны, Supabase" },
+            { page: "integrations", label: "Интеграции",          desc: "Telegram, HTTP, Discord, Slack, Email" },
+            { page: "connections",  label: "Как соединять узлы",  desc: "Порты, типы данных, ветвление" },
+            { page: "execution",    label: "Выполнение потока",   desc: "Как работает запуск и отладка" },
+            { page: "tips",         label: "Советы и примеры",    desc: "Готовые сценарии автоматизации" },
+        ],
+    },
+    triggers: {
+        title: "Триггеры",
+        content: () => (
+            <>
+                <p className={styles.helpText}>Триггеры — начальные точки потока. Каждый поток должен начинаться хотя бы с одного триггера.</p>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#10b981"}}>Загрузка фото</h4>
+                    <p>Передаёт изображение следующему узлу. Для тестирования загрузите фото в секцию «Тест: фото» в левой панели.</p>
+                    <p><strong>Выход:</strong> <code>photo</code> — base64-изображение</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#10b981"}}>Webhook</h4>
+                    <p>Принимает внешний HTTP-запрос. Задайте URL-путь, и внешний сервис сможет запускать ваш поток автоматически.</p>
+                    <p><strong>Выход:</strong> <code>data</code> — JSON из тела запроса</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#10b981"}}>Ручной запуск</h4>
+                    <p>Позволяет задать начальные JSON-данные вручную. Полезно для тестирования без фото.</p>
+                    <p><strong>Пример:</strong> <code>{"{"}"name":"Nike Air Max","category":"sneakers"{"}"}</code></p>
+                </div>
+            </>
+        ),
+    },
+    ai_models: {
+        title: "ИИ Модели",
+        content: () => (
+            <>
+                <p className={styles.helpText}>Узлы ИИ вызывают нейросети из ваших настроек. Выберите провайдера — и список моделей загрузится автоматически.</p>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#6366f1"}}>ИИ: Текст</h4>
+                    <p>Генерирует текст. Поддерживает все провайдеры: Groq (бесплатно), Polza, OmniRoute, OpenRouter, HuggingFace, Gemini.</p>
+                    <p><strong>Промт:</strong> Используйте <code>{"{{input}}"}</code> для подстановки входных данных. Например: <code>Напиши описание товара: {"{{input}}"}</code></p>
+                    <p><strong>Системный промт:</strong> Задаёт роль ИИ. Например: «Ты — копирайтер спортивного магазина».</p>
+                    <p><strong>Вход:</strong> text | <strong>Выход:</strong> text</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#6366f1"}}>ИИ: Зрение (Vision)</h4>
+                    <p>Анализирует изображение и возвращает JSON с описанием товара (название, категория, атрибуты).</p>
+                    <p><strong>Режимы:</strong> full (всё фото), price_tag (ценник), chat (подробный анализ).</p>
+                    <p><strong>Вход:</strong> photo | <strong>Выход:</strong> json</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#6366f1"}}>ИИ: Генератор</h4>
+                    <p>Полный пайплайн как на странице «Генератор»: сначала Vision анализирует фото, затем текстовая модель создаёт описание по выбранному сценарию.</p>
+                    <p><strong>Сценарии:</strong> SEO-описание, краткое, преимущества, сравнение, креативное, e-commerce.</p>
+                    <p><strong>Выходы:</strong> text (описание) + json (данные vision)</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#6366f1"}}>ИИ: Эмбеддинг</h4>
+                    <p>Создаёт числовой вектор из текста — для семантического поиска или сравнения.</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#6366f1"}}>ИИ: OCR (ценник)</h4>
+                    <p>Специализированное распознавание ценников и этикеток. Извлекает название, цену, штрихкод и т.д.</p>
+                </div>
+            </>
+        ),
+    },
+    catalog: {
+        title: "Каталог товаров",
+        content: () => (
+            <>
+                <p className={styles.helpText}>Узлы каталога работают с вашей базой товаров в Supabase (таблица products).</p>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#f97316"}}>Каталог: Поиск</h4>
+                    <p>Ищет товары по тексту. Поддерживает семантический поиск (по смыслу, а не точному совпадению).</p>
+                    <p><strong>Вход:</strong> текст запроса | <strong>Выход:</strong> массив найденных товаров</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#f97316"}}>Каталог: Вопрос</h4>
+                    <p>Задаёт вопрос ИИ о вашем каталоге. Например: «Какие кроссовки дешевле 5000?» — и получает осмысленный ответ.</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#f97316"}}>Каталог: Добавить</h4>
+                    <p>Добавляет новый товар в базу. Используйте маппинг полей чтобы указать, какие данные куда записать.</p>
+                    <p><strong>Маппинг:</strong> <code>{"{"}"name":"{"{{input.name}}"}","category":"{"{{input.category}}"}"{"}"}</code></p>
+                </div>
+            </>
+        ),
+    },
+    logic: {
+        title: "Логика",
+        content: () => (
+            <>
+                <p className={styles.helpText}>Логические узлы управляют потоком данных: ветвление, объединение, преобразование.</p>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#f59e0b"}}>IF / ELSE</h4>
+                    <p>Проверяет условие и направляет данные в одну из двух веток.</p>
+                    <p><strong>Операторы:</strong> contains (содержит), equals, not_equals, starts_with, gt (&gt;), lt (&lt;)</p>
+                    <p><strong>Пример:</strong> Поле = category, Оператор = contains, Значение = кроссовк → если категория содержит «кроссовк», данные идут в выход <code>true</code>, иначе — <code>false</code>.</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#f59e0b"}}>Маршрутизатор</h4>
+                    <p>Как IF/ELSE, но с 3 выходами. Третий маршрут — «всё остальное».</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#f59e0b"}}>Объединить (Merge)</h4>
+                    <p>Собирает данные из нескольких веток в один объект. Укажите имена ключей через запятую.</p>
+                    <p><strong>3 входа:</strong> a, b, c | <strong>Выход:</strong> merged (объект)</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#f59e0b"}}>Трансформация</h4>
+                    <p>Извлекает поле из объекта (dot-notation) или формирует строку по шаблону.</p>
+                    <p><strong>Пример извлечения:</strong> <code>data.items.0.name</code></p>
+                </div>
+            </>
+        ),
+    },
+    data: {
+        title: "Данные / База",
+        content: () => (
+            <>
+                <p className={styles.helpText}>Узлы для работы с данными: парсинг, шаблоны, чтение и запись в Supabase.</p>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#06b6d4"}}>JSON Парсер</h4>
+                    <p>Парсит строку в JSON-объект. Может извлечь конкретное поле.</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#06b6d4"}}>Шаблон текста</h4>
+                    <p>Формирует текст из шаблона: <code>Товар: {"{{input.name}}"}, Цена: {"{{input.price}}"} руб.</code></p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#06b6d4"}}>Supabase: Вставка</h4>
+                    <p>INSERT в любую таблицу Supabase. Используйте маппинг полей для указания структуры.</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#06b6d4"}}>Supabase: Запрос</h4>
+                    <p>SELECT из таблицы. Можно указать фильтр (поле=значение), лимит и нужные поля.</p>
+                </div>
+            </>
+        ),
+    },
+    integrations: {
+        title: "Интеграции",
+        content: () => (
+            <>
+                <p className={styles.helpText}>Отправка результатов во внешние сервисы. API-ключи и webhook URL задаются в Настройки → Интеграции.</p>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#3b82f6"}}>Telegram</h4>
+                    <p>Отправляет сообщение в чат/канал. Требуется Bot Token (через @BotFather) и Chat ID. Поддерживает HTML и Markdown.</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#3b82f6"}}>HTTP Запрос</h4>
+                    <p>Универсальный узел для вызова любого REST API. Задайте URL, метод, заголовки и тело запроса.</p>
+                    <p>Поддерживает шаблоны в URL, заголовках и body: <code>{"{{input.name}}"}</code></p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#3b82f6"}}>Discord / Slack</h4>
+                    <p>Отправка через Incoming Webhook. Создайте вебхук в настройках канала и вставьте URL.</p>
+                </div>
+                <div className={styles.helpNode}>
+                    <h4 style={{color:"#3b82f6"}}>Email (SMTP)</h4>
+                    <p>Отправка email. Настройте SMTP в Настройки → Интеграции (Gmail, Yandex, или любой SMTP-сервис).</p>
+                </div>
+            </>
+        ),
+    },
+    connections: {
+        title: "Как соединять узлы",
+        content: () => (
+            <>
+                <p className={styles.helpText}>Каждый узел имеет <strong>входы</strong> (слева) и <strong>выходы</strong> (справа) — цветные кружки на краях.</p>
+                <h3 className={styles.helpH3}>Как подключить</h3>
+                <ol className={styles.helpList}>
+                    <li>Наведите на выходной порт (кружок справа) — курсор станет «+»</li>
+                    <li>Зажмите и тяните стрелку до входного порта другого узла</li>
+                    <li>Отпустите — соединение создано!</li>
+                </ol>
+                <h3 className={styles.helpH3}>Типы портов</h3>
+                <ul className={styles.helpList}>
+                    <li><code>photo</code> — изображение (base64)</li>
+                    <li><code>text</code> — текстовая строка</li>
+                    <li><code>json</code> — JSON-объект (данные товара, анализа и т.д.)</li>
+                    <li><code>data</code> — любые данные</li>
+                    <li><code>true / false</code> — ветки IF/ELSE</li>
+                    <li><code>route_1, route_2, route_3</code> — ветки маршрутизатора</li>
+                </ul>
+                <h3 className={styles.helpH3}>Шаблоны данных</h3>
+                <p className={styles.helpText}>
+                    Во многих полях используются шаблоны: <code>{"{{input}}"}</code> — все входные данные,
+                    <code>{"{{input.name}}"}</code> — конкретное поле. Вложенность: <code>{"{{input.data.items.0}}"}</code>.
+                </p>
+            </>
+        ),
+    },
+    execution: {
+        title: "Выполнение потока",
+        content: () => (
+            <>
+                <p className={styles.helpText}>При нажатии «Запустить» поток выполняется на сервере.</p>
+                <h3 className={styles.helpH3}>Как это работает</h3>
+                <ol className={styles.helpList}>
+                    <li>Система находит все узлы-триггеры (без входов) и начинает с них</li>
+                    <li>Каждый узел выполняется, его результат передаётся по стрелкам следующим узлам</li>
+                    <li>IF/ELSE и маршрутизаторы направляют данные только в нужную ветку</li>
+                    <li>По завершении справа появится панель «Результат» с выводом каждого шага</li>
+                </ol>
+                <h3 className={styles.helpH3}>Отладка</h3>
+                <ul className={styles.helpList}>
+                    <li>Каждый шаг показывает <span style={{color:"#10b981"}}>✓</span> или <span style={{color:"#ef4444"}}>✗</span></li>
+                    <li>Нажмите на шаг чтобы увидеть его вывод (до 400 символов)</li>
+                    <li>При ошибке текст ошибки подскажет, что пошло не так</li>
+                </ul>
+                <h3 className={styles.helpH3}>Тестовое фото</h3>
+                <p className={styles.helpText}>Если поток начинается с «Загрузка фото», загрузите изображение через секцию «Тест: фото» в левой панели перед запуском.</p>
+            </>
+        ),
+    },
+    tips: {
+        title: "Советы и примеры",
+        content: () => (
+            <>
+                <h3 className={styles.helpH3}>Пример: Автокарточка товара</h3>
+                <p className={styles.helpText}>
+                    Фото → Gemini Vision (анализ) → IF/ELSE (категория = кроссовки?) →
+                    Groq (текст для спорта / для блога) → Supabase (сохранить) → Telegram (уведомление).
+                </p>
+                <p className={styles.helpText}>Нажмите «Демо» в верхней панели чтобы загрузить этот пример.</p>
+
+                <h3 className={styles.helpH3}>Пример: Мониторинг цен</h3>
+                <p className={styles.helpText}>
+                    Webhook (получить данные) → Каталог: Поиск (найти товар) → IF/ELSE (цена изменилась?) →
+                    Supabase (обновить цену) → Telegram (уведомить менеджера).
+                </p>
+
+                <h3 className={styles.helpH3}>Пример: Массовая генерация</h3>
+                <p className={styles.helpText}>
+                    Ручной запуск (JSON с данными) → ИИ: Текст (Groq бесплатно, SEO описание) →
+                    Шаблон текста (форматирование) → HTTP запрос (отправить на маркетплейс).
+                </p>
+
+                <h3 className={styles.helpH3}>Полезные советы</h3>
+                <ul className={styles.helpList}>
+                    <li><strong>Groq — бесплатные модели.</strong> Для тестирования используйте llama3 через Groq.</li>
+                    <li><strong>Gemini Vision — лучший бесплатный Vision.</strong> Отлично подходит для анализа фото товаров.</li>
+                    <li><strong>Сохраняйте чаще.</strong> Потоки хранятся в Supabase и доступны с любого устройства.</li>
+                    <li><strong>JSON Парсер.</strong> Если ИИ вернул текст с JSON внутри, парсер его извлечёт.</li>
+                    <li><strong>Delete на клавиатуре</strong> удаляет выделенный узел или стрелку.</li>
+                </ul>
+            </>
+        ),
+    },
+};
+
+function HelpModal({ page, setPage, onClose }) {
+    const helpData = HELP_PAGES[page] || HELP_PAGES.main;
+    const Content = helpData.content;
+
+    return (
+        <div className={styles.helpOverlay} onClick={onClose}>
+            <div className={styles.helpModal} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.helpHeader}>
+                    {page !== "main" && (
+                        <button className={styles.helpBackBtn} onClick={() => setPage("main")}>
+                            <ChevronLeft size={14} /> Назад
+                        </button>
+                    )}
+                    <span className={styles.helpTitle}>
+                        <BookOpen size={16} /> {helpData.title}
+                    </span>
+                    <button className={styles.configCloseBtn} onClick={onClose}><X size={16} /></button>
+                </div>
+                <div className={styles.helpBody}>
+                    <Content />
+                    {helpData.links && (
+                        <div className={styles.helpLinks}>
+                            {helpData.links.map((link) => (
+                                <button key={link.page} className={styles.helpLinkBtn} onClick={() => setPage(link.page)}>
+                                    <div className={styles.helpLinkTitle}>{link.label}</div>
+                                    <div className={styles.helpLinkDesc}>{link.desc}</div>
+                                    <ChevronRight size={14} className={styles.helpLinkArrow} />
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
