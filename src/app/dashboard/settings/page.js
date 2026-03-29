@@ -1839,6 +1839,7 @@ export default function SettingsPage() {
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
                                 {/* Webhooks — Discord / Slack */}
                                 <div>
