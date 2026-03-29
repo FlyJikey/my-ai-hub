@@ -91,13 +91,6 @@
     cursor: not-allowed;
 }
 
-.btnSave:hover:not(:disabled) {
-    background: #2a2a5a;
-    color: #c0c0ff;
-}
-
-.btnSave:disabled { opacity: 0.5; cursor: not-allowed; }
-
 .btnRun {
     display: flex;
     align-items: center;
@@ -152,11 +145,11 @@
     top: 52px;
     left: 16px;
     z-index: 100;
-    background: #1a1a2e;
-    border: 1px solid #2a2a3e;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 8px;
     min-width: 280px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     overflow: hidden;
 }
 
@@ -167,21 +160,21 @@
     padding: 10px 14px;
     cursor: pointer;
     font-size: 13px;
-    border-bottom: 1px solid #2a2a3e;
+    border-bottom: 1px solid var(--card-border);
     transition: background 0.15s;
 }
 
 .flowListItem:last-child { border-bottom: none; }
-.flowListItem:hover { background: #2a2a3e; }
+.flowListItem:hover { background: var(--card-hover); }
 
 .flowListDate {
-    color: #6b6b8a;
+    color: var(--text-muted);
     font-size: 11px;
 }
 
 .flowListEmpty {
     padding: 16px;
-    color: #6b6b8a;
+    color: var(--text-muted);
     font-size: 13px;
     text-align: center;
 }
@@ -227,7 +220,7 @@
 .panelSearchIcon {
     position: absolute;
     left: 8px;
-    color: #6b6b8a;
+    color: var(--text-muted);
     pointer-events: none;
     flex-shrink: 0;
 }
@@ -249,21 +242,20 @@
 }
 
 .panelSearchInput:focus { border-color: #6366f1; }
-.panelSearchInput::placeholder { color: #4a4a6a; }
 
 .panelSearchClear {
     position: absolute;
     right: 6px;
     background: none;
     border: none;
-    color: #6b6b8a;
+    color: var(--text-muted);
     cursor: pointer;
     padding: 2px;
     display: flex;
     align-items: center;
 }
 
-.panelSearchClear:hover { color: #e4e4f0; }
+.panelSearchClear:hover { color: var(--text-primary); }
 
 .nodeCategory {
     margin-bottom: 4px;
@@ -287,8 +279,6 @@
     background: var(--card-hover);
 }
 
-.nodeCategoryHeader:hover { background: #1e1e2e; }
-
 .nodeCategoryList {
     display: flex;
     flex-direction: column;
@@ -309,12 +299,7 @@
 
 .nodePanelItem:hover {
     background: var(--card-hover);
-}
-
-.nodePanelItem:hover {
-    background: #1e1e2e;
-    border-color: var(--item-color, #6366f1);
-    color: #e4e4f0;
+    color: var(--text-primary);
 }
 
 .nodePanelItem:active {
@@ -325,7 +310,7 @@
 /* ─── Test Photo Upload ────────────────────────────────────────────── */
 .testPhotoSection {
     padding-top: 8px;
-    border-top: 1px solid #1e1e2e;
+    border-top: 1px solid var(--card-border);
     margin-top: 8px;
 }
 
@@ -336,16 +321,16 @@
     padding: 7px 8px;
     border-radius: 5px;
     font-size: 11px;
-    color: #a0a0b8;
+    color: var(--text-secondary);
     cursor: pointer;
-    border: 1px dashed #2a2a3e;
+    border: 1px dashed var(--card-border);
     transition: all 0.15s;
     word-break: break-all;
 }
 
 .photoUploadLabel:hover {
     border-color: #6366f1;
-    color: #e4e4f0;
+    color: var(--text-primary);
 }
 
 .hiddenInput { display: none; }
@@ -356,7 +341,7 @@
     gap: 4px;
     background: none;
     border: none;
-    color: #6b6b8a;
+    color: var(--text-muted);
     font-size: 10px;
     cursor: pointer;
     padding: 2px 6px;
@@ -369,7 +354,7 @@
 .canvasWrap {
     flex: 1;
     position: relative;
-    background: #0f0f17;
+    background: #f5f5f7;
 }
 
 .emptyHint {
@@ -453,12 +438,12 @@
 }
 
 .flowNodeConfigKey {
-    color: #6b6b8a;
+    color: var(--text-secondary);
     flex-shrink: 0;
 }
 
 .flowNodeConfigVal {
-    color: #a0a0c8;
+    color: var(--text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -496,14 +481,14 @@
 .configCloseBtn {
     background: none;
     border: none;
-    color: #6b6b8a;
+    color: var(--text-muted);
     cursor: pointer;
     padding: 2px;
     display: flex;
     align-items: center;
 }
 
-.configCloseBtn:hover { color: #e4e4f0; }
+.configCloseBtn:hover { color: var(--text-primary); }
 
 .configNodeType {
     font-size: 14px;
@@ -528,7 +513,7 @@
 .configLabel {
     font-size: 11px;
     font-weight: 600;
-    color: #a0a0b8;
+    color: var(--text-secondary);
 }
 
 .configInput {
@@ -580,8 +565,8 @@
 
 .configPortInfo {
     font-size: 11px;
-    color: #6b6b8a;
-    background: #1e1e2e;
+    color: var(--text-secondary);
+    background: var(--code-bg);
     border-radius: 5px;
     padding: 8px 10px;
     display: flex;
@@ -633,8 +618,8 @@
 }
 
 .execStep {
-    background: #1e1e2e;
-    border: 1px solid #2a2a3e;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 6px;
     overflow: hidden;
 }
@@ -644,13 +629,13 @@
     align-items: center;
     justify-content: space-between;
     padding: 7px 10px;
-    border-bottom: 1px solid #2a2a3e;
+    border-bottom: 1px solid var(--card-border);
 }
 
 .execStepName {
     font-size: 12px;
     font-weight: 600;
-    color: #c0c0d8;
+    color: var(--text-primary);
 }
 
 .execStepStatus {
@@ -663,7 +648,7 @@
 
 .execStepOutput {
     font-size: 10px;
-    color: #8888aa;
+    color: var(--text-secondary);
     padding: 6px 10px;
     margin: 0;
     white-space: pre-wrap;
@@ -681,16 +666,16 @@
 
 /* ─── React Flow overrides ─────────────────────────────────────────── */
 .canvasWrap :global(.react-flow__controls) {
-    background: #1a1a2e;
-    border: 1px solid #2a2a3e;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 8px;
 }
 
 .canvasWrap :global(.react-flow__controls button) {
     background: transparent;
     border: none;
-    color: #a0a0b8;
-    border-bottom: 1px solid #2a2a3e;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--card-border);
 }
 
 .canvasWrap :global(.react-flow__controls button:last-child) {
@@ -698,13 +683,13 @@
 }
 
 .canvasWrap :global(.react-flow__controls button:hover) {
-    background: #2a2a3e;
-    color: #e4e4f0;
+    background: var(--card-hover);
+    color: var(--text-primary);
 }
 
 .canvasWrap :global(.react-flow__minimap) {
     border-radius: 8px;
-    border: 1px solid #2a2a3e;
+    border: 1px solid var(--card-border);
 }
 
 /* ─── Help Button ──────────────────────────────────────────── */
@@ -715,9 +700,9 @@
     width: 30px;
     height: 30px;
     background: transparent;
-    border: 1px solid #2a2a3e;
+    border: 1px solid var(--card-border);
     border-radius: 6px;
-    color: #6b6b8a;
+    color: var(--text-muted);
     cursor: pointer;
     transition: all 0.15s;
     flex-shrink: 0;
@@ -725,8 +710,8 @@
 
 .btnHelp:hover {
     border-color: #6366f1;
-    color: #a0a0f8;
-    background: #1e1e3a;
+    color: var(--text-primary);
+    background: var(--card-hover);
 }
 
 /* ─── Config hint ──────────────────────────────────────────── */
@@ -741,7 +726,7 @@
 .helpOverlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--overlay);
     z-index: 1000;
     display: flex;
     align-items: center;
@@ -750,15 +735,15 @@
 }
 
 .helpModal {
-    background: #13131f;
-    border: 1px solid #2a2a3e;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 12px;
     width: 580px;
     max-width: 95vw;
     max-height: 82vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
     overflow: hidden;
 }
 
@@ -767,7 +752,7 @@
     align-items: center;
     gap: 10px;
     padding: 16px 20px;
-    border-bottom: 1px solid #1e1e2e;
+    border-bottom: 1px solid var(--card-border);
     flex-shrink: 0;
 }
 
@@ -776,9 +761,9 @@
     align-items: center;
     gap: 4px;
     background: transparent;
-    border: 1px solid #2a2a3e;
+    border: 1px solid var(--card-border);
     border-radius: 5px;
-    color: #a0a0b8;
+    color: var(--text-secondary);
     font-size: 12px;
     padding: 4px 8px;
     cursor: pointer;
@@ -788,7 +773,7 @@
 
 .helpBackBtn:hover {
     border-color: #6366f1;
-    color: #e4e4f0;
+    color: var(--text-primary);
 }
 
 .helpTitle {
@@ -797,7 +782,7 @@
     gap: 8px;
     font-size: 15px;
     font-weight: 700;
-    color: #e4e4f0;
+    color: var(--text-primary);
     flex: 1;
 }
 
@@ -811,7 +796,7 @@
 
 .helpText {
     font-size: 13px;
-    color: #a0a0c8;
+    color: var(--text-secondary);
     line-height: 1.6;
     margin: 0;
 }
@@ -821,13 +806,13 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: #6b6b8a;
+    color: var(--text-muted);
     margin: 8px 0 4px;
 }
 
 .helpList {
     font-size: 13px;
-    color: #a0a0c8;
+    color: var(--text-secondary);
     line-height: 1.8;
     padding-left: 20px;
     margin: 0;
@@ -835,16 +820,16 @@
 
 .helpList li { margin-bottom: 4px; }
 .helpList code {
-    background: #1e1e2e;
+    background: var(--code-bg);
     border-radius: 3px;
     padding: 1px 5px;
     font-size: 11px;
-    color: #c0c0f0;
+    color: var(--text-primary);
 }
 
 .helpNode {
-    background: #1e1e2e;
-    border: 1px solid #2a2a3e;
+    background: var(--code-bg);
+    border: 1px solid var(--card-border);
     border-radius: 8px;
     padding: 12px 14px;
     display: flex;
@@ -860,17 +845,17 @@
 
 .helpNode p {
     font-size: 12px;
-    color: #8888aa;
+    color: var(--text-secondary);
     line-height: 1.5;
     margin: 0;
 }
 
 .helpNode code {
-    background: #13131f;
+    background: var(--card-bg);
     border-radius: 3px;
     padding: 1px 5px;
     font-size: 11px;
-    color: #c0c0f0;
+    color: var(--text-primary);
 }
 
 /* ─── Help navigation links ────────────────────────────────── */
@@ -887,8 +872,8 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 3px;
-    background: #1e1e2e;
-    border: 1px solid #2a2a3e;
+    background: var(--code-bg);
+    border: 1px solid var(--card-border);
     border-radius: 8px;
     padding: 10px 30px 10px 12px;
     cursor: pointer;
@@ -898,18 +883,18 @@
 
 .helpLinkBtn:hover {
     border-color: #6366f1;
-    background: #1e1e3a;
+    background: var(--card-hover);
 }
 
 .helpLinkTitle {
     font-size: 13px;
     font-weight: 600;
-    color: #e4e4f0;
+    color: var(--text-primary);
 }
 
 .helpLinkDesc {
     font-size: 11px;
-    color: #6b6b8a;
+    color: var(--text-muted);
 }
 
 .helpLinkArrow {
@@ -917,5 +902,107 @@
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    color: #6b6b8a;
+    color: var(--text-muted);
+}
+
+/* ─── Navigation Confirmation Modal ────────────────────────── */
+.navConfirmOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.navConfirmModal {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 24px;
+    min-width: 380px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.navConfirmHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.navConfirmTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.navConfirmText {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.navConfirmButtons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.btnNavCancel,
+.btnNavDontSave,
+.btnNavSave {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btnNavCancel {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--text-secondary);
+}
+
+.btnNavCancel:hover {
+    border-color: #6366f1;
+    color: var(--text-primary);
+}
+
+.btnNavDontSave {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--text-secondary);
+}
+
+.btnNavDontSave:hover {
+    background: #ef444422;
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.btnNavSave {
+    background: #10b981;
+    color: white;
+}
+
+.btnNavSave:hover {
+    background: #059669;
 }

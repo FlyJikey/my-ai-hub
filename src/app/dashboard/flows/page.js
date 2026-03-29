@@ -362,10 +362,104 @@ export default function FlowsPage() {
     const [aiSettings, setAiSettings] = useState(null);
     const [showHelp, setShowHelp] = useState(false);
     const [helpPage, setHelpPage] = useState("main");
+    const [isDirty, setIsDirty] = useState(false);
     const reactFlowWrapper = useRef(null);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
-    useEffect(() => { fetchFlows(); fetchAiSettings(); }, []);
+    // Modal для подтверждения при уходе с несохранёнными изменениями
+    const [showNavConfirm, setShowNavConfirm] = useState(false);
+    const [pendingNavigation, setPendingNavigation] = useState(null);
+
+    // Refs для актуальных данных при размонтировании
+    const nodesRef = useRef([]);
+    const edgesRef = useRef([]);
+    const flowNameRef = useRef("Новый поток");
+    const flowIdRef = useRef(null);
+
+    // Restore draft from localStorage on mount
+    useEffect(() => {
+        fetchFlows();
+        fetchAiSettings();
+        try {
+            const draft = localStorage.getItem("flows-draft");
+            if (draft) {
+                const d = JSON.parse(draft);
+                setCurrentFlowName(d.name || "Новый поток");
+                setCurrentFlowId(d.flowId || null);
+                setNodes(d.nodes || []);
+                setEdges(d.edges || []);
+                setIsDirty(true);
+            }
+        } catch (e) { }
+    }, []);
+
+    // Auto-save draft to localStorage (debounced 800ms)
+    useEffect(() => {
+        if (nodes.length === 0 && edges.length === 0) return;
+        const t = setTimeout(() => {
+            try {
+                localStorage.setItem("flows-draft", JSON.stringify({
+                    name: currentFlowName, nodes, edges, flowId: currentFlowId
+                }));
+            } catch (e) { }
+            setIsDirty(true);
+        }, 800);
+        return () => clearTimeout(t);
+    }, [nodes, edges]);
+
+    // Синхронно обновлять refs с текущими данными
+    useEffect(() => {
+        nodesRef.current = nodes;
+        edgesRef.current = edges;
+        flowNameRef.current = currentFlowName;
+        flowIdRef.current = currentFlowId;
+    }, [nodes, edges, currentFlowName, currentFlowId]);
+
+    // Сохранять черновик при размонтировании компонента
+    useEffect(() => {
+        return () => {
+            if (nodesRef.current.length > 0 || edgesRef.current.length > 0) {
+                try {
+                    localStorage.setItem("flows-draft", JSON.stringify({
+                        name: flowNameRef.current,
+                        nodes: nodesRef.current,
+                        edges: edgesRef.current,
+                        flowId: flowIdRef.current,
+                    }));
+                } catch (e) { }
+            }
+        };
+    }, []);
+
+    // Warn on browser unload when dirty
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (isDirty) { e.preventDefault(); e.returnValue = ""; }
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [isDirty]);
+
+    // Перехватывать клики на навигационные ссылки, если есть несохранённые изменения
+    useEffect(() => {
+        const handleLinkClick = (e) => {
+            if (!isDirty) return;
+
+            const link = e.target.closest('a[href]');
+            if (!link) return;
+
+            const href = link.getAttribute('href');
+            // Если это не ссылка на flows, показать подтверждение
+            if (href && !href.includes('/flows')) {
+                e.preventDefault();
+                setPendingNavigation(href);
+                setShowNavConfirm(true);
+            }
+        };
+
+        document.addEventListener('click', handleLinkClick, true);
+        return () => document.removeEventListener('click', handleLinkClick, true);
+    }, [isDirty]);
 
     const fetchFlows = async () => {
         try {
@@ -406,6 +500,26 @@ export default function FlowsPage() {
     const showMsg = (text, type = "success") => {
         setMessage({ text, type });
         setTimeout(() => setMessage({ text: "", type: "" }), 3500);
+    };
+
+    const handleNavConfirmSave = async () => {
+        setShowNavConfirm(false);
+        await handleSave();
+        if (pendingNavigation) {
+            window.location.href = pendingNavigation;
+        }
+    };
+
+    const handleNavConfirmDontSave = () => {
+        setShowNavConfirm(false);
+        if (pendingNavigation) {
+            window.location.href = pendingNavigation;
+        }
+    };
+
+    const handleNavConfirmCancel = () => {
+        setShowNavConfirm(false);
+        setPendingNavigation(null);
     };
 
     const onDragStart = (e, nodeType) => {
@@ -479,6 +593,8 @@ export default function FlowsPage() {
             if (res.ok) {
                 const d = await res.json();
                 if (!currentFlowId) setCurrentFlowId(d.id);
+                localStorage.removeItem("flows-draft");
+                setIsDirty(false);
                 showMsg("Поток сохранён!");
                 fetchFlows();
             } else showMsg("Ошибка сохранения", "error");
@@ -491,6 +607,8 @@ export default function FlowsPage() {
         setCurrentFlowName(flow.name);
         setNodes(flow.nodes || []);
         setEdges(flow.edges || []);
+        localStorage.removeItem("flows-draft");
+        setIsDirty(false);
         setShowFlowList(false);
         setSelectedNode(null);
         showMsg(`Загружен: "${flow.name}"`);
@@ -500,6 +618,8 @@ export default function FlowsPage() {
         setCurrentFlowId(null);
         setCurrentFlowName("Новый поток");
         setNodes([]); setEdges([]);
+        localStorage.removeItem("flows-draft");
+        setIsDirty(false);
         setSelectedNode(null);
         setExecResult(null);
         setShowFlowList(false);
@@ -574,6 +694,9 @@ export default function FlowsPage() {
                     </button>
                 </div>
                 <div className={styles.topBarRight}>
+                    {isDirty && !message.text && (
+                        <span style={{ fontSize: 11, color: "var(--warning)" }}>● не сохранено</span>
+                    )}
                     {message.text && (
                         <div className={`${styles.msg} ${message.type === "error" ? styles.msgError : styles.msgSuccess}`}>
                             {message.type === "error" ? <AlertCircle size={13} /> : <CheckCircle size={13} />}
@@ -689,7 +812,7 @@ export default function FlowsPage() {
                         onInit={setReactFlowInstance} onNodeClick={onNodeClick} onPaneClick={onPaneClick}
                         nodeTypes={nodeTypes} fitView colorMode="dark" deleteKeyCode="Delete"
                         proOptions={{ hideAttribution: true }}>
-                        <Background variant={BackgroundVariant.Dots} color="#2a2a40" gap={20} size={1} />
+                        <Background variant={BackgroundVariant.Dots} color="#d4d4d8" gap={20} size={1} />
                         <Controls />
                         <MiniMap nodeColor={(n) => NODE_DEFS[n.data?.nodeType]?.color || "#6366f1"}
                             style={{ background: 'var(--minimap-bg)' }} maskColor="rgba(0,0,0,0.5)" />
@@ -814,6 +937,32 @@ export default function FlowsPage() {
                     </div>
                 )}
             </div>
+
+            {/* ── Navigation Confirmation Modal ── */}
+            {showNavConfirm && (
+                <div className={styles.navConfirmOverlay} onClick={handleNavConfirmCancel}>
+                    <div className={styles.navConfirmModal} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.navConfirmHeader}>
+                            <AlertCircle size={20} style={{ color: "#f59e0b" }} />
+                            <span className={styles.navConfirmTitle}>Несохранённые изменения</span>
+                        </div>
+                        <p className={styles.navConfirmText}>
+                            У вас есть несохранённые изменения в цепочке. Что вы хотите сделать?
+                        </p>
+                        <div className={styles.navConfirmButtons}>
+                            <button className={styles.btnNavCancel} onClick={handleNavConfirmCancel}>
+                                Остаться
+                            </button>
+                            <button className={styles.btnNavDontSave} onClick={handleNavConfirmDontSave}>
+                                Перейти без сохранения
+                            </button>
+                            <button className={styles.btnNavSave} onClick={handleNavConfirmSave}>
+                                Сохранить и перейти
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── Help Modal ── */}
             {showHelp && <HelpModal page={helpPage} setPage={setHelpPage} onClose={() => setShowHelp(false)} />}
