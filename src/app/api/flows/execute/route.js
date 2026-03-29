@@ -35,10 +35,34 @@ function interpolate(template, data) {
     return result;
 }
 
-// ─── Base URL for internal API calls ─────────────────────────────────────────
-function baseUrl() {
-    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-    return `http://localhost:${process.env.PORT || 3000}`;
+// ─── Internal API helpers ─────────────────────────────────────────────────────
+function getInternalApiBase(request) {
+    const forwardedProto = request.headers.get("x-forwarded-proto");
+    const forwardedHost = request.headers.get("x-forwarded-host") || request.headers.get("host");
+
+    if (forwardedProto && forwardedHost) {
+        return `${forwardedProto}://${forwardedHost}`;
+    }
+
+    return request.nextUrl.origin;
+}
+
+function getForwardedHeaders(request, extraHeaders = {}) {
+    const headers = new Headers(extraHeaders);
+    const cookie = request.headers.get("cookie");
+    const authorization = request.headers.get("authorization");
+    const bypassHeader = request.headers.get("x-vercel-protection-bypass");
+
+    if (cookie) headers.set("cookie", cookie);
+    if (authorization) headers.set("authorization", authorization);
+    if (bypassHeader) headers.set("x-vercel-protection-bypass", bypassHeader);
+
+    return headers;
+}
+
+async function internalFetch(ctx, path, init = {}) {
+    const headers = getForwardedHeaders(ctx.request, init.headers);
+    return fetch(`${ctx.internalApiBase}${path}`, { ...init, headers });
 }
 
 // ─── Node executors ───────────────────────────────────────────────────────────
@@ -70,7 +94,7 @@ async function execAiText(node, ctx, input) {
     messages.push({ role: "user", content: userMsg });
 
     // Call internal API
-    const res = await fetch(`${baseUrl()}/api/ai/text`, {
+    const res = await internalFetch(ctx, "/api/ai/text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ provider, modelId: model, prompt: userMsg, chatHistory: system_prompt ? [{ role: "system", content: system_prompt }] : [] }),
@@ -99,7 +123,7 @@ async function execAiVision(node, ctx, input) {
     if (model) formData.append("modelId", model);
     formData.append("mode", mode);
 
-    const res = await fetch(`${baseUrl()}/api/ai/vision`, { method: "POST", body: formData });
+    const res = await internalFetch(ctx, "/api/ai/vision", { method: "POST", body: formData });
     if (!res.ok) {
         const err = await res.text();
         throw new Error(`Vision error (${provider}): ${err}`);
@@ -127,7 +151,7 @@ async function execAiGenerate(node, ctx, input) {
     const base64 = photoData.startsWith("data:") ? photoData : `data:${mimeType};base64,${photoData}`;
     body.imageUrl = base64;
 
-    const res = await fetch(`${baseUrl()}/api/ai/generate`, {
+    const res = await internalFetch(ctx, "/api/ai/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -144,7 +168,7 @@ async function execAiGenerate(node, ctx, input) {
 async function execAiEmbed(node, ctx, input) {
     const { model } = node.data.config || {};
     const text = typeof input === "string" ? input : JSON.stringify(input);
-    const res = await fetch(`${baseUrl()}/api/ai/embed`, {
+    const res = await internalFetch(ctx, "/api/ai/embed", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, modelId: model }),
@@ -163,7 +187,7 @@ async function execAiOcr(node, ctx, input) {
 async function execCatalogSearch(node, ctx, input) {
     const { limit = 5, semantic = "true" } = node.data.config || {};
     const query = typeof input === "string" ? input : (input?.query || JSON.stringify(input));
-    const res = await fetch(`${baseUrl()}/api/catalog/search`, {
+    const res = await internalFetch(ctx, "/api/catalog/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, limit: parseInt(limit), useSemanticFallback: semantic === "true" }),
@@ -177,7 +201,7 @@ async function execCatalogSearch(node, ctx, input) {
 async function execCatalogAsk(node, ctx, input) {
     const { provider = "groq", model, style = "concise" } = node.data.config || {};
     const question = typeof input === "string" ? input : JSON.stringify(input);
-    const res = await fetch(`${baseUrl()}/api/catalog/ask`, {
+    const res = await internalFetch(ctx, "/api/catalog/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: question, provider, modelId: model, style }),
@@ -463,7 +487,13 @@ export async function POST(request) {
         if (!nodes || nodes.length === 0) return Response.json({ error: "No nodes" }, { status: 400 });
 
         // Context
-        const ctx = { webhookData: null, photoBase64: null, photoMime: "image/jpeg" };
+        const ctx = {
+            request,
+            internalApiBase: getInternalApiBase(request),
+            webhookData: null,
+            photoBase64: null,
+            photoMime: "image/jpeg",
+        };
         if (photoFile) {
             const buf = await photoFile.arrayBuffer();
             ctx.photoBase64 = Buffer.from(buf).toString("base64");
