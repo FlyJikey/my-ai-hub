@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import AppShell from "./AppShell";
+import { themeInitScript } from "./theme-script";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -11,7 +12,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ru">
+    <html lang="ru" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className={inter.className}>
         <AppShell>
           {children}

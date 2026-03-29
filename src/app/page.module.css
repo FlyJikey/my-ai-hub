@@ -78,18 +78,12 @@
     color: transparent;
     background-clip: text;
     -webkit-background-clip: text;
-    background-image: linear-gradient(to right, #111827, #6b7280);
-}
-
-@media (prefers-color-scheme: dark) {
-    .textGradient {
-        background-image: linear-gradient(to right, #ffffff, #9ca3af);
-    }
+    background-image: linear-gradient(to right, var(--hero-gradient-start), var(--hero-gradient-end));
 }
 
 .subtitle {
     font-size: 1.125rem;
-    color: #6b7280;
+    color: var(--hero-subtitle);
     max-width: 42rem;
     margin: 1rem auto 0;
     text-wrap: balance;
@@ -98,12 +92,6 @@
 @media (min-width: 640px) {
     .subtitle {
         font-size: 1.25rem;
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-    .subtitle {
-        color: #9ca3af;
     }
 }
 
@@ -169,18 +157,12 @@
     width: 3rem;
     height: 3rem;
     border-radius: 1rem;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--glass-tint);
     display: flex;
     align-items: center;
     justify-content: center;
     border: 1px solid var(--border-glass);
     backdrop-filter: blur(12px);
-}
-
-@media (prefers-color-scheme: dark) {
-    .iconWrap1 {
-        background-color: rgba(0, 0, 0, 0.2);
-    }
 }
 
 .icon1 {
@@ -208,15 +190,9 @@
     height: 6rem;
     border-radius: 1rem;
     border: 1px solid var(--border-glass);
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--glass-tint-strong);
     overflow: hidden;
     position: relative;
-}
-
-@media (prefers-color-scheme: dark) {
-    .fakeUi {
-        background-color: rgba(0, 0, 0, 0.1);
-    }
 }
 
 .f1 {
@@ -225,7 +201,7 @@
     left: 1rem;
     right: 1rem;
     height: 0.5rem;
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: var(--surface-inset-strong);
     border-radius: 9999px;
 }
 
@@ -235,7 +211,7 @@
     left: 1rem;
     width: 75%;
     height: 0.5rem;
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: var(--surface-inset);
     border-radius: 9999px;
 }
 
@@ -251,16 +227,6 @@
 
 .card1:hover .f3 {
     opacity: 1;
-}
-
-@media (prefers-color-scheme: dark) {
-    .f1 {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .f2 {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
 }
 
 .card2 {
@@ -330,8 +296,8 @@
 
 .card3 {
     min-height: 340px;
-    background-color: #050510;
-    border: 1px solid #1a1a3a;
+    background-color: var(--surface-opaque);
+    border: 1px solid var(--card-border);
     padding: 2rem;
     display: flex;
     flex-direction: column;
@@ -399,7 +365,7 @@
 .icon4 {
     width: 2.5rem;
     height: 2.5rem;
-    color: #9ca3af;
+    color: var(--icon-muted);
 }
 
 .c4Title {
@@ -409,7 +375,7 @@
 
 .c4Desc {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--text-secondary);
 }
 
 .c4Btn {
@@ -422,11 +388,5 @@
 }
 
 .c4Btn:hover {
-    background-color: #f9fafb;
-}
-
-@media (prefers-color-scheme: dark) {
-    .c4Btn:hover {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
+    background-color: var(--surface-strong);
 }

@@ -56,11 +56,6 @@
     border-color: var(--text-muted);
 }
 
-.btnUpdate:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: #4b5563;
-}
-
 /* Upload State */
 .uploadCard {
     background: var(--card-bg);
@@ -68,7 +63,7 @@
     border-radius: 12px;
     padding: 1.5rem;
     margin-top: 1rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-soft);
 }
 
 .dropzone {
@@ -84,11 +79,6 @@
 .dropzone:hover {
     background: var(--success-bg);
     border-color: var(--success);
-}
-
-.dropzone:hover {
-    border-color: #10b981;
-    background: rgba(16, 185, 129, 0.05);
 }
 
 .dropzoneIconWrapper {
@@ -109,7 +99,7 @@
 }
 
 .dropzoneDesc {
-    color: #6b7280;
+    color: var(--text-secondary);
     font-size: 0.9rem;
 }
 
@@ -118,7 +108,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    color: #10b981;
+    color: var(--success);
     font-weight: 500;
 }
 
@@ -133,13 +123,13 @@
 .uploadOptions input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    accent-color: #10b981;
+    accent-color: var(--success);
     cursor: pointer;
 }
 
 .btnUpload {
-    background: #10b981;
-    color: white;
+    background: var(--success);
+    color: var(--cta-text);
     border: none;
     padding: 0.75rem 2rem;
     border-radius: 8px;
@@ -153,19 +143,19 @@
 }
 
 .btnUpload:hover:not(:disabled) {
-    background: #059669;
+    filter: brightness(0.92);
 }
 
 .btnUpload:disabled {
-    background: #4b5563;
-    color: #9ca3af;
+    background: var(--disabled-bg);
+    color: var(--disabled-text);
     cursor: not-allowed;
 }
 
 .btnStop {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-    border: 1px solid #ef4444;
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger-border);
     padding: 0.6rem 1.5rem;
     border-radius: 8px;
     font-size: 0.9rem;
@@ -176,8 +166,8 @@
 }
 
 .btnStop:hover {
-    background: #ef4444;
-    color: white;
+    background: var(--danger);
+    color: var(--cta-text);
 }
 
 .progressContainer {
@@ -189,7 +179,7 @@
     display: flex;
     justify-content: space-between;
     font-size: 0.9rem;
-    color: #9ca3af;
+    color: var(--text-muted);
     margin-bottom: 0.5rem;
 }
 
@@ -202,7 +192,7 @@
 
 .progressBarFill {
     height: 100%;
-    background: #10b981;
+    background: var(--success);
     transition: width 0.3s ease;
 }
 
@@ -211,8 +201,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #1a1d27;
-    border: 1px solid #2d2f3e;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 16px;
     overflow: hidden;
 }
@@ -230,7 +220,7 @@
     width: 6px;
 }
 .chatHistory::-webkit-scrollbar-thumb {
-    background: #4b5563;
+    background: var(--scrollbar-thumb);
     border-radius: 10px;
 }
 
@@ -260,51 +250,51 @@
 }
 
 .avatarUser {
-    background: #1e3a5f;
-    color: #93c5fd;
+    background: var(--chat-bubble-user);
+    color: var(--text-primary);
 }
 
 .avatarAi {
-    background: #10b981;
-    color: white;
+    background: var(--success);
+    color: var(--cta-text);
 }
 
 .messageContent {
-    background: #1e3a5f; /* default for user */
+    background: var(--chat-bubble-user);
     padding: 1rem 1.25rem;
     border-radius: 16px;
     border-top-right-radius: 4px;
     font-size: 0.95rem;
     line-height: 1.5;
     white-space: pre-wrap;
-    color: #e5e7eb;
+    color: var(--text-primary);
 }
 
 .messageAi .messageContent {
     background: transparent;
-    border: 1px solid #2d2f3e;
+    border: 1px solid var(--card-border);
     border-top-left-radius: 4px;
     border-top-right-radius: 16px;
 }
 
 .inputArea {
     padding: 1rem 1.5rem;
-    background: #0f1117;
-    border-top: 1px solid #2d2f3e;
+    background: var(--input-bg);
+    border-top: 1px solid var(--card-border);
 }
 
 .inputWrapper {
     display: flex;
     align-items: flex-end;
-    background: #1a1d27;
-    border: 1px solid #2d2f3e;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 12px;
     padding: 0.5rem;
     transition: border-color 0.2s;
 }
 
 .inputWrapper:focus-within {
-    border-color: #4b5563;
+    border-color: var(--text-muted);
 }
 
 .textarea {

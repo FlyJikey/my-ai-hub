@@ -437,7 +437,7 @@ export default function AIHubChatPage() {
                             className={`${styles.chatListItem} ${activeChatId === chat.id ? styles.chatListItemActive : ''}`}
                             onClick={() => setActiveChatId(chat.id)}
                         >
-                            <Zap size={14} color={activeChatId === chat.id ? "#60a5fa" : "#4b5563"} />
+                            <Zap size={14} color={activeChatId === chat.id ? "var(--info)" : "var(--text-muted)"} />
                             <span className={styles.chatListItemTitle}>{chat.title}</span>
                             <X 
                                 size={14} 
@@ -462,7 +462,7 @@ export default function AIHubChatPage() {
                         </button>
                         <div className={styles.modelDropdownContainer}>
                             <button className={styles.modelDropdownButton} onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}>
-                                <Bot size={18} color="#10b981" />
+                                <Bot size={18} color="var(--success)" />
                                 <span>{selectedTextModel?.name || 'Загрузка...'}</span>
                                 {isModelMenuOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                             </button>
@@ -540,8 +540,8 @@ export default function AIHubChatPage() {
                     <div className={styles.chatHistory}>
                         {messages.length === 0 ? (
                             <div className={styles.emptyState}>
-                                <div style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '2rem', borderRadius: '50%', marginBottom: '2rem' }}>
-                                    <Sparkles size={48} color="#10b981" />
+                                <div style={{ background: 'var(--success-bg)', padding: '2rem', borderRadius: '50%', marginBottom: '2rem' }}>
+                                    <Sparkles size={48} color="var(--success)" />
                                 </div>
                                 <h3>Привет! Я твой ИИ-помощник</h3>
                                 <p>Выбери модель выше и начни общение.<br/>Я поддерживаю анализ фото, генерацию кода и многое другое.</p>
@@ -561,7 +561,7 @@ export default function AIHubChatPage() {
                                         </div>
                                         {msg.role === 'ai' && (
                                             <button className={styles.copyBtn} onClick={() => handleCopy(msg.text, idx)}>
-                                                {copiedIndex === idx ? <Check size={14} color="#34d399" /> : <Copy size={14} />}
+                                                {copiedIndex === idx ? <Check size={14} color="var(--success)" /> : <Copy size={14} />}
                                                 {copiedIndex === idx ? "Скопировано" : "Копировать"}
                                             </button>
                                         )}
@@ -572,7 +572,7 @@ export default function AIHubChatPage() {
                         {isProcessing && (
                             <div className={`${styles.message} ${styles.messageAi}`}>
                                 <div className={`${styles.avatar} ${styles.avatarAi}`}><Bot size={20} /></div>
-                                <div className={styles.messageContent} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#6b7280' }}>
+                                <div className={styles.messageContent} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-secondary)' }}>
                                     <RefreshCw size={18} className={styles.spin} /> Думаю...
                                 </div>
                             </div>
@@ -595,9 +595,9 @@ export default function AIHubChatPage() {
                                     style={{
                                         display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', 
                                         padding: '4px 10px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                                        background: useCatalog ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-                                        color: useCatalog ? '#10b981' : '#6b7280',
-                                        border: useCatalog ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #374151',
+                                        background: useCatalog ? 'var(--success-bg)' : 'transparent',
+                                        color: useCatalog ? 'var(--success)' : 'var(--text-secondary)',
+                                        border: useCatalog ? '1px solid var(--success-border)' : '1px solid var(--card-border)',
                                         transition: 'all 0.2s'
                                     }}
                                     title="Включить поиск по загруженной Базе товаров"
@@ -661,9 +661,9 @@ export default function AIHubChatPage() {
                                                     <div className={styles.toolSubLabel}>Прочитать сайт по URL</div>
                                                 </div>
                                             </button>
-                                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '4px 8px' }}></div>
+                                    <div style={{ height: '1px', background: 'var(--card-border)', margin: '4px 8px' }}></div>
 
-                                            <div style={{ padding: '8px 12px', fontSize: '0.7rem', color: '#4b5563', fontWeight: 'bold' }}>СТИЛЬ ОТВЕТА</div>
+                                            <div style={{ padding: '8px 12px', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>СТИЛЬ ОТВЕТА</div>
                                             {['normal', 'concise', 'formal', 'creative', 'code'].map(s => (
                                                 <button 
                                                     key={s} 
@@ -673,7 +673,7 @@ export default function AIHubChatPage() {
                                                     <div className={styles.toolContent}>
                                                         {s === 'normal' ? 'Обычный' : s === 'concise' ? 'Краткий' : s === 'formal' ? 'Деловой' : s === 'creative' ? 'Творческий' : 'Код'}
                                                     </div>
-                                                    {currentStyle === s && <Check size={14} color="#60a5fa" />}
+                                                    {currentStyle === s && <Check size={14} color="var(--info)" />}
                                                 </button>
                                             ))}
                                         </div>

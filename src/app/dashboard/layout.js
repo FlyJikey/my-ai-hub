@@ -1,29 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Settings, Shapes, Menu, History, Eye, Scan, MessageSquare, Package, Workflow, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import styles from "./layout.module.css";
 
-// Used by Settings page too (imported via window or called directly)
-export function applyTheme(value) {
-    if (value === "system") {
-        document.documentElement.removeAttribute("data-theme");
-    } else {
-        document.documentElement.setAttribute("data-theme", value);
-    }
-}
-
 export default function DashboardLayout({ children }) {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
-
-    // Apply saved theme on mount
-    useEffect(() => {
-        const saved = localStorage.getItem("ai-hub-theme") || "system";
-        applyTheme(saved);
-    }, []);
 
     const isActive = (path) => {
         return pathname === path ? styles.linkActive : styles.linkDisabled;

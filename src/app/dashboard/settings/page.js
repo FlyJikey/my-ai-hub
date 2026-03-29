@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Save, Plus, Trash2, Edit2, CheckCircle, AlertCircle, RefreshCw, ChevronUp, ChevronDown, RotateCcw, FileText, Sun, Moon, Monitor } from "lucide-react";
 import styles from "./page.module.css";
-import { applyTheme } from "../layout";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function SettingsPage() {
     const [settings, setSettings] = useState(null);
@@ -41,7 +41,7 @@ export default function SettingsPage() {
     const [huggingfaceTypeFilter, setHuggingfaceTypeFilter] = useState("all");
 
     // Appearance / theme state
-    const [currentTheme, setCurrentTheme] = useState("system");
+    const { theme: currentTheme, setTheme } = useTheme();
 
     // Integrations state
     const [integrations, setIntegrations] = useState({
@@ -57,19 +57,7 @@ export default function SettingsPage() {
 
     useEffect(() => {
         fetchSettings();
-        const saved = localStorage.getItem("ai-hub-theme") || "system";
-        setCurrentTheme(saved);
     }, []);
-
-    const applyTheme = (value) => {
-        setCurrentTheme(value);
-        localStorage.setItem("ai-hub-theme", value);
-        if (value === "system") {
-            document.documentElement.removeAttribute("data-theme");
-        } else {
-            document.documentElement.setAttribute("data-theme", value);
-        }
-    };
 
     const fetchSettings = async () => {
         setIsLoading(true);
@@ -1940,7 +1928,7 @@ export default function SettingsPage() {
                             ].map(opt => (
                                 <button
                                     key={opt.value}
-                                    onClick={() => applyTheme(opt.value)}
+                                    onClick={() => setTheme(opt.value)}
                                     style={{
                                         display: 'flex',
                                         flexDirection: 'column',

@@ -65,7 +65,7 @@ export default function DashboardPage() {
                                 </div>
                             ))
                         ) : (
-                            <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280', fontSize: '0.875rem' }}>
+                            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                                 История пуста. Сделайте первую генерацию!
                             </div>
                         )}

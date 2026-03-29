@@ -1,10 +1,12 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { AppProvider } from "./context/AppContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 export default function AppShell({ children }) {
-    const pathname = usePathname();
-
-    return <AppProvider>{children}</AppProvider>;
+    return (
+        <ThemeProvider>
+            <AppProvider>{children}</AppProvider>
+        </ThemeProvider>
+    );
 }

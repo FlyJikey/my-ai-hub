@@ -116,15 +116,15 @@ export default function OCRPage() {
             <div className={styles.mainGrid}>
                 {/* Scan Section */}
                 <section className={styles.scanSection}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 50 }}>
+                    <div className={styles.controlsRow}>
                         <div className={styles.modelDropdownContainer}>
                             <button
                                 className={styles.modelDropdownButton}
                                 onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
                                 title="Выбрать нейросеть для фото"
                             >
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Zap size={14} style={{ color: '#fbbf24' }} /> ИИ: {selectedVisionModel?.name || 'Выбрать'}
+                                <span className={styles.selectedModelLabel}>
+                                    <Zap size={14} className={styles.modelZapIcon} /> ИИ: {selectedVisionModel?.name || 'Выбрать'}
                                 </span>
                                 {isModelMenuOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                             </button>
@@ -154,41 +154,17 @@ export default function OCRPage() {
                         </div>
 
                         {/* Mode Toggle Switch */}
-                        <div className={styles.modeToggleContainer} style={{
-                            display: 'flex',
-                            background: 'rgba(255,255,255,0.05)',
-                            borderRadius: '2rem',
-                            padding: '0.25rem',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            pointerEvents: isProcessing ? 'none' : 'auto',
-                            opacity: isProcessing ? 0.6 : 1
-                        }}>
+                        <div className={`${styles.modeToggleContainer} ${isProcessing ? styles.modeToggleDisabled : ""}`}>
                             <button
                                 className={styles.modeToggleBtn}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: '2rem',
-                                    fontSize: '0.875rem',
-                                    fontWeight: scanMode === 'price_tag' ? 600 : 400,
-                                    background: scanMode === 'price_tag' ? '#3b82f6' : 'transparent',
-                                    color: scanMode === 'price_tag' ? '#fff' : '#a1a1aa',
-                                    transition: 'all 0.2s'
-                                }}
+                                data-active={scanMode === 'price_tag'}
                                 onClick={() => setScanMode('price_tag')}
                             >
                                 Ценник
                             </button>
                             <button
                                 className={styles.modeToggleBtn}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: '2rem',
-                                    fontSize: '0.875rem',
-                                    fontWeight: scanMode === 'full' ? 600 : 400,
-                                    background: scanMode === 'full' ? '#8b5cf6' : 'transparent',
-                                    color: scanMode === 'full' ? '#fff' : '#a1a1aa',
-                                    transition: 'all 0.2s'
-                                }}
+                                data-active={scanMode === 'full'}
                                 onClick={() => setScanMode('full')}
                             >
                                 Всё фото
@@ -220,9 +196,9 @@ export default function OCRPage() {
                         ) : (
                             <div className={styles.loadingOverlay}>
                                 <UploadCloud size={48} className={styles.dropzoneIcon} />
-                                <div style={{ textAlign: 'center' }}>
-                                    <p style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Нажмите для загрузки или фото</p>
-                                    <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Поддерживаются JPG, PNG, WEBP</p>
+                                <div className={styles.dropzoneContent}>
+                                    <p className={styles.dropzoneTitle}>Нажмите для загрузки или фото</p>
+                                    <p className={styles.dropzoneHint}>Поддерживаются JPG, PNG, WEBP</p>
                                 </div>
                             </div>
                         )}
@@ -247,9 +223,9 @@ export default function OCRPage() {
                     </button>
 
                     {error && (
-                        <div className={styles.imageWarning} style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem', borderRadius: '0.75rem' }}>
+                        <div className={styles.imageWarning}>
                             <AlertCircle size={18} />
-                            <span style={{ fontSize: '0.875rem' }}>{error}</span>
+                            <span>{error}</span>
                         </div>
                     )}
                 </section>
@@ -264,7 +240,7 @@ export default function OCRPage() {
                                     className={styles.copyBtn}
                                     onClick={() => handleCopy(result.productName)}
                                 >
-                                    {copied ? <Check size={14} color="#22c55e" /> : <Copy size={14} />}
+                                    {copied ? <Check size={14} color="var(--success)" /> : <Copy size={14} />}
                                     {copied ? "Скопировано" : "Копировать название"}
                                 </button>
                             </div>
@@ -274,7 +250,7 @@ export default function OCRPage() {
                                 <div className={styles.resultText}>{result.productName}</div>
 
                                 <div className={styles.attrLabel}>Подробности</div>
-                                <div style={{ fontSize: '0.9375rem', lineHeight: 1.6, color: '#9ca3af' }}>
+                                <div className={styles.resultDescription}>
                                     {result.description}
                                 </div>
 
@@ -291,7 +267,7 @@ export default function OCRPage() {
                             </div>
                         </div>
                     ) : (
-                        <div className={styles.resultCard} style={{ justifyContent: 'center', alignItems: 'center', color: '#4b5563', borderStyle: 'dashed' }}>
+                        <div className={`${styles.resultCard} ${styles.resultCardEmpty}`}>
                             <Camera size={48} opacity={0.2} style={{ marginBottom: '1rem' }} />
                             <p>Результаты появятся здесь после сканирования</p>
                         </div>

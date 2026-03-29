@@ -353,7 +353,7 @@ export default function UnifiedGeneratorPage() {
                             {isChatListOpen && (
                                 <div className={`${styles.modelDropdownMenu} ${styles.chatListMenu}`}>
                                     {chatList.length === 0 ? (
-                                        <div style={{ padding: '1rem', color: '#6b7280', fontSize: '0.82rem', textAlign: 'center' }}>Нет сохранённых чатов</div>
+                                        <div style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.82rem', textAlign: 'center' }}>Нет сохранённых чатов</div>
                                     ) : chatList.map(c => (
                                         <div
                                             key={c.id}
@@ -530,7 +530,7 @@ export default function UnifiedGeneratorPage() {
 
                                     {msg.role === 'ai' && (
                                         <button className={styles.copyBtn} onClick={() => handleCopy(msg.text, idx)}>
-                                            {copiedIndex === idx ? <Check size={14} color="#22c55e" /> : <Copy size={14} />}
+                                            {copiedIndex === idx ? <Check size={14} color="var(--success)" /> : <Copy size={14} />}
                                             {copiedIndex === idx ? "Скопировано" : "Копировать"}
                                         </button>
                                     )}
@@ -544,7 +544,7 @@ export default function UnifiedGeneratorPage() {
                             <div className={`${styles.avatar} ${styles.avatarAi}`}>
                                 <Bot size={18} />
                             </div>
-                            <div className={styles.messageContent} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280' }}>
+                            <div className={styles.messageContent} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
                                 <RefreshCw size={16} className={styles.spin} />
                                 ИИ анализирует и пишет текст...
                             </div>

@@ -64,7 +64,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    background: rgba(96, 165, 250, 0.05);
+    background: var(--info-bg);
     border-bottom: 1px solid var(--border);
     flex-wrap: wrap;
     gap: 0.5rem;
@@ -86,15 +86,15 @@
     font-size: 0.72rem;
     padding: 0.2rem 0.6rem;
     border-radius: 0.4rem;
-    background: rgba(96, 165, 250, 0.1);
-    color: #60a5fa;
-    border: 1px solid rgba(96, 165, 250, 0.15);
+    background: var(--info-bg);
+    color: var(--info);
+    border: 1px solid var(--info-border);
 }
 
 .logUserPrompt {
     padding: 0.6rem 1rem;
     font-size: 0.82rem;
-    color: #9ca3af;
+    color: var(--text-muted);
     border-bottom: 1px solid var(--border);
 }
 
@@ -130,7 +130,7 @@
 /* Vision Fields */
 .visionField {
     font-size: 0.82rem;
-    color: #9ca3af;
+    color: var(--text-muted);
     display: flex;
     gap: 0.5rem;
 }
@@ -191,9 +191,9 @@
     font-size: 0.72rem;
     padding: 0.15rem 0.5rem;
     border-radius: 0.3rem;
-    background: rgba(139, 92, 246, 0.1);
-    color: #a78bfa;
-    border: 1px solid rgba(139, 92, 246, 0.15);
+    background: var(--surface-inset);
+    color: var(--text-primary);
+    border: 1px solid var(--card-border);
 }
 
 /* Prompt Block */

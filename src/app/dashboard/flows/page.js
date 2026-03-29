@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { createElement, useState, useCallback, useRef, useEffect } from "react";
 import {
     ReactFlow, MiniMap, Controls, Background, useNodesState, useEdgesState,
     addEdge, Handle, Position, BackgroundVariant, Panel,
@@ -14,6 +14,7 @@ import {
     HelpCircle, ChevronLeft, BookOpen,
 } from "lucide-react";
 import styles from "./page.module.css";
+import { useTheme } from "../../context/ThemeContext";
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 const PROVIDERS = [
@@ -295,10 +296,13 @@ function getIcon(name) {
     return ICON_MAP[name] || Zap;
 }
 
+function NodeIcon({ name, ...props }) {
+    return createElement(getIcon(name), props);
+}
+
 // ─── Custom Node Component ─────────────────────────────────────────────────────
 function FlowNode({ data, selected }) {
     const def = NODE_DEFS[data.nodeType] || {};
-    const IconComp = getIcon(def.icon);
     const color = def.color || "#6366f1";
 
     return (
@@ -313,7 +317,7 @@ function FlowNode({ data, selected }) {
 
             <div className={styles.flowNodeHeader} style={{ background: color + "22", borderBottom: `1px solid ${color}44` }}>
                 <div className={styles.flowNodeIcon} style={{ color }}>
-                    <IconComp size={14} />
+                    <NodeIcon name={def.icon} size={14} />
                 </div>
                 <span className={styles.flowNodeLabel}>{data.label || def.label}</span>
                 {def.category === "trigger" && (
@@ -345,6 +349,7 @@ const nodeTypes = { flowNode: FlowNode };
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function FlowsPage() {
+    const { resolvedTheme } = useTheme();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [selectedNode, setSelectedNode] = useState(null);
@@ -810,12 +815,12 @@ export default function FlowsPage() {
                         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
                         onConnect={onConnect} onDrop={onDrop} onDragOver={onDragOver}
                         onInit={setReactFlowInstance} onNodeClick={onNodeClick} onPaneClick={onPaneClick}
-                        nodeTypes={nodeTypes} fitView colorMode="dark" deleteKeyCode="Delete"
+                        nodeTypes={nodeTypes} fitView colorMode={resolvedTheme} deleteKeyCode="Delete"
                         proOptions={{ hideAttribution: true }}>
-                        <Background variant={BackgroundVariant.Dots} color="#d4d4d8" gap={20} size={1} />
+                        <Background variant={BackgroundVariant.Dots} color="var(--flow-grid-color)" gap={20} size={1} />
                         <Controls />
                         <MiniMap nodeColor={(n) => NODE_DEFS[n.data?.nodeType]?.color || "#6366f1"}
-                            style={{ background: 'var(--minimap-bg)' }} maskColor="rgba(0,0,0,0.5)" />
+                            style={{ background: "var(--minimap-bg)" }} maskColor="var(--flow-minimap-mask)" />
                         <Panel position="top-center">
                             {nodes.length === 0 && (
                                 <div className={styles.emptyHint}>
@@ -1021,7 +1026,7 @@ const HELP_PAGES = {
                 <div className={styles.helpNode}>
                     <h4 style={{color:"#10b981"}}>Ручной запуск</h4>
                     <p>Позволяет задать начальные JSON-данные вручную. Полезно для тестирования без фото.</p>
-                    <p><strong>Пример:</strong> <code>{"{"}"name":"Nike Air Max","category":"sneakers"{"}"}</code></p>
+                    <p><strong>Пример:</strong> <code>{'{"name":"Nike Air Max","category":"sneakers"}'}</code></p>
                 </div>
             </>
         ),
@@ -1078,7 +1083,7 @@ const HELP_PAGES = {
                 <div className={styles.helpNode}>
                     <h4 style={{color:"#f97316"}}>Каталог: Добавить</h4>
                     <p>Добавляет новый товар в базу. Используйте маппинг полей чтобы указать, какие данные куда записать.</p>
-                    <p><strong>Маппинг:</strong> <code>{"{"}"name":"{"{{input.name}}"}","category":"{"{{input.category}}"}"{"}"}</code></p>
+                    <p><strong>Маппинг:</strong> <code>{'{"name":"{{input.name}}","category":"{{input.category}}"}'}</code></p>
                 </div>
             </>
         ),
