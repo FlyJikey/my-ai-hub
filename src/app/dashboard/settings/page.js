@@ -44,6 +44,8 @@ export default function SettingsPage() {
         telegram_token: "", huggingface_api_key: "",
         supabase_url: "", supabase_key: "",
         extra_db_url: "", extra_db_user: "", extra_db_password: "",
+        smtp_host: "", smtp_port: "587", smtp_user: "", smtp_password: "", smtp_from: "",
+        discord_webhook_url: "", slack_webhook_url: "",
     });
     const [isLoadingIntegrations, setIsLoadingIntegrations] = useState(false);
     const [isSavingIntegrations, setIsSavingIntegrations] = useState(false);
@@ -1826,6 +1828,82 @@ export default function SettingsPage() {
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Webhooks — Discord / Slack */}
+                                <div>
+                                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f4f4f5', marginBottom: 14, borderBottom: '1px solid #27272a', paddingBottom: 8 }}>
+                                        🔔 Webhooks (Discord / Slack)
+                                    </h3>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Discord Webhook URL</label>
+                                            <input type="text" value={integrations.discord_webhook_url || ''}
+                                                onChange={e => setIntegrations(p => ({ ...p, discord_webhook_url: e.target.value }))}
+                                                placeholder="https://discord.com/api/webhooks/..."
+                                                className={styles.input} style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
+                                            <p style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>Канал → Настройки → Интеграции → Вебхуки</p>
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Slack Incoming Webhook</label>
+                                            <input type="text" value={integrations.slack_webhook_url || ''}
+                                                onChange={e => setIntegrations(p => ({ ...p, slack_webhook_url: e.target.value }))}
+                                                placeholder="https://hooks.slack.com/services/..."
+                                                className={styles.input} style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
+                                            <p style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>api.slack.com/apps → Incoming Webhooks</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Email SMTP */}
+                                <div>
+                                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#f4f4f5', marginBottom: 14, borderBottom: '1px solid #27272a', paddingBottom: 8 }}>
+                                        📧 Email (SMTP)
+                                    </h3>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 12 }}>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>SMTP Хост</label>
+                                            <input type="text" value={integrations.smtp_host || ''}
+                                                onChange={e => setIntegrations(p => ({ ...p, smtp_host: e.target.value }))}
+                                                placeholder="smtp.gmail.com" className={styles.input}
+                                                style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Порт</label>
+                                            <input type="text" value={integrations.smtp_port || ''}
+                                                onChange={e => setIntegrations(p => ({ ...p, smtp_port: e.target.value }))}
+                                                placeholder="587" className={styles.input}
+                                                style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Логин</label>
+                                            <input type="text" value={integrations.smtp_user || ''}
+                                                onChange={e => setIntegrations(p => ({ ...p, smtp_user: e.target.value }))}
+                                                placeholder="you@gmail.com" className={styles.input}
+                                                style={{ width: '100%', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>Пароль</label>
+                                            <div style={{ display: 'flex', gap: 6 }}>
+                                                <input type={showSecrets.smtp ? 'text' : 'password'} value={integrations.smtp_password || ''}
+                                                    onChange={e => setIntegrations(p => ({ ...p, smtp_password: e.target.value }))}
+                                                    placeholder="••••••" className={styles.input} style={{ flex: 1, fontSize: 12, padding: '7px 10px' }} />
+                                                <button className={styles.iconBtn} onClick={() => setShowSecrets(p => ({ ...p, smtp: !p.smtp }))}>
+                                                    {showSecrets.smtp ? '🙈' : '👁️'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ marginTop: 12 }}>
+                                        <label style={{ fontSize: 12, color: '#a1a1aa', display: 'block', marginBottom: 5 }}>From (адрес отправителя)</label>
+                                        <input type="text" value={integrations.smtp_from || ''}
+                                            onChange={e => setIntegrations(p => ({ ...p, smtp_from: e.target.value }))}
+                                            placeholder="AI Hub <noreply@yourshop.ru>" className={styles.input}
+                                            style={{ width: '320px', fontSize: 12, padding: '7px 10px', boxSizing: 'border-box' }} />
+                                    </div>
+                                    <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
+                                        💡 Gmail: используйте App Password. Бесплатные альтернативы: Resend, Brevo, Mailjet.
+                                    </p>
                                 </div>
 
                             </div>

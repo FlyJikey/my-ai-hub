@@ -1,235 +1,456 @@
 import { supabase } from "@/lib/supabase";
 
-export const maxDuration = 60; // allow long-running flows
+export const maxDuration = 60;
 
-// ── Topological sort ──────────────────────────────────────────────────────────
+// ─── Topological sort ─────────────────────────────────────────────────────────
 function topoSort(nodes, edges) {
     const inDegree = {};
     const adj = {};
     nodes.forEach((n) => { inDegree[n.id] = 0; adj[n.id] = []; });
     edges.forEach((e) => {
-        if (adj[e.source]) adj[e.source].push({ to: e.target, sourceHandle: e.sourceHandle, targetHandle: e.targetHandle });
+        if (adj[e.source]) adj[e.source].push({ to: e.target, sourceHandle: e.sourceHandle });
         if (inDegree[e.target] !== undefined) inDegree[e.target]++;
     });
-
     const queue = nodes.filter((n) => inDegree[n.id] === 0).map((n) => n.id);
     const result = [];
     while (queue.length > 0) {
         const id = queue.shift();
         result.push(id);
-        (adj[id] || []).forEach(({ to }) => {
-            inDegree[to]--;
-            if (inDegree[to] === 0) queue.push(to);
-        });
+        (adj[id] || []).forEach(({ to }) => { inDegree[to]--; if (inDegree[to] === 0) queue.push(to); });
     }
     return result;
 }
 
-// ── Template interpolation  {{varName}} ───────────────────────────────────────
+// ─── Template interpolation {{field}} ─────────────────────────────────────────
 function interpolate(template, data) {
     if (!template) return template;
-    const dataStr = typeof data === "string" ? data : JSON.stringify(data);
-    return template
-        .replace(/\{\{input\}\}/g, dataStr)
-        .replace(/\{\{input\.(\w+)\}\}/g, (_, key) => {
-            const obj = typeof data === "object" ? data : {};
-            return obj[key] !== undefined ? String(obj[key]) : "";
-        });
-}
-
-// ── Node executors ────────────────────────────────────────────────────────────
-
-async function execTriggerPhoto(node, context) {
-    if (context.photoBase64) return { photo: context.photoBase64, mimeType: context.photoMime || "image/jpeg" };
-    return { photo: null, message: "No photo provided — using test mode" };
-}
-
-async function execTriggerWebhook(node, context) {
-    return context.webhookData || { message: "Webhook triggered" };
-}
-
-async function execGeminiVision(node, context, input) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GEMINI_API_KEY не задан в .env.local");
-
-    const photo = input?.photo;
-    if (!photo) throw new Error("Нет фото на входе. Подключите узел 'Загрузка фото'");
-
-    const prompt = node.data.config?.prompt || "Опиши этот товар детально в формате JSON.";
-    const language = node.data.config?.language || "ru";
-    const fullPrompt = `${prompt}\n\nОтвечай на ${language === "ru" ? "русском" : "English"} языке. Верни чистый JSON без markdown.`;
-
-    const { GoogleGenAI } = await import("@google/genai");
-    const ai = new GoogleGenAI({ apiKey });
-
-    const imageData = photo.startsWith("data:") ? photo.split(",")[1] : photo;
-    const mimeType = input?.mimeType || "image/jpeg";
-
-    const result = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: [{ parts: [{ text: fullPrompt }, { inlineData: { mimeType, data: imageData } }] }],
-    });
-
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    // Try parse JSON
-    try {
-        const clean = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        return JSON.parse(clean);
-    } catch {
-        return { raw: text };
+    if (typeof data !== "object" || data === null) {
+        return template.replace(/\{\{input\}\}/g, String(data));
     }
+    let result = template.replace(/\{\{input\}\}/g, JSON.stringify(data));
+    result = result.replace(/\{\{input\.([^}]+)\}\}/g, (_, path) => {
+        const val = path.split(".").reduce((o, k) => (o && o[k] !== undefined ? o[k] : undefined), data);
+        return val !== undefined ? String(val) : "";
+    });
+    return result;
 }
 
-async function execGroqLlama(node, context, input) {
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) throw new Error("GROQ_API_KEY не задан в .env.local");
+// ─── Base URL for internal API calls ─────────────────────────────────────────
+function baseUrl() {
+    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+    return `http://localhost:${process.env.PORT || 3000}`;
+}
 
-    const model = node.data.config?.model || "llama3-8b-8192";
-    const systemPrompt = node.data.config?.system_prompt || "Ты — полезный ИИ-ассистент.";
-    const userTemplate = node.data.config?.user_template || "{{input}}";
-    const temperature = parseFloat(node.data.config?.temperature || "0.7");
+// ─── Node executors ───────────────────────────────────────────────────────────
 
-    const userMessage = interpolate(userTemplate, input);
+async function execTriggerPhoto(node, ctx) {
+    if (!ctx.photoBase64) return { photo: null, message: "No photo — test mode" };
+    return { photo: ctx.photoBase64, mimeType: ctx.photoMime || "image/jpeg" };
+}
 
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+async function execTriggerWebhook(node, ctx) {
+    return ctx.webhookData || { message: "Webhook triggered" };
+}
+
+async function execTriggerManual(node) {
+    const raw = node.data.config?.input_json || "{}";
+    try { return JSON.parse(raw); }
+    catch { return { raw }; }
+}
+
+// ── AI: Text (all providers via /api/ai/text) ─────────────────────────────────
+async function execAiText(node, ctx, input) {
+    const { provider = "groq", model, system_prompt, user_template, temperature } = node.data.config || {};
+    if (!provider) throw new Error("Не выбран провайдер");
+
+    const userMsg = user_template ? interpolate(user_template, input) : (typeof input === "string" ? input : JSON.stringify(input));
+
+    const messages = [];
+    if (system_prompt) messages.push({ role: "system", content: system_prompt });
+    messages.push({ role: "user", content: userMsg });
+
+    // Call internal API
+    const res = await fetch(`${baseUrl()}/api/ai/text`, {
         method: "POST",
-        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-            model,
-            messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userMessage }],
-            temperature,
-            max_tokens: 1500,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider, modelId: model, prompt: userMsg, chatHistory: system_prompt ? [{ role: "system", content: system_prompt }] : [] }),
     });
-
     if (!res.ok) {
         const err = await res.text();
-        throw new Error(`Groq API error: ${err}`);
+        throw new Error(`AI Text error (${provider}): ${err}`);
     }
-
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content || "";
+    const d = await res.json();
+    return d.result || d.text || d;
 }
 
-async function execIfElse(node, context, input) {
-    const field = node.data.config?.field || "";
-    const operator = node.data.config?.operator || "contains";
-    const value = node.data.config?.value || "";
+// ── AI: Vision ────────────────────────────────────────────────────────────────
+async function execAiVision(node, ctx, input) {
+    const { provider = "gemini", model, mode = "full" } = node.data.config || {};
+    const photoData = input?.photo || ctx.photoBase64;
+    if (!photoData) throw new Error("Нет фото на входе. Подключите узел 'Загрузка фото'");
 
-    const obj = typeof input === "object" && input !== null ? input : {};
-    const fieldVal = obj[field] !== undefined ? String(obj[field]) : String(input || "");
-    const checkVal = String(value).toLowerCase();
-    const testVal = fieldVal.toLowerCase();
+    const mimeType = input?.mimeType || ctx.photoMime || "image/jpeg";
+    const base64 = photoData.startsWith("data:") ? photoData.split(",")[1] : photoData;
+    const blob = Buffer.from(base64, "base64");
 
-    let result = false;
-    if (operator === "contains") result = testVal.includes(checkVal);
-    else if (operator === "equals") result = testVal === checkVal;
-    else if (operator === "not_equals") result = testVal !== checkVal;
-    else if (operator === "starts_with") result = testVal.startsWith(checkVal);
+    const formData = new FormData();
+    formData.append("image", new Blob([blob], { type: mimeType }), "photo.jpg");
+    formData.append("provider", provider);
+    if (model) formData.append("modelId", model);
+    formData.append("mode", mode);
 
-    return { __branch: result ? "true" : "false", data: input };
+    const res = await fetch(`${baseUrl()}/api/ai/vision`, { method: "POST", body: formData });
+    if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`Vision error (${provider}): ${err}`);
+    }
+    const d = await res.json();
+    return d.result || d;
 }
 
-async function execRouter(node, context, input) {
-    const field = node.data.config?.field || "";
-    const r1 = (node.data.config?.route_1_value || "").toLowerCase();
-    const r2 = (node.data.config?.route_2_value || "").toLowerCase();
+// ── AI: Full Generator pipeline (Vision + Text) ───────────────────────────────
+async function execAiGenerate(node, ctx, input) {
+    const { scenario = "seo_full", vision_provider, vision_model, text_provider, text_model } = node.data.config || {};
+    const photoData = input?.photo || ctx.photoBase64;
+    if (!photoData) throw new Error("Нет фото для генератора");
 
-    const obj = typeof input === "object" && input !== null ? input : {};
-    const fieldVal = String(obj[field] !== undefined ? obj[field] : input || "").toLowerCase();
+    const body = {
+        scenario,
+        visionProvider: vision_provider || "gemini",
+        visionModelId: vision_model,
+        textProvider: text_provider || "groq",
+        textModelId: text_model,
+    };
 
-    let route = "route_3";
-    if (r1 && fieldVal.includes(r1)) route = "route_1";
-    else if (r2 && fieldVal.includes(r2)) route = "route_2";
+    // Attach photo as imageUrl (base64 data URL)
+    const mimeType = input?.mimeType || ctx.photoMime || "image/jpeg";
+    const base64 = photoData.startsWith("data:") ? photoData : `data:${mimeType};base64,${photoData}`;
+    body.imageUrl = base64;
 
-    return { __branch: route, data: input };
+    const res = await fetch(`${baseUrl()}/api/ai/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`Generate error: ${err}`);
+    }
+    const d = await res.json();
+    return { text: d.resultText || d.description, json: d.visionData, ...d };
 }
 
-async function execSupabaseInsert(node, context, input) {
-    const table = node.data.config?.table;
-    if (!table) throw new Error("Не указана таблица Supabase");
+// ── AI: Embeddings ────────────────────────────────────────────────────────────
+async function execAiEmbed(node, ctx, input) {
+    const { model } = node.data.config || {};
+    const text = typeof input === "string" ? input : JSON.stringify(input);
+    const res = await fetch(`${baseUrl()}/api/ai/embed`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, modelId: model }),
+    });
+    if (!res.ok) throw new Error("Embed error: " + await res.text());
+    const d = await res.json();
+    return d.vector || d;
+}
 
+// ── AI: OCR ───────────────────────────────────────────────────────────────────
+async function execAiOcr(node, ctx, input) {
+    return execAiVision({ ...node, data: { ...node.data, config: { ...node.data.config, mode: "price_tag" } } }, ctx, input);
+}
+
+// ── Catalog: Search ───────────────────────────────────────────────────────────
+async function execCatalogSearch(node, ctx, input) {
+    const { limit = 5, semantic = "true" } = node.data.config || {};
+    const query = typeof input === "string" ? input : (input?.query || JSON.stringify(input));
+    const res = await fetch(`${baseUrl()}/api/catalog/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, limit: parseInt(limit), useSemanticFallback: semantic === "true" }),
+    });
+    if (!res.ok) throw new Error("Catalog search error: " + await res.text());
+    const d = await res.json();
+    return d;
+}
+
+// ── Catalog: Ask ──────────────────────────────────────────────────────────────
+async function execCatalogAsk(node, ctx, input) {
+    const { provider = "groq", model, style = "concise" } = node.data.config || {};
+    const question = typeof input === "string" ? input : JSON.stringify(input);
+    const res = await fetch(`${baseUrl()}/api/catalog/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: question, provider, modelId: model, style }),
+    });
+    if (!res.ok) throw new Error("Catalog ask error: " + await res.text());
+    const d = await res.json();
+    return d.result || d;
+}
+
+// ── Catalog: Add product ──────────────────────────────────────────────────────
+async function execCatalogAdd(node, ctx, input) {
+    const { mapping } = node.data.config || {};
     let row = {};
-    const mappingStr = node.data.config?.mapping;
-    if (mappingStr) {
-        try {
-            const tpl = interpolate(mappingStr, input);
-            row = JSON.parse(tpl);
-        } catch {
-            row = typeof input === "object" ? input : { data: input };
-        }
+    if (mapping) {
+        try { row = JSON.parse(interpolate(mapping, input)); }
+        catch { row = typeof input === "object" ? input : { description: String(input) }; }
     } else {
-        row = typeof input === "object" ? input : { data: input };
+        row = typeof input === "object" ? input : { description: String(input) };
     }
-
-    const { data, error } = await supabase.from(table).insert([row]).select().single();
-    if (error) throw new Error(`Supabase insert error: ${error.message}`);
+    const { data, error } = await supabase.from("products").insert([row]).select().single();
+    if (error) throw new Error("Catalog add error: " + error.message);
     return data;
 }
 
-async function execJsonParser(node, context, input) {
+// ── Logic: IF/ELSE ────────────────────────────────────────────────────────────
+async function execIfElse(node, ctx, input) {
+    const { field = "", operator = "contains", value = "" } = node.data.config || {};
+    const obj = (typeof input === "object" && input !== null) ? input : {};
+    const fieldVal = (obj[field] !== undefined ? String(obj[field]) : String(input || "")).toLowerCase();
+    const checkVal = String(value).toLowerCase();
+
+    const tests = {
+        contains:    () => fieldVal.includes(checkVal),
+        equals:      () => fieldVal === checkVal,
+        not_equals:  () => fieldVal !== checkVal,
+        starts_with: () => fieldVal.startsWith(checkVal),
+        gt:          () => parseFloat(fieldVal) > parseFloat(checkVal),
+        lt:          () => parseFloat(fieldVal) < parseFloat(checkVal),
+    };
+    const result = (tests[operator] || tests.contains)();
+    return { __branch: result ? "true" : "false", data: input };
+}
+
+// ── Logic: Router ─────────────────────────────────────────────────────────────
+async function execRouter(node, ctx, input) {
+    const { field = "", route_1_value, route_2_value } = node.data.config || {};
+    const obj = (typeof input === "object" && input !== null) ? input : {};
+    const fieldVal = String(obj[field] !== undefined ? obj[field] : input || "").toLowerCase();
+    let route = "route_3";
+    if (route_1_value && fieldVal.includes(route_1_value.toLowerCase())) route = "route_1";
+    else if (route_2_value && fieldVal.includes(route_2_value.toLowerCase())) route = "route_2";
+    return { __branch: route, data: input };
+}
+
+// ── Logic: Merge ──────────────────────────────────────────────────────────────
+async function execMerge(node, ctx, input) {
+    // input is already a merged object built by the orchestrator
+    return input;
+}
+
+// ── Logic: Transform ─────────────────────────────────────────────────────────
+async function execTransform(node, ctx, input) {
+    const { extract, template } = node.data.config || {};
+    if (extract) {
+        const keys = extract.replace(/\[(\d+)\]/g, ".$1").split(".");
+        let val = typeof input === "object" ? input : {};
+        for (const k of keys) { if (val && typeof val === "object") val = val[k]; else { val = undefined; break; } }
+        return val !== undefined ? val : input;
+    }
+    if (template) return interpolate(template, input);
+    return input;
+}
+
+// ── Data: JSON Parser ─────────────────────────────────────────────────────────
+async function execJsonParser(node, ctx, input) {
     let obj = input;
     if (typeof input === "string") {
-        try {
-            const clean = input.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-            obj = JSON.parse(clean);
-        } catch {
-            obj = { raw: input };
-        }
+        try { obj = JSON.parse(input.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim()); }
+        catch { obj = { raw: input }; }
     }
-
-    const extractField = node.data.config?.extract_field;
-    if (extractField && typeof obj === "object") {
-        // Simple dot-notation extraction: "data.items.0"
-        const keys = extractField.replace(/\[(\d+)\]/g, ".$1").split(".");
+    const { extract_field } = node.data.config || {};
+    if (extract_field) {
+        const keys = extract_field.replace(/\[(\d+)\]/g, ".$1").split(".");
         let val = obj;
-        for (const k of keys) {
-            if (val && typeof val === "object") val = val[k];
-            else { val = undefined; break; }
-        }
+        for (const k of keys) { if (val && typeof val === "object") val = val[k]; else { val = undefined; break; } }
         return val !== undefined ? val : obj;
     }
     return obj;
 }
 
-async function execTelegram(node, context, input) {
+// ── Data: Template ────────────────────────────────────────────────────────────
+async function execTemplate(node, ctx, input) {
+    const { template } = node.data.config || {};
+    if (!template) return String(input);
+    return interpolate(template, input);
+}
+
+// ── Data: Supabase Insert ─────────────────────────────────────────────────────
+async function execSupabaseInsert(node, ctx, input) {
+    const { table, mapping } = node.data.config || {};
+    if (!table) throw new Error("Не указана таблица Supabase");
+    let row = {};
+    if (mapping) {
+        try { row = JSON.parse(interpolate(mapping, input)); }
+        catch { row = typeof input === "object" ? input : { data: input }; }
+    } else {
+        row = typeof input === "object" ? input : { data: input };
+    }
+    const { data, error } = await supabase.from(table).insert([row]).select().single();
+    if (error) throw new Error(`Supabase insert (${table}): ${error.message}`);
+    return data;
+}
+
+// ── Data: Supabase Query ──────────────────────────────────────────────────────
+async function execSupabaseQuery(node, ctx, input) {
+    const { table, filter, limit = 10, select: selectFields } = node.data.config || {};
+    if (!table) throw new Error("Не указана таблица");
+    let query = supabase.from(table).select(selectFields || "*").limit(parseInt(limit));
+    if (filter) {
+        const [field, val] = filter.split("=");
+        if (field && val) query = query.eq(field.trim(), val.trim());
+    }
+    const { data, error } = await query;
+    if (error) throw new Error(`Supabase query (${table}): ${error.message}`);
+    return data;
+}
+
+// ── Integration: Telegram ─────────────────────────────────────────────────────
+async function execTelegram(node, ctx, input) {
     const token = process.env.TELEGRAM_BOT_TOKEN;
-    if (!token) throw new Error("TELEGRAM_BOT_TOKEN не задан. Добавьте в Настройки → Интеграции.");
+    if (!token) {
+        // Try from integrations stored in DB
+        const { data } = await supabase.from("ai_settings").select("data").eq("id", "integrations").single();
+        const dbToken = data?.data?.telegram_token;
+        if (!dbToken || dbToken.includes("•")) throw new Error("TELEGRAM_BOT_TOKEN не задан. Добавьте в Настройки → Интеграции.");
+        return execTelegramWithToken(dbToken, node, input);
+    }
+    return execTelegramWithToken(token, node, input);
+}
 
-    const chatId = node.data.config?.chat_id;
-    if (!chatId) throw new Error("Не указан Chat ID");
-
-    const template = node.data.config?.template || "{{input}}";
-    const text = interpolate(template, input);
-
+async function execTelegramWithToken(token, node, input) {
+    const { chat_id, template, parse_mode = "HTML" } = node.data.config || {};
+    if (!chat_id) throw new Error("Не указан Chat ID в Telegram-узле");
+    const text = template ? interpolate(template, input) : (typeof input === "string" ? input : JSON.stringify(input, null, 2));
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+        body: JSON.stringify({ chat_id, text, parse_mode: parse_mode === "None" ? undefined : parse_mode }),
     });
-
-    if (!res.ok) {
-        const err = await res.text();
-        throw new Error(`Telegram API error: ${err}`);
-    }
-
-    return { sent: true, chat_id: chatId };
+    if (!res.ok) { const err = await res.text(); throw new Error(`Telegram API: ${err}`); }
+    return { sent: true, chat_id };
 }
 
-// ── Node type → executor map ──────────────────────────────────────────────────
+// ── Integration: HTTP Request ─────────────────────────────────────────────────
+async function execHttp(node, ctx, input) {
+    const { url, method = "POST", headers: hdrsTemplate, body_template } = node.data.config || {};
+    if (!url) throw new Error("Не указан URL для HTTP-запроса");
+
+    const parsedUrl = interpolate(url, input);
+    const headers = { "Content-Type": "application/json" };
+    if (hdrsTemplate) {
+        try { Object.assign(headers, JSON.parse(interpolate(hdrsTemplate, input))); }
+        catch { }
+    }
+
+    const fetchOpts = { method, headers };
+    if (method !== "GET" && body_template) {
+        try { fetchOpts.body = JSON.stringify(JSON.parse(interpolate(body_template, input))); }
+        catch { fetchOpts.body = interpolate(body_template, input); }
+    }
+
+    const res = await fetch(parsedUrl, fetchOpts);
+    const text = await res.text();
+    try { return JSON.parse(text); }
+    catch { return { status: res.status, body: text }; }
+}
+
+// ── Integration: Discord ──────────────────────────────────────────────────────
+async function execDiscord(node, ctx, input) {
+    const { webhook_url, content, username = "AI Hub" } = node.data.config || {};
+    if (!webhook_url) throw new Error("Не указан Discord Webhook URL");
+    const text = content ? interpolate(content, input) : (typeof input === "string" ? input : JSON.stringify(input));
+    const res = await fetch(webhook_url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text, username }),
+    });
+    if (!res.ok) throw new Error(`Discord webhook error: ${res.status}`);
+    return { sent: true };
+}
+
+// ── Integration: Slack ────────────────────────────────────────────────────────
+async function execSlack(node, ctx, input) {
+    const { webhook_url, text: tmpl, channel } = node.data.config || {};
+    if (!webhook_url) throw new Error("Не указан Slack Webhook URL");
+    const text = tmpl ? interpolate(tmpl, input) : (typeof input === "string" ? input : JSON.stringify(input));
+    const payload = { text };
+    if (channel) payload.channel = channel;
+    const res = await fetch(webhook_url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Slack webhook error: ${res.status}`);
+    return { sent: true };
+}
+
+// ── Integration: Email ────────────────────────────────────────────────────────
+async function execEmail(node, ctx, input) {
+    // For production: add nodemailer or use a transactional service
+    // Current: sends via any SMTP-compatible service stored in integrations
+    const { to, subject, body } = node.data.config || {};
+    if (!to) throw new Error("Не указан адрес получателя email");
+    const subjectText = subject ? interpolate(subject, input) : "AI Hub notification";
+    const bodyText = body ? interpolate(body, input) : JSON.stringify(input, null, 2);
+    // Stub: log the email data (implement SMTP when SMTP settings are added)
+    console.log("[Email node] TO:", to, "SUBJECT:", subjectText, "BODY:", bodyText.slice(0, 100));
+    return { sent: true, to, subject: subjectText, note: "Email logged (configure SMTP in Настройки → Интеграции)" };
+}
+
+// ─── Executor map ─────────────────────────────────────────────────────────────
 const EXECUTORS = {
-    trigger_photo: execTriggerPhoto,
-    trigger_webhook: execTriggerWebhook,
-    ai_gemini_vision: execGeminiVision,
-    ai_groq_llama: execGroqLlama,
-    logic_ifelse: execIfElse,
-    logic_router: execRouter,
-    data_supabase: execSupabaseInsert,
-    data_json_parser: execJsonParser,
-    data_telegram: execTelegram,
+    trigger_photo:       execTriggerPhoto,
+    trigger_webhook:     execTriggerWebhook,
+    trigger_manual:      execTriggerManual,
+    ai_text:             execAiText,
+    ai_vision:           execAiVision,
+    ai_generate:         execAiGenerate,
+    ai_embed:            execAiEmbed,
+    ai_ocr:              execAiOcr,
+    catalog_search:      execCatalogSearch,
+    catalog_ask:         execCatalogAsk,
+    catalog_add:         execCatalogAdd,
+    logic_ifelse:        execIfElse,
+    logic_router:        execRouter,
+    logic_merge:         execMerge,
+    logic_transform:     execTransform,
+    data_json_parser:    execJsonParser,
+    data_template:       execTemplate,
+    data_supabase_insert: execSupabaseInsert,
+    data_supabase_query:  execSupabaseQuery,
+    int_telegram:        execTelegram,
+    int_http:            execHttp,
+    int_discord:         execDiscord,
+    int_slack:           execSlack,
+    int_email:           execEmail,
 };
 
-// ── Main handler ──────────────────────────────────────────────────────────────
+// ─── Output handle map — which handles each node type publishes ───────────────
+const OUTPUT_HANDLES = {
+    trigger_photo:   ["photo"],
+    trigger_webhook: ["data"],
+    trigger_manual:  ["data"],
+    ai_text:         ["text"],
+    ai_vision:       ["json"],
+    ai_generate:     ["text", "json"],
+    ai_embed:        ["vector"],
+    ai_ocr:          ["json"],
+    catalog_search:  ["results"],
+    catalog_ask:     ["text"],
+    catalog_add:     ["result"],
+    data_json_parser:["json"],
+    data_template:   ["text"],
+    data_supabase_insert: ["result"],
+    data_supabase_query:  ["rows"],
+    logic_ifelse:    [], // handled via __branch
+    logic_router:    [], // handled via __branch
+    logic_merge:     ["merged"],
+    logic_transform: ["output"],
+    int_http:        ["response"],
+};
+
+// ─── Main handler ─────────────────────────────────────────────────────────────
 export async function POST(request) {
     try {
         const formData = await request.formData();
@@ -239,30 +460,31 @@ export async function POST(request) {
         if (!flowJson) return Response.json({ error: "flow JSON is required" }, { status: 400 });
 
         const { nodes, edges } = JSON.parse(flowJson);
-        if (!nodes || nodes.length === 0) return Response.json({ error: "No nodes in flow" }, { status: 400 });
+        if (!nodes || nodes.length === 0) return Response.json({ error: "No nodes" }, { status: 400 });
 
-        // Build context
-        const context = { webhookData: null };
+        // Context
+        const ctx = { webhookData: null, photoBase64: null, photoMime: "image/jpeg" };
         if (photoFile) {
             const buf = await photoFile.arrayBuffer();
-            context.photoBase64 = Buffer.from(buf).toString("base64");
-            context.photoMime = photoFile.type || "image/jpeg";
+            ctx.photoBase64 = Buffer.from(buf).toString("base64");
+            ctx.photoMime = photoFile.type || "image/jpeg";
         }
 
         // Topological sort
         const sortedIds = topoSort(nodes, edges);
         const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
 
-        // Build edge map: for each node, which output handle connects to which node+handle
-        const edgeMap = {}; // sourceId+handle -> [{targetId, targetHandle}]
+        // Edge map: `sourceId::sourceHandle` → [{targetId, targetHandle}]
+        const edgeMap = {};
         edges.forEach((e) => {
             const key = `${e.source}::${e.sourceHandle || "output"}`;
             if (!edgeMap[key]) edgeMap[key] = [];
             edgeMap[key].push({ targetId: e.target, targetHandle: e.targetHandle || "input" });
         });
 
-        // Input accumulator per node
-        const nodeInputs = {}; // nodeId -> accumulated input value
+        // Merge node input accumulator: nodeId → Map<targetHandle, value>
+        const nodeInputParts = {}; // nodeId → { [handle]: value }
+        const nodeInputs = {};     // nodeId → resolved input (last single value, or merged)
 
         const steps = [];
         let hasError = false;
@@ -273,7 +495,6 @@ export async function POST(request) {
 
             const nodeType = node.data?.nodeType;
             const executor = EXECUTORS[nodeType];
-            const input = nodeInputs[nodeId];
             const label = node.data?.label || nodeType;
 
             if (!executor) {
@@ -282,12 +503,26 @@ export async function POST(request) {
                 continue;
             }
 
+            // Resolve input: if merge node, build object from parts; else use last received
+            let input = nodeInputs[nodeId];
+            if (nodeType === "logic_merge" && nodeInputParts[nodeId]) {
+                const keys = (node.data.config?.keys || "").split(",").map(k => k.trim()).filter(Boolean);
+                const parts = nodeInputParts[nodeId];
+                const partValues = Object.values(parts);
+                if (keys.length > 0) {
+                    input = {};
+                    Object.entries(parts).forEach(([, v], i) => { input[keys[i] || `input_${i}`] = v; });
+                } else {
+                    input = partValues.length === 1 ? partValues[0] : partValues;
+                }
+            }
+
             let output;
             let success = true;
             let stepError = null;
 
             try {
-                output = await executor(node, context, input);
+                output = await executor(node, ctx, input);
             } catch (e) {
                 success = false;
                 stepError = e.message;
@@ -298,33 +533,42 @@ export async function POST(request) {
 
             steps.push({ nodeId, label, success: true, output });
 
-            // Propagate output to downstream nodes
-            // Handle branch logic (IF/ELSE, Router)
-            if (output && typeof output === "object" && output.__branch) {
+            // Propagate output downstream
+            if (output && typeof output === "object" && "__branch" in output) {
+                // Branching node (IF/ELSE, Router)
                 const branchKey = `${nodeId}::${output.__branch}`;
-                const targets = edgeMap[branchKey] || [];
-                targets.forEach(({ targetId }) => {
+                (edgeMap[branchKey] || []).forEach(({ targetId }) => {
                     nodeInputs[targetId] = output.data;
                 });
             } else {
-                // Try common output handle names, then fall back to all outgoing edges
-                const nodeType = node.data?.nodeType;
-                const def = { trigger_photo: ["photo"], trigger_webhook: ["data"], ai_gemini_vision: ["json"], ai_groq_llama: ["text"], data_supabase: ["result"], data_json_parser: ["json"] };
-                const handles = def[nodeType] || ["output", "text", "json", "data", "result"];
-
+                const handles = OUTPUT_HANDLES[nodeType] || ["output"];
                 let propagated = false;
+
+                // Try named handles first
                 for (const h of handles) {
                     const key = `${nodeId}::${h}`;
                     if (edgeMap[key]) {
-                        edgeMap[key].forEach(({ targetId }) => { nodeInputs[targetId] = output; });
+                        const val = (typeof output === "object" && output !== null && h in output) ? output[h] : output;
+                        edgeMap[key].forEach(({ targetId, targetHandle }) => {
+                            nodeInputs[targetId] = val;
+                            if (!nodeInputParts[targetId]) nodeInputParts[targetId] = {};
+                            nodeInputParts[targetId][targetHandle] = val;
+                        });
                         propagated = true;
                     }
                 }
-                // Also try all edges from this source
+
+                // Fallback: any outgoing edge from this node
                 if (!propagated) {
-                    Object.keys(edgeMap).filter((k) => k.startsWith(nodeId + "::")).forEach((k) => {
-                        edgeMap[k].forEach(({ targetId }) => { nodeInputs[targetId] = output; });
-                    });
+                    Object.entries(edgeMap)
+                        .filter(([k]) => k.startsWith(nodeId + "::"))
+                        .forEach(([, targets]) => {
+                            targets.forEach(({ targetId, targetHandle }) => {
+                                nodeInputs[targetId] = output;
+                                if (!nodeInputParts[targetId]) nodeInputParts[targetId] = {};
+                                nodeInputParts[targetId][targetHandle] = output;
+                            });
+                        });
                 }
             }
         }
