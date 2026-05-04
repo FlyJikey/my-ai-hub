@@ -468,19 +468,51 @@ print("Judge:", judge_answer)`}</div>
                 {/* Usage example */}
                 <div className={styles.section}>
                     <div className={styles.sectionTitle}>Пример запроса</div>
-                    <div className={styles.codeBlock}>
+
+                    {/* Per-task code examples */}
+                    {selectedInt.tasks && selectedInt.tasks.length > 0 ? selectedInt.tasks.map(task => {
+                        const isAll = (task.allowedModels || []).includes("all");
+                        const taskModels = isAll
+                            ? allModels.map(m => m.id)
+                            : (task.allowedModels || []);
+                        const firstModel = taskModels[0] || 'llama-3.3-70b-versatile';
+
+                        return (
+                            <div key={task.id} style={{ marginBottom: 16 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--text-secondary)' }}>
+                                    Задача: <code style={{ color: 'var(--text-primary)' }}>{task.id}</code>
+                                    {' · '}
+                                    {isAll
+                                        ? <span style={{ color: '#28a745' }}>все модели разрешены</span>
+                                        : <span style={{ color: 'var(--primary-color, #007bff)' }}>
+                                            разрешено: {taskModels.map(id => getModelName(id)).join(', ')}
+                                          </span>
+                                    }
+                                </div>
+                                <div className={styles.codeBlock}>
 {`curl -X POST ${SITE_URL}/api/integrations/chat \\
   -H "Authorization: Bearer ${selectedInt.apiKey}" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "task": "${selectedInt.tasks?.[0]?.id || 'worker'}",
+    "task": "${task.id}",
     "prompt": "Твой промпт",
-    "model": "${
-        selectedInt.tasks?.[0]?.allowedModels?.filter(m => m !== 'all')?.[0]
-            || 'llama-3.3-70b-versatile'
-    }"
+    "model": "${firstModel}"${taskModels.length > 1 ? `  // также доступны: ${taskModels.slice(1).join(', ')}` : ''}
   }'`}
-                    </div>
+                                </div>
+                            </div>
+                        );
+                    }) : (
+                        <div className={styles.codeBlock}>
+{`curl -X POST ${SITE_URL}/api/integrations/chat \\
+  -H "Authorization: Bearer ${selectedInt.apiKey}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "task": "worker",
+    "prompt": "Твой промпт",
+    "model": "llama-3.3-70b-versatile"
+  }'`}
+                        </div>
+                    )}
                 </div>
             </div>
         );
