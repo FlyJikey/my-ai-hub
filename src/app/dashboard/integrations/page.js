@@ -282,35 +282,60 @@ export default function IntegrationsPage() {
 API_KEY = "sk-aihub-xxxxxxxxxxxxxxxx"
 BASE_URL = "${SITE_URL}"
 
-def ask_worker(log_data):
+# Модели задаются отдельно для каждого агента.
+# Укажи те модели, которые настроены в задачах твоей интеграции.
+WORKER_MODELS = [
+    "llama-3.3-70b-versatile",           # основная (быстрая, бесплатная)
+    "meta-llama/llama-4-maverick-17b-128e-instruct",  # резервная 1
+    "qwen/qwen3-32b",                     # резервная 2
+]
+JUDGE_MODEL = "anthropic/claude-3.5-sonnet"  # судья — точная платная модель
+
+
+def ask_worker(log_data, model=None):
+    """Отправить логи Сотруднику ИИ для анализа."""
+    selected_model = model or WORKER_MODELS[0]
     res = requests.post(
         f"{BASE_URL}/api/integrations/chat",
         headers={"Authorization": f"Bearer {API_KEY}"},
         json={
             "task": "worker",
             "prompt": f"Проанализируй логи:\\n{log_data}",
-            "model": "llama-3.3-70b-versatile"
+            "model": selected_model
         }
     )
+    res.raise_for_status()
     return res.json()["answer"]
 
-def ask_judge(proposed_change, current_config):
+
+def ask_judge(proposed_change, current_config, model=None):
+    """Отправить предложенное изменение Судье ИИ для проверки."""
+    selected_model = model or JUDGE_MODEL
     res = requests.post(
         f"{BASE_URL}/api/integrations/chat",
         headers={"Authorization": f"Bearer {API_KEY}"},
         json={
             "task": "judge",
             "prompt": f"Текущий конфиг:\\n{current_config}\\n\\nПредложенное изменение:\\n{proposed_change}",
-            "model": "llama-3.3-70b-versatile"
+            "model": selected_model
         }
     )
+    res.raise_for_status()
     return res.json()["answer"]
 
-# Использование
-log_snippet = "ERROR: TLS handshake timeout..."
-worker_answer = ask_worker(log_snippet)
-print("Worker:", worker_answer)
 
+# Использование — Worker с разными моделями
+log_snippet = "ERROR: TLS handshake timeout..."
+
+# Основная модель
+worker_answer = ask_worker(log_snippet)
+print("Worker (основная):", worker_answer)
+
+# Или явно указать другую модель из разрешённых
+worker_answer2 = ask_worker(log_snippet, model="qwen/qwen3-32b")
+print("Worker (qwen):", worker_answer2)
+
+# Судья всегда использует свою модель
 judge_answer = ask_judge(worker_answer, open("/opt/xray/config.json").read())
 print("Judge:", judge_answer)`}</div>
 
