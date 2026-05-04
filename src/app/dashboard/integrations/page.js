@@ -36,6 +36,8 @@ export default function IntegrationsPage() {
     };
 
     const saveIntegrations = async (updatedList) => {
+        // Optimistically update UI immediately
+        setIntegrations(updatedList);
         setSaving(true);
         setSaveSuccess(false);
         try {
@@ -45,11 +47,11 @@ export default function IntegrationsPage() {
                 body: JSON.stringify({ integrations: updatedList })
             });
             if (res.ok) {
-                setIntegrations(updatedList);
                 setSaveSuccess(true);
                 setTimeout(() => setSaveSuccess(false), 2000);
             } else {
-                console.error("Failed to save integrations");
+                const errData = await res.json().catch(() => ({}));
+                console.error("Failed to save integrations:", errData);
             }
         } catch (e) {
             console.error("Failed to save", e);
