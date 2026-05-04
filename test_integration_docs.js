@@ -32,6 +32,13 @@ test("does not invent a fallback model when a task has no allowed models", () =>
     assert.equal(buildTaskModelSummary(task, models), "модели не выбраны");
 });
 
+test("ignores selected model ids that are not in the available model list", () => {
+    const task = { id: "judge", allowedModels: ["missing-model", "openai/gpt-4o-mini"] };
+
+    assert.deepEqual(getAllowedModelIds(task, models), ["openai/gpt-4o-mini"]);
+    assert.equal(getDefaultModelId(task, models), "openai/gpt-4o-mini");
+});
+
 test("builds examples from selected task and model facts", () => {
     const task = { id: "judge", allowedModels: ["openai/gpt-4o-mini"] };
     const example = buildRequestExample({

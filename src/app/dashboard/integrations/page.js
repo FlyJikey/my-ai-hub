@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Copy, Check, ChevronRight, AlertCircle, BookOpen, X } from "lucide-react";
 import styles from "./page.module.css";
 import { AI_MODELS } from "@/config/models";
+import { useAppContext } from "@/app/context/AppContext";
 import { readJsonResponse } from "@/lib/api-response";
 import {
     buildModelList,
@@ -61,8 +62,10 @@ export default function IntegrationsPage() {
     const [showDocs, setShowDocs] = useState(false);
     const [newIntName, setNewIntName] = useState("");
     const [copiedKey, setCopiedKey] = useState(null);
+    const { availableTextModels } = useAppContext();
 
-    const allModels = AI_MODELS.text.map(m => ({ id: m.id, name: m.name, provider: m.provider, tier: m.tier }));
+    const modelSource = availableTextModels.length ? availableTextModels : AI_MODELS.text;
+    const allModels = modelSource.map(m => ({ id: m.id, name: m.name, provider: m.provider, tier: m.tier }));
     const exampleTask = { id: "worker", allowedModels: allModels[0]?.id ? [allModels[0].id] : [] };
 
     useEffect(() => { fetchIntegrations(); }, []);

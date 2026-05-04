@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { AI_MODELS } from '@/config/models';
 import { getAllowedModelIds, getDefaultModelId } from '@/lib/integration-docs';
+import { getEnabledTextModels } from '@/lib/model-settings';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -50,8 +51,15 @@ export async function POST(req) {
             return NextResponse.json({ error: `Задача '${task}' не настроена для этой интеграции.` }, { status: 403, headers: corsHeaders });
         }
 
-        const allowedModelIds = getAllowedModelIds(taskConfig, AI_MODELS.text);
-        let selectedModel = model || getDefaultModelId(taskConfig, AI_MODELS.text);
+        const { data: settingsData } = await supabase
+            .from('ai_settings')
+            .select('data')
+            .eq('id', 'global')
+            .single();
+
+        const textModels = getEnabledTextModels(settingsData?.data, AI_MODELS.text);
+        const allowedModelIds = getAllowedModelIds(taskConfig, textModels);
+        let selectedModel = model || getDefaultModelId(taskConfig, textModels);
 
         if (!selectedModel) {
             return NextResponse.json({ error: "Не указана модель и нет разрешенных моделей по умолчанию." }, { status: 400, headers: corsHeaders });

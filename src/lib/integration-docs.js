@@ -17,7 +17,11 @@ export function getAllowedModelIds(task, models = []) {
         return normalizedModels.map(model => model.id);
     }
 
-    return allowedModels.filter(Boolean);
+    const explicitModels = allowedModels.filter(Boolean);
+    if (!normalizedModels.length) return explicitModels;
+
+    const availableIds = new Set(normalizedModels.map(model => model.id));
+    return explicitModels.filter(modelId => availableIds.has(modelId));
 }
 
 export function getDefaultModelId(task, models = []) {

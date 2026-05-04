@@ -5,7 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { Trash2, Copy, Check, ArrowLeft, AlertCircle, BookOpen, X } from "lucide-react";
 import styles from "../page.module.css";
 import { AI_MODELS } from "@/config/models";
+import { useAppContext } from "@/app/context/AppContext";
 import { readJsonResponse } from "@/lib/api-response";
+import { syncAllowedModelsWithAvailable } from "@/lib/model-settings";
 import {
     buildAiSetupPrompt,
     buildModelList,
@@ -68,8 +70,10 @@ export default function IntegrationDetailPage() {
     const [saveError, setSaveError] = useState("");
     const [copiedKey, setCopiedKey] = useState(null);
     const [showDocs, setShowDocs] = useState(false);
+    const { availableTextModels } = useAppContext();
 
-    const allModels = AI_MODELS.text.map(m => ({ id: m.id, name: m.name, provider: m.provider, tier: m.tier }));
+    const modelSource = availableTextModels.length ? availableTextModels : AI_MODELS.text;
+    const allModels = modelSource.map(m => ({ id: m.id, name: m.name, provider: m.provider, tier: m.tier }));
 
     useEffect(() => { fetchData(); }, [id]);
 
@@ -163,7 +167,7 @@ export default function IntegrationDetailPage() {
                     const isAll = (t.allowedModels || []).includes("all");
                     return { ...t, allowedModels: isAll ? [] : ["all"] };
                 }
-                let current = (t.allowedModels || []).filter(m => m !== "all");
+                let current = syncAllowedModelsWithAvailable(t.allowedModels, allModels);
                 if (current.includes(modelId)) {
                     current = current.filter(m => m !== modelId);
                 } else {
@@ -361,7 +365,7 @@ def ask_${task.id}(prompt, model=None):
                     </p>
                 ) : integration.tasks.map((task) => {
                     const isAll = (task.allowedModels || []).includes("all");
-                    const selectedModels = (task.allowedModels || []).filter(m => m !== "all");
+                    const selectedModels = syncAllowedModelsWithAvailable(task.allowedModels, allModels);
                     const hasNoModels = !isAll && selectedModels.length === 0;
 
                     return (
