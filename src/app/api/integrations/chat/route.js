@@ -71,10 +71,23 @@ export async function POST(req) {
             { role: "user", content: prompt }
         ];
 
-        // Call the regular chat route logic (we can fetch to our own API or replicate the logic)
-        // Since we want to use the same logic, we can construct the URL
-        const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-        const baseUrl = origin.endsWith('/') ? origin.slice(0, -1) : origin;
+        // Build base URL — origin header is absent for server-to-server requests,
+        // so fall back to host header (always present on Vercel) or env var.
+        const origin = req.headers.get('origin');
+        const host = req.headers.get('host');
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+
+        let baseUrl;
+        if (origin) {
+            baseUrl = origin.endsWith('/') ? origin.slice(0, -1) : origin;
+        } else if (siteUrl) {
+            baseUrl = siteUrl.endsWith('/') ? siteUrl.slice(0, -1) : siteUrl;
+        } else if (host) {
+            const protocol = host.includes('localhost') ? 'http' : 'https';
+            baseUrl = `${protocol}://${host}`;
+        } else {
+            baseUrl = 'http://localhost:3000';
+        }
 
         const chatReq = await fetch(`${baseUrl}/api/chat`, {
             method: 'POST',
