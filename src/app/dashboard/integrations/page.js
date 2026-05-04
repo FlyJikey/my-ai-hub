@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { Plus, Copy, Check, ChevronRight, AlertCircle, BookOpen, X } from "lucide-react";
 import styles from "./page.module.css";
 import { AI_MODELS } from "@/config/models";
+import { readJsonResponse } from "@/lib/api-response";
+import {
+    buildModelList,
+    buildRequestBodyExample,
+    buildResponseExample,
+} from "@/lib/integration-docs";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://my-ai-hub-silk.vercel.app";
 
@@ -56,7 +62,8 @@ export default function IntegrationsPage() {
     const [newIntName, setNewIntName] = useState("");
     const [copiedKey, setCopiedKey] = useState(null);
 
-    const allModels = AI_MODELS.text.map(m => ({ id: m.id, name: m.name, provider: m.provider }));
+    const allModels = AI_MODELS.text.map(m => ({ id: m.id, name: m.name, provider: m.provider, tier: m.tier }));
+    const exampleTask = { id: "worker", allowedModels: allModels[0]?.id ? [allModels[0].id] : [] };
 
     useEffect(() => { fetchIntegrations(); }, []);
 
@@ -66,7 +73,7 @@ export default function IntegrationsPage() {
         setSaveError("");
         try {
             const res = await fetch("/api/integrations");
-            const data = await res.json();
+            const data = await readJsonResponse(res);
             if (data.integrations) {
                 setIntegrations(data.integrations);
             } else if (data.error) {
@@ -92,7 +99,7 @@ export default function IntegrationsPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ integrations: updatedList })
             });
-            const data = await res.json();
+            const data = await readJsonResponse(res);
             if (res.ok) {
                 setSaveStatus("ok");
                 setTimeout(() => setSaveStatus(null), 2500);
@@ -154,17 +161,9 @@ export default function IntegrationsPage() {
                         <code>{SITE_URL}/api/integrations/chat</code>
                         <p>Отправить промпт к AI-модели через интеграцию.</p>
                         <strong>Тело запроса (JSON):</strong>
-                        <div className={styles.codeBlock}>{`{
-  "task": "worker",        // ID задачи (обязательно)
-  "prompt": "Текст...",    // Промпт для модели (обязательно)
-  "model": "llama-3.3-70b-versatile"  // ID модели (опционально)
-}`}</div>
+                        <div className={styles.codeBlock}>{buildRequestBodyExample(exampleTask, allModels)}</div>
                         <strong>Успешный ответ:</strong>
-                        <div className={styles.codeBlock}>{`{
-  "status": "ok",
-  "answer": "Ответ модели...",
-  "model_used": "llama-3.3-70b-versatile"
-}`}</div>
+                        <div className={styles.codeBlock}>{buildResponseExample(exampleTask, allModels)}</div>
                         <strong>Ошибки:</strong>
                         <div className={styles.codeBlock}>{`401 - Неверный или отсутствующий API ключ
 403 - Задача не настроена / модель не разрешена
@@ -179,7 +178,8 @@ export default function IntegrationsPage() {
                     </div>
 
                     <h3>Доступные модели</h3>
-                    <div className={styles.codeBlock}>{allModels.map(m => `${m.id.padEnd(45)} (${m.provider})`).join('\n')}</div>
+                    <p>Список строится из текущей конфигурации текстовых моделей приложения.</p>
+                    <div className={styles.codeBlock}>{buildModelList(allModels)}</div>
 
                     <h3>Системные промпты</h3>
                     <strong>Worker — анализ и решения:</strong>

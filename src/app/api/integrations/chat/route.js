@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { AI_MODELS } from '@/config/models';
+import { getAllowedModelIds, getDefaultModelId } from '@/lib/integration-docs';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -48,22 +50,16 @@ export async function POST(req) {
             return NextResponse.json({ error: `Задача '${task}' не настроена для этой интеграции.` }, { status: 403, headers: corsHeaders });
         }
 
-        // Determine which model to use
-        let selectedModel = model;
+        const allowedModelIds = getAllowedModelIds(taskConfig, AI_MODELS.text);
+        let selectedModel = model || getDefaultModelId(taskConfig, AI_MODELS.text);
+
         if (!selectedModel) {
-            // Fallback to the first available model for this task
-            if (taskConfig.allowedModels && taskConfig.allowedModels.length > 0) {
-                selectedModel = taskConfig.allowedModels[0];
-            } else {
-                return NextResponse.json({ error: "Не указана модель и нет разрешенных моделей по умолчанию." }, { status: 400, headers: corsHeaders });
-            }
+            return NextResponse.json({ error: "Не указана модель и нет разрешенных моделей по умолчанию." }, { status: 400, headers: corsHeaders });
         }
 
         // Validate model allowed
-        if (taskConfig.allowedModels && taskConfig.allowedModels.length > 0 && taskConfig.allowedModels[0] !== 'all') {
-            if (!taskConfig.allowedModels.includes(selectedModel)) {
-                return NextResponse.json({ error: `Модель '${selectedModel}' не разрешена для задачи '${task}'. Разрешены: ${taskConfig.allowedModels.join(', ')}` }, { status: 403, headers: corsHeaders });
-            }
+        if (!allowedModelIds.includes(selectedModel)) {
+            return NextResponse.json({ error: `Модель '${selectedModel}' не разрешена для задачи '${task}'. Разрешены: ${allowedModelIds.join(', ')}` }, { status: 403, headers: corsHeaders });
         }
 
         // We prepare messages

@@ -5,6 +5,18 @@ import { useParams, useRouter } from "next/navigation";
 import { Trash2, Copy, Check, ArrowLeft, AlertCircle, BookOpen, X } from "lucide-react";
 import styles from "../page.module.css";
 import { AI_MODELS } from "@/config/models";
+import { readJsonResponse } from "@/lib/api-response";
+import {
+    buildAiSetupPrompt,
+    buildModelList,
+    buildRequestBodyExample,
+    buildRequestExample,
+    buildResponseExample,
+    buildTaskModelSummary,
+    getAllowedModelIds,
+    getDefaultModelId,
+    getModelLabel,
+} from "@/lib/integration-docs";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://my-ai-hub-silk.vercel.app";
 
@@ -57,7 +69,7 @@ export default function IntegrationDetailPage() {
     const [copiedKey, setCopiedKey] = useState(null);
     const [showDocs, setShowDocs] = useState(false);
 
-    const allModels = AI_MODELS.text.map(m => ({ id: m.id, name: m.name, provider: m.provider }));
+    const allModels = AI_MODELS.text.map(m => ({ id: m.id, name: m.name, provider: m.provider, tier: m.tier }));
 
     useEffect(() => { fetchData(); }, [id]);
 
@@ -65,7 +77,7 @@ export default function IntegrationDetailPage() {
         setLoading(true);
         try {
             const res = await fetch("/api/integrations");
-            const data = await res.json();
+            const data = await readJsonResponse(res);
             if (data.integrations) {
                 setAllIntegrations(data.integrations);
                 const found = data.integrations.find(i => i.id === id);
@@ -99,7 +111,7 @@ export default function IntegrationDetailPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ integrations: updatedList })
             });
-            const data = await res.json();
+            const data = await readJsonResponse(res);
             if (res.ok) {
                 setSaveStatus("ok");
                 setTimeout(() => setSaveStatus(null), 2500);
@@ -172,8 +184,15 @@ export default function IntegrationDetailPage() {
 
     const getModelName = (modelId) => {
         if (modelId === "all") return "Все модели";
-        return allModels.find(m => m.id === modelId)?.name || modelId;
+        return getModelLabel(modelId, allModels);
     };
+
+    const aiSetupPrompt = buildAiSetupPrompt({
+        siteUrl: SITE_URL,
+        apiKey: integration?.apiKey || "",
+        integration,
+        models: allModels,
+    });
 
     if (loading) return <div className={styles.container}><p>Загрузка...</p></div>;
     if (!integration) return null;
@@ -183,11 +202,29 @@ export default function IntegrationDetailPage() {
             <div className={styles.docsContent} onClick={e => e.stopPropagation()}>
                 <div className={styles.docsHeader}>
                     <h2 style={{ margin: 0, fontSize: 18 }}>Документация API интеграций</h2>
-                    <button className={styles.closeBtn} onClick={() => setShowDocs(false)}><X size={18} /></button>
+                    <div className={styles.docsHeaderActions}>
+                        <button
+                            className={styles.promptCopyBtn}
+                            onClick={() => copyToClipboard(aiSetupPrompt, 'aiSetupPrompt')}
+                        >
+                            {copiedKey === 'aiSetupPrompt' ? <Check size={15} /> : <Copy size={15} />}
+                            Промпт для ИИ
+                        </button>
+                        <button className={styles.closeBtn} onClick={() => setShowDocs(false)}><X size={18} /></button>
+                    </div>
                 </div>
                 <div className={styles.docsBody}>
                     <h3>Обзор</h3>
                     <p>API интеграций позволяет внешним приложениям отправлять запросы к AI-моделям через AI Hub, используя API-ключ и задачи с настроенными правами.</p>
+
+                    <h3>Автонастройка через ИИ</h3>
+                    <p>Скопируйте этот промпт в ИИ-агента, который будет настраивать внешнее приложение. Промпт собран из текущего endpoint, API-ключа, задач и выбранных моделей этой интеграции.</p>
+                    <div className={styles.codeBlock} style={{ position: 'relative' }}>
+                        <button className={styles.copyOverlay} onClick={() => copyToClipboard(aiSetupPrompt, 'aiSetupPromptBlock')}>
+                            {copiedKey === 'aiSetupPromptBlock' ? <Check size={14} color="#28a745" /> : <Copy size={14} />}
+                        </button>
+                        {aiSetupPrompt}
+                    </div>
 
                     <h3>Аутентификация</h3>
                     <p>Все запросы требуют Bearer-токен в заголовке:</p>
@@ -199,17 +236,9 @@ export default function IntegrationDetailPage() {
                         <code>{SITE_URL}/api/integrations/chat</code>
                         <p>Отправить промпт к AI-модели через интеграцию.</p>
                         <strong>Тело запроса (JSON):</strong>
-                        <div className={styles.codeBlock}>{`{
-  "task": "worker",        // ID задачи (обязательно)
-  "prompt": "Текст...",    // Промпт для модели (обязательно)
-  "model": "llama-3.3-70b-versatile"  // ID модели (опционально)
-}`}</div>
+                        <div className={styles.codeBlock}>{buildRequestBodyExample(integration.tasks?.[0] || { id: "worker", allowedModels: [] }, allModels)}</div>
                         <strong>Успешный ответ:</strong>
-                        <div className={styles.codeBlock}>{`{
-  "status": "ok",
-  "answer": "Ответ модели...",
-  "model_used": "llama-3.3-70b-versatile"
-}`}</div>
+                        <div className={styles.codeBlock}>{buildResponseExample(integration.tasks?.[0] || { id: "worker", allowedModels: [] }, allModels)}</div>
                         <strong>Ошибки:</strong>
                         <div className={styles.codeBlock}>{`401 - Неверный или отсутствующий API ключ
 403 - Задача не настроена / модель не разрешена
@@ -220,21 +249,17 @@ export default function IntegrationDetailPage() {
                     <h3>Задачи этой интеграции</h3>
                     {(!integration.tasks || integration.tasks.length === 0) ? (
                         <p>Нет настроенных задач.</p>
-                    ) : integration.tasks.map(task => {
-                        const isAll = (task.allowedModels || []).includes("all");
-                        const taskModels = isAll ? allModels.map(m => m.id) : (task.allowedModels || []);
-                        return (
+                    ) : integration.tasks.map(task => (
                             <div key={task.id} className={styles.endpointBlock}>
                                 <strong>Задача: <code>{task.id}</code></strong>
-                                <p>Разрешённые модели: {isAll ? "все" : taskModels.map(id => getModelName(id)).join(", ") || "не выбрано"}</p>
-                                <div className={styles.codeBlock}>{`"task": "${task.id}",
-"model": "${taskModels[0] || 'llama-3.3-70b-versatile'}"${taskModels.length > 1 ? `  // также: ${taskModels.slice(1, 4).join(', ')}${taskModels.length > 4 ? '...' : ''}` : ''}`}</div>
+                                <p>Разрешённые модели: {buildTaskModelSummary(task, allModels)}</p>
+                                <div className={styles.codeBlock}>{buildRequestBodyExample(task, allModels)}</div>
                             </div>
-                        );
-                    })}
+                    ))}
 
                     <h3>Доступные модели</h3>
-                    <div className={styles.codeBlock}>{allModels.map(m => `${m.id.padEnd(45)} (${m.provider})`).join('\n')}</div>
+                    <p>Список строится из текущей конфигурации текстовых моделей приложения.</p>
+                    <div className={styles.codeBlock}>{buildModelList(allModels)}</div>
 
                     <h3>Системные промпты</h3>
                     <strong>Worker — анализ и решения:</strong>
@@ -258,8 +283,13 @@ export default function IntegrationDetailPage() {
 API_KEY = "${integration.apiKey}"
 BASE_URL = "${SITE_URL}"
 ${integration.tasks?.map(task => {
-    const isAll = (task.allowedModels || []).includes("all");
-    const models = isAll ? allModels.map(m => m.id) : (task.allowedModels || []);
+    const models = getAllowedModelIds(task, allModels);
+    const defaultModel = getDefaultModelId(task, allModels);
+    if (!defaultModel) {
+        return `
+# Задача: ${task.id}
+# Для этой задачи не выбраны модели. Добавьте модель в настройках интеграции.`;
+    }
     return `
 # Задача: ${task.id}
 ${task.id.toUpperCase()}_MODELS = [${models.slice(0, 3).map(m => `"${m}"`).join(', ')}]
@@ -401,8 +431,7 @@ def ask_${task.id}(prompt, model=None):
                 <div className={styles.sectionTitle}>Пример запроса</div>
                 {integration.tasks && integration.tasks.length > 0 ? integration.tasks.map(task => {
                     const isAll = (task.allowedModels || []).includes("all");
-                    const taskModels = isAll ? allModels.map(m => m.id) : (task.allowedModels || []);
-                    const firstModel = taskModels[0] || 'llama-3.3-70b-versatile';
+                    const taskModels = getAllowedModelIds(task, allModels);
                     return (
                         <div key={task.id} style={{ marginBottom: 16 }}>
                             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--text-secondary)' }}>
@@ -416,14 +445,7 @@ def ask_${task.id}(prompt, model=None):
                                 }
                             </div>
                             <div className={styles.codeBlock}>
-{`curl -X POST ${SITE_URL}/api/integrations/chat \\
-  -H "Authorization: Bearer ${integration.apiKey}" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "task": "${task.id}",
-    "prompt": "Твой промпт",
-    "model": "${firstModel}"${taskModels.length > 1 ? `  // также: ${taskModels.slice(1, 3).join(', ')}${taskModels.length > 3 ? '...' : ''}` : ''}
-  }'`}
+{buildRequestExample({ siteUrl: SITE_URL, apiKey: integration.apiKey, task, models: allModels })}
                             </div>
                         </div>
                     );
@@ -434,8 +456,7 @@ def ask_${task.id}(prompt, model=None):
   -H "Content-Type: application/json" \\
   -d '{
     "task": "worker",
-    "prompt": "Твой промпт",
-    "model": "llama-3.3-70b-versatile"
+    "prompt": "Твой промпт"
   }'`}
                     </div>
                 )}

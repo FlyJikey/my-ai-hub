@@ -297,26 +297,30 @@
 }
 
 .codeBlock {
-    background: #1a1a2e;
-    color: #e0e0e0;
-    padding: 16px;
+    background: #111827;
+    color: #e5e7eb;
+    padding: 14px 16px;
     border-radius: 8px;
-    font-family: monospace;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
     font-size: 13px;
     white-space: pre-wrap;
     overflow-x: auto;
     line-height: 1.6;
+    word-break: break-word;
 }
 
 /* ── Modal ── */
 .modal {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(17, 24, 39, 0.62);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    padding: 24px;
+    box-sizing: border-box;
 }
 
 .modalContent {
@@ -409,32 +413,42 @@
 
 /* ── Docs modal ── */
 .docsContent {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 14px;
-    width: 100%;
-    max-width: 760px;
-    max-height: 88vh;
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--card-border, #e5e7eb);
+    border-radius: 8px;
+    width: min(920px, calc(100vw - 32px));
+    max-height: min(88vh, 860px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    color: var(--text-primary, #111111);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
 }
 
 .docsHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 14px;
     padding: 18px 24px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--card-border, #e5e7eb);
+    flex-shrink: 0;
+    background: var(--card-bg, #ffffff);
+}
+
+.docsHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     flex-shrink: 0;
 }
 
 .docsBody {
-    padding: 20px 24px;
+    padding: 22px 24px 28px;
     overflow-y: auto;
     flex: 1;
     font-size: 14px;
-    line-height: 1.7;
+    line-height: 1.65;
     color: var(--text-primary);
 }
 
@@ -459,7 +473,7 @@
 }
 
 .docsBody code {
-    background: var(--bg-body);
+    background: var(--muted-surface, #f4f4f5);
     padding: 2px 6px;
     border-radius: 4px;
     font-family: monospace;
@@ -468,11 +482,29 @@
 }
 
 .endpointBlock {
-    background: var(--bg-body);
-    border: 1px solid var(--border-color);
+    background: var(--panel-subtle, #f9fafb);
+    border: 1px solid var(--card-border, #e5e7eb);
     border-radius: 8px;
-    padding: 14px 16px;
-    margin-bottom: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.promptCopyBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--primary-color, #007bff);
+    color: #ffffff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.promptCopyBtn:hover {
+    opacity: 0.9;
 }
 
 .endpointBlock p {
@@ -520,6 +552,42 @@
 
 .checkboxLabelDisabled {
     cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+    .container {
+        padding: 18px;
+    }
+
+    .header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .docsContent {
+        width: calc(100vw - 20px);
+        max-height: 92vh;
+    }
+
+    .docsHeader {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 16px;
+    }
+
+    .docsHeaderActions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .docsBody {
+        padding: 16px;
+    }
+
+    .codeBlock {
+        font-size: 12px;
+    }
 }
 
 /* ── Copy overlay button inside codeblock ── */
