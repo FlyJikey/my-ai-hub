@@ -370,3 +370,170 @@
 .submitBtn:hover {
     opacity: 0.88;
 }
+
+/* ── Docs button ── */
+.docsBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.docsBtn:hover {
+    background: var(--bg-body);
+}
+
+/* ── Close button ── */
+.closeBtn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+}
+
+.closeBtn:hover {
+    color: var(--text-primary);
+    background: var(--bg-body);
+}
+
+/* ── Docs modal ── */
+.docsContent {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 760px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.docsHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.docsBody {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.docsBody h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 20px 0 8px;
+    color: var(--text-primary);
+}
+
+.docsBody h3:first-child {
+    margin-top: 0;
+}
+
+.docsBody p {
+    margin: 0 0 10px;
+    color: var(--text-secondary);
+}
+
+.docsBody code {
+    background: var(--bg-body);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.endpointBlock {
+    background: var(--bg-body);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+}
+
+.endpointBlock p {
+    margin: 6px 0 10px;
+}
+
+.endpointBlock strong {
+    display: block;
+    margin: 10px 0 4px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.methodPost {
+    display: inline-block;
+    background: #007bff;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 8px;
+    vertical-align: middle;
+    font-family: monospace;
+}
+
+.methodGet {
+    display: inline-block;
+    background: #28a745;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 8px;
+    vertical-align: middle;
+    font-family: monospace;
+}
+
+/* ── Model checkbox disabled state ── */
+.modelCheckboxListDisabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.checkboxLabelDisabled {
+    cursor: not-allowed;
+}
+
+/* ── Copy overlay button inside codeblock ── */
+.copyOverlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #ccc;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    transition: background 0.15s;
+}
+
+.copyOverlay:hover {
+    background: rgba(255,255,255,0.2);
+}
