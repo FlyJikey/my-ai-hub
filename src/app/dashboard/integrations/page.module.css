@@ -435,6 +435,7 @@
     flex: 1;
     font-size: 14px;
     line-height: 1.7;
+    color: var(--text-primary);
 }
 
 .docsBody h3 {
@@ -450,7 +451,11 @@
 
 .docsBody p {
     margin: 0 0 10px;
-    color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+.docsBody strong {
+    color: var(--text-primary);
 }
 
 .docsBody code {
@@ -459,6 +464,7 @@
     border-radius: 4px;
     font-family: monospace;
     font-size: 13px;
+    color: var(--text-primary);
 }
 
 .endpointBlock {
