@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Settings, Shapes, Menu, History, Eye, Scan, MessageSquare, Package, Workflow, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LayoutDashboard, Settings, Shapes, Menu, History, Eye, Scan, MessageSquare, Package, Workflow, PanelLeftClose, PanelLeftOpen, Plug } from "lucide-react";
 import styles from "./layout.module.css";
 
 export default function DashboardLayout({ children }) {
@@ -63,6 +63,10 @@ export default function DashboardLayout({ children }) {
                     <Link href="/dashboard/flows" className={isActive("/dashboard/flows")} title="Цепочки ИИ">
                         <Workflow className={pathname === "/dashboard/flows" ? styles.linkActiveIcon : styles.linkIcon} />
                         {!collapsed && <span>Цепочки ИИ</span>}
+                    </Link>
+                    <Link href="/dashboard/integrations" className={isActive("/dashboard/integrations")} title="Интеграции">
+                        <Plug className={pathname === "/dashboard/integrations" ? styles.linkActiveIcon : styles.linkIcon} />
+                        {!collapsed && <span>Интеграции</span>}
                     </Link>
                     <Link href="/dashboard/history" className={isActive("/dashboard/history")} title="История">
                         <History className={pathname === "/dashboard/history" ? styles.linkActiveIcon : styles.linkIcon} />

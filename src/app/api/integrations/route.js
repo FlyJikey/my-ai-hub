@@ -1,94 +1,51 @@
-import { supabase } from "@/lib/supabase";
+import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
-const INTEGRATIONS_ID = "integrations";
+export const runtime = 'nodejs';
 
-// Fields that should be masked (partially hidden) in GET responses
-const SECRET_FIELDS = ["telegram_token", "huggingface_api_key", "supabase_key", "extra_db_password"];
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
 
-function maskSecret(value) {
-    if (!value || value.length < 8) return value;
-    return value.slice(0, 6) + "•".repeat(Math.min(value.length - 8, 20)) + value.slice(-4);
+export async function OPTIONS() {
+    return NextResponse.json({}, { headers: corsHeaders });
 }
 
-export async function GET() {
+export async function GET(req) {
     try {
         const { data, error } = await supabase
-            .from("ai_settings")
-            .select("data")
-            .eq("id", INTEGRATIONS_ID)
+            .from('ai_settings')
+            .select('*')
+            .eq('id', 'integrations')
             .single();
 
-        if (error) {
-            // Not found yet — return empty defaults
-            if (error.code === "PGRST116") {
-                return Response.json({
-                    telegram_token: "", huggingface_api_key: "",
-                    supabase_url: "", supabase_key: "",
-                    extra_db_url: "", extra_db_user: "", extra_db_password: "",
-                });
-            }
-            return Response.json({ error: error.message }, { status: 500 });
+        if (error && error.code !== 'PGRST116') {
+            return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
         }
 
-        const raw = data?.data || {};
-        // Return masked secrets so they're visible but not easily copyable
-        const masked = { ...raw };
-        SECRET_FIELDS.forEach((f) => {
-            if (masked[f]) masked[f] = maskSecret(masked[f]);
-        });
-
-        return Response.json(masked);
-    } catch (e) {
-        return Response.json({ error: e.message }, { status: 500 });
+        // Return empty array if not exists
+        return NextResponse.json({ integrations: data?.data?.integrations || [] }, { headers: corsHeaders });
+    } catch (err) {
+        return NextResponse.json({ error: err.message }, { status: 500, headers: corsHeaders });
     }
 }
 
-export async function POST(request) {
+export async function POST(req) {
     try {
-        const body = await request.json();
-
-        // Don't overwrite real secrets if client sends back masked values (•••)
-        // First load existing data
-        const { data: existing } = await supabase
-            .from("ai_settings")
-            .select("data")
-            .eq("id", INTEGRATIONS_ID)
-            .single();
-
-        const existingData = existing?.data || {};
-        const merged = { ...existingData };
-
-        // Only update fields that don't look like masked values
-        Object.entries(body).forEach(([k, v]) => {
-            if (typeof v === "string" && v.includes("•")) {
-                // Masked — keep existing
-            } else {
-                merged[k] = v;
-            }
-        });
-
+        const body = await req.json();
+        
         const { error } = await supabase
-            .from("ai_settings")
-            .upsert({ id: INTEGRATIONS_ID, data: merged }, { onConflict: "id" });
+            .from('ai_settings')
+            .upsert({ id: 'integrations', data: { integrations: body.integrations } }, { onConflict: 'id' });
 
-        if (error) return Response.json({ error: error.message }, { status: 500 });
+        if (error) {
+            return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders });
+        }
 
-        return Response.json({ success: true });
-    } catch (e) {
-        return Response.json({ error: e.message }, { status: 500 });
-    }
-}
-
-// Helper used by flow executor to get real (unmasked) integration values
-export async function getIntegrationValue(key) {
-    try {
-        const { data } = await supabase
-            .from("ai_settings")
-            .select("data")
-            .eq("id", INTEGRATIONS_ID)
-            .single();
-        return data?.data?.[key] || null;
-    } catch {
-        return null;
+        return NextResponse.json({ success: true, integrations: body.integrations }, { headers: corsHeaders });
+    } catch (err) {
+        return NextResponse.json({ error: err.message }, { status: 500, headers: corsHeaders });
     }
 }
