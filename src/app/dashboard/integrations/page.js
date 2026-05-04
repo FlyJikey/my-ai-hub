@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Copy, Save, Check } from "lucide-react";
+import { Plus, Trash2, Copy, Check } from "lucide-react";
 import styles from "./page.module.css";
 import { AI_MODELS } from "@/config/models";
 
@@ -9,6 +9,7 @@ export default function IntegrationsPage() {
     const [integrations, setIntegrations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [newIntName, setNewIntName] = useState("");
     const [copiedKey, setCopiedKey] = useState(null);
@@ -20,6 +21,7 @@ export default function IntegrationsPage() {
     }, []);
 
     const fetchIntegrations = async () => {
+        setLoading(true);
         try {
             const res = await fetch("/api/integrations");
             const data = await res.json();
@@ -35,13 +37,20 @@ export default function IntegrationsPage() {
 
     const saveIntegrations = async (updatedList) => {
         setSaving(true);
+        setSaveSuccess(false);
         try {
-            await fetch("/api/integrations", {
+            const res = await fetch("/api/integrations", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ integrations: updatedList })
             });
-            setIntegrations(updatedList);
+            if (res.ok) {
+                setIntegrations(updatedList);
+                setSaveSuccess(true);
+                setTimeout(() => setSaveSuccess(false), 2000);
+            } else {
+                console.error("Failed to save integrations");
+            }
         } catch (e) {
             console.error("Failed to save", e);
         } finally {
@@ -101,18 +110,32 @@ export default function IntegrationsPage() {
         saveIntegrations(newList);
     };
 
-    const updateTaskModels = (intId, taskId, modelId) => {
+    // Toggle a single model in the allowedModels array
+    const toggleTaskModel = (intId, taskId, modelId) => {
         const newList = integrations.map(int => {
-            if (int.id === intId) {
-                const newTasks = int.tasks.map(t => {
-                    if (t.id === taskId) {
-                        return { ...t, allowedModels: [modelId] }; // For simplicity, 1 model or 'all'
-                    }
-                    return t;
-                });
-                return { ...int, tasks: newTasks };
-            }
-            return int;
+            if (int.id !== intId) return int;
+            const newTasks = int.tasks.map(t => {
+                if (t.id !== taskId) return t;
+
+                if (modelId === "all") {
+                    // If "all" is selected, clear specific models and set ["all"]
+                    return { ...t, allowedModels: ["all"] };
+                }
+
+                // Remove "all" if a specific model is toggled
+                let current = (t.allowedModels || []).filter(m => m !== "all");
+
+                if (current.includes(modelId)) {
+                    current = current.filter(m => m !== modelId);
+                    // If nothing left, fall back to "all"
+                    if (current.length === 0) current = ["all"];
+                } else {
+                    current = [...current, modelId];
+                }
+
+                return { ...t, allowedModels: current };
+            });
+            return { ...int, tasks: newTasks };
         });
         saveIntegrations(newList);
     };
@@ -129,10 +152,17 @@ export default function IntegrationsPage() {
         <div className={styles.container}>
             <div className={styles.header}>
                 <h1 className={styles.title}>Интеграции (API)</h1>
-                <button className={styles.createBtn} onClick={() => setShowModal(true)}>
-                    <Plus size={18} style={{ marginRight: 6, verticalAlign: 'middle' }} />
-                    Создать интеграцию
-                </button>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    {saveSuccess && (
+                        <span style={{ color: 'var(--success-color, #28a745)', fontSize: 14, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Check size={16} /> Сохранено
+                        </span>
+                    )}
+                    <button className={styles.createBtn} onClick={() => setShowModal(true)}>
+                        <Plus size={18} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                        Создать интеграцию
+                    </button>
+                </div>
             </div>
 
             <p style={{ marginBottom: 24, color: 'var(--text-secondary)' }}>
@@ -176,17 +206,35 @@ export default function IntegrationsPage() {
                                         <button className={styles.deleteBtn} onClick={() => deleteTask(int.id, task.id)}>Удалить</button>
                                     </div>
                                     <div style={{ marginTop: 8 }}>
-                                        <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Разрешенная модель:</label>
-                                        <select 
-                                            className={styles.select}
-                                            value={task.allowedModels?.[0] || "all"}
-                                            onChange={(e) => updateTaskModels(int.id, task.id, e.target.value)}
-                                        >
-                                            <option value="all">Все модели (определяет клиент)</option>
-                                            {allModels.map(m => (
-                                                <option key={m.id} value={m.id}>{m.name} ({m.provider})</option>
-                                            ))}
-                                        </select>
+                                        <label style={{ fontSize: 13, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>
+                                            Разрешённые модели:
+                                        </label>
+
+                                        {/* "All models" checkbox */}
+                                        <label className={styles.checkboxLabel}>
+                                            <input
+                                                type="checkbox"
+                                                checked={(task.allowedModels || []).includes("all")}
+                                                onChange={() => toggleTaskModel(int.id, task.id, "all")}
+                                            />
+                                            <span>Все модели (определяет клиент)</span>
+                                        </label>
+
+                                        {/* Individual model checkboxes — shown only when "all" is NOT selected */}
+                                        {!(task.allowedModels || []).includes("all") && (
+                                            <div className={styles.modelCheckboxList}>
+                                                {allModels.map(m => (
+                                                    <label key={m.id} className={styles.checkboxLabel}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={(task.allowedModels || []).includes(m.id)}
+                                                            onChange={() => toggleTaskModel(int.id, task.id, m.id)}
+                                                        />
+                                                        <span>{m.name} <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>({m.provider})</span></span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -204,7 +252,11 @@ export default function IntegrationsPage() {
   -d '{
     "task": "${int.tasks?.[0]?.id || 'worker'}",
     "prompt": "Твой промпт или данные",
-    "model": "${int.tasks?.[0]?.allowedModels?.[0] !== 'all' ? int.tasks?.[0]?.allowedModels?.[0] || 'qwen/qwen3-32b' : 'qwen/qwen3-32b'}"
+    "model": "${
+        (int.tasks?.[0]?.allowedModels?.[0] && int.tasks[0].allowedModels[0] !== 'all')
+            ? int.tasks[0].allowedModels[0]
+            : 'qwen/qwen3-32b'
+    }"
   }'`}
                             </div>
                         </div>
@@ -218,11 +270,11 @@ export default function IntegrationsPage() {
                         <h2 style={{ marginTop: 0 }}>Новая интеграция</h2>
                         <div style={{ marginTop: 16 }}>
                             <label style={{ fontSize: 14, fontWeight: 500 }}>Название (например: VPN Manager)</label>
-                            <input 
+                            <input
                                 autoFocus
-                                className={styles.input} 
-                                value={newIntName} 
-                                onChange={(e) => setNewIntName(e.target.value)} 
+                                className={styles.input}
+                                value={newIntName}
+                                onChange={(e) => setNewIntName(e.target.value)}
                                 placeholder="Введите название..."
                                 onKeyDown={(e) => e.key === 'Enter' && createIntegration()}
                             />
